@@ -7,7 +7,7 @@ TARGET_DIR = bin/
 all: main
 	rm -f *.o
 
-main: StreamFunctions.o Debug.o main.o
+main: StreamFunctions.o Debug.o main.o Writer.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
 %.o: $(SRC_DIR)%.cpp $(SRC_DIR)%.h

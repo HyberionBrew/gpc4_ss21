@@ -3,6 +3,7 @@
 //
 
 #include "main.h"
+#include "Writer.h"
 
 IntStream createTestStreamInt(size_t s, size_t c){
     IntStream testStream;
@@ -32,6 +33,10 @@ int main(int argc, char **argv){
     UnitStream result2 = delay(test1,test_unit1);
     printIntStream(result1);
     printUnitStream(result2);
+    Writer writeOut = Writer("output.txt");
+    writeOut.addIntStream("z1",result1);
+    writeOut.addUnitStream("z2",result2);
+    writeOut.writeOutputFile();
     return 0;
 }
 

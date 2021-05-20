@@ -32,7 +32,7 @@ private:
         IntStream intStream;
         UnitStream unitStream;
     };
-
+    std::string name;
     data_type type;
 
 public:

@@ -35,6 +35,10 @@ UnitStream Reader::getUnitStream(string name) {
         }
         file.close();
     }
+    if (readStream.size() == 0) {
+        cerr < "Stream " << name << " is not present in the input file";
+        exit(1);
+    }
     return readStream;
 }
 
@@ -60,6 +64,10 @@ IntStream Reader::getIntStream(string name) {
             }
         }
         file.close();
+    }
+    if (readStream.size() == 0) {
+        cerr < "Stream " << name << " is not present in the input file";
+        exit(1);
     }
     return readStream;
 }

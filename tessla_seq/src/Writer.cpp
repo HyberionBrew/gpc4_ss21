@@ -7,16 +7,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#incluse "Stream.h"
 
-Writer::Writer(string outputFile);
+Writer::Writer(std::string outputFile);
 
-void Writer::addUnitStream(string name,UnitStream stream){
-    Stream stream(UNIT_STREAM,stream);
+void Writer::addUnitStream(std::string name,UnitStream stream){
+    Stream stream(name,stream);
     Writer::streams.push_back();
 };
-void Writer::addIntStream(string name,IntStream stream){
-    Stream stream(INT_STREAM,stream);
+void Writer::addIntStream(std::string name,IntStream stream){
+    Stream stream(name,stream);
     Writer::streams.push_back();
 };
 void Writer::writeOutputFile() {
@@ -51,12 +50,15 @@ void Writer::writeOutputFile() {
             }
         }
         if (isIntStream == true) {
-            IntEvent ev = bestIntStream.pop();
-            f << ev.timestamp << ": = " << ev.value << "\n";
+            IntEvent ev = bestIntStream;
+
+            f << ev.timestamp << ": "<<ev.name <<" = " << ev.value << "\n";
+            ev.erase(ev.begin());
             //print some stuff with ev
         } else {
-            UnitEvent ev = bestUnitStream.pop();
-            f << ev.timestamp << ": = " << ev.value << "\n";
+            UnitEvent ev = bestUnitStream;
+            f << ev.timestamp << ": "<<ev.name << " = ()" << "\n";
+            ev.erase(ev.begin());
         }
     }
     f.close();

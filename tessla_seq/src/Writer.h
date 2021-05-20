@@ -6,14 +6,15 @@
 #define GPU_TESSLA_WRITER_H
 
 #include <string>
+#include "Stream.h"
 
 class Writer {
     std::vector<Stream> streams;
 public:
-    Writer(string outputFile);
-    UnitStream addUnitStream(string name);
-    IntStream addIntStream(string name);
+    Writer(std::string outputFile);
+    UnitStream addUnitStream(std::string name, UnitStream stream);
+    IntStream addIntStream(std::string name, IntStream stream);
     void writeOutputFile();
-}
+};
 
 #endif //GPU_TESSLA_WRITER_H

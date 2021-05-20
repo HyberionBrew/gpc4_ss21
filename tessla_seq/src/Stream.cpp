@@ -3,14 +3,16 @@
 //
 
 #include "Stream.h"
-Stream::Stream(IntStream in){
+Stream::Stream(std::string name, IntStream in){
     Stream::stream s;
     s.intStream = in;
+    this->name = name;
     data_type = INT_STREAM;
 }
-Stream::Stream(UnitStream in){
+Stream::Stream(std::string name,UnitStream in){
     Stream::stream s;
     s.unitStream = in;
+    this->name = name;
     data_type = UNIT_STREAM;
 }
 
