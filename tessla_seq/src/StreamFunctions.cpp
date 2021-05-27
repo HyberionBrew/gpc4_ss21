@@ -8,7 +8,7 @@ IntStream time(Stream& s){
     IntStream result;
     std::vector<Event> es = s.get_event_stream();
     for (std::vector<Event>::iterator it = es.begin() ; it != es.end(); ++it) {
-        IntEvent node{it->timestamp,(int32_t)it->timestamp};
+        IntEvent node(it->timestamp,(int32_t)it->timestamp);
         result.stream.push_back(node);
     }
     return result;

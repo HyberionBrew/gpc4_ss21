@@ -11,6 +11,17 @@ IntEvent::IntEvent(size_t ts, int32_t v){
     this->value = v;
 }
 
+
+bool operator==(const UnitEvent& lhs, const UnitEvent& rhs)
+{
+    return lhs.timestamp == rhs.timestamp;
+}
+
+bool operator==(const IntEvent& lhs, const IntEvent& rhs)
+{
+    return lhs.timestamp == rhs.timestamp && lhs.value == rhs.value;
+}
+
 std::string IntEvent::string_rep(std::string name) {
     std::ostringstream str_rep;
     str_rep << this->timestamp << ": " << name << " = " << this->value;
