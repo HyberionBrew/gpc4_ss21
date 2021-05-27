@@ -13,6 +13,10 @@ main: StreamFunctions.o Debug.o main.o Writer.o
 %.o: $(SRC_DIR)%.cpp $(SRC_DIR)%.h
 	$(CC) $(CFLAGS) $< -c -o $@
 
+test: main
+	$(CC) $(CFLAGS) -o run_test $(OBJS) $(TEST_SRC)
+	@./run_test
+
 clean:
 	rm -f bin/*
 	rm -f *.o
