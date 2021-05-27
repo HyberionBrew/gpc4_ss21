@@ -7,6 +7,7 @@
 
 #include "Event.h"
 #include <vector>
+#include <string>
 
 /**
  * A Vector of UnitEvents which only contain a timestamp

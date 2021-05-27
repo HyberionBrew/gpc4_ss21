@@ -8,7 +8,9 @@
 #include <fstream>
 #include <string>
 
-Writer::Writer(std::string outputFile);
+Writer::Writer(std::string outputFile){
+    this->FILENAME = outputFile;
+};
 
 void Writer::addUnitStream(std::string name,UnitStream stream){
     Stream stream(name,stream);
@@ -27,9 +29,9 @@ void Writer::writeOutputFile() {
     bool isIntStream;
     bool finished = false;
 
-    ofstream f;
+    std::ofstream f;
     f.open(FILENAME, ios::out);
-
+/*
     while (finished) {
         finished = true;
         for (std::vector<Stream>::iterator it = this->streams.begin(); it != streams.end(); it++) {
@@ -60,7 +62,7 @@ void Writer::writeOutputFile() {
             f << ev.timestamp << ": "<<ev.name << " = ()" << "\n";
             ev.erase(ev.begin());
         }
-    }
+    }*/
     f.close();
 
 };

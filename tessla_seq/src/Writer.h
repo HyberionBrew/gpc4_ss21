@@ -10,10 +10,11 @@
 
 class Writer {
     std::vector<Stream> streams;
+    std::string FILENAME;
 public:
     Writer(std::string outputFile);
-    UnitStream addUnitStream(std::string name, UnitStream stream);
-    IntStream addIntStream(std::string name, IntStream stream);
+    void addUnitStream(std::string name, UnitStream stream);
+    void addIntStream(std::string name, IntStream stream);
     void writeOutputFile();
 };
 
