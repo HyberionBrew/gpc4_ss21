@@ -64,6 +64,8 @@ UnitStream delay(IntStream d, UnitStream r){
                 UnitEvent node{target};
                 outstream.push_back(node);
             }
+            currEventR--;
+        }
     }
     return outstream;
 }
