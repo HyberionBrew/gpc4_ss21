@@ -58,9 +58,12 @@ UnitStream delay(IntStream d, UnitStream r){
         }
         if ((currEventD->timestamp == currEventR->timestamp) ||
             (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp))) {
-            UnitEvent node{currEventD->timestamp + currEventD->value};
-            outstream.push_back(node);
-        }
+            size_t target = currEventD->timestamp + currEventD->value;
+            currEventR++;
+            if (currEventR->timestamp >= target) {
+                UnitEvent node{target};
+                outstream.push_back(node);
+            }
     }
     return outstream;
 }
