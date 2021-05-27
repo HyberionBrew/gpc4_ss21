@@ -6,18 +6,15 @@
 
 void printIntStream(IntStream s){
     std::cout << "Debug IntStream" << std::endl;
-    for (IntStream::iterator it = s.begin() ; it != s.end(); ++it) {
-        std::cout << it->value;
-        std::cout << "-";
-        std::cout <<it->timestamp << " ";
-
+    for (std::vector<IntEvent>::iterator it = s.stream.begin() ; it != s.stream.end(); ++it) {
+        std::cout << it->value << "=" << it->timestamp;
     }
     std::cout << std::endl;
 }
 
 void printUnitStream(UnitStream s){
     std::cout << "Debug UnitStream" << std::endl;
-    for (UnitStream::iterator it = s.begin() ; it != s.end(); ++it) {
+    for (std::vector<UnitEvent>::iterator it = s.stream.begin() ; it != s.stream.end(); ++it) {
         std::cout << it->timestamp << " ";
     }
     std::cout << std::endl;

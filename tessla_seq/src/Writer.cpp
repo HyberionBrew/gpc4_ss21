@@ -13,6 +13,7 @@ Writer::Writer(std::string outputFile){
     this->FILENAME = outputFile;
 };
 
+/*
 void Writer::addUnitStream(std::string name,UnitStream stream){
     Stream streamUnit(name,stream);
     Writer::streams.push_back(streamUnit);
@@ -21,75 +22,53 @@ void Writer::addIntStream(std::string name,IntStream stream){
     Stream streamInt(name,stream);
     Writer::streams.push_back(streamInt);
 };
+ */
+
+void Writer::addStream(std::string name, Stream& stream) {
+    this->streams.push_back(OutputStream(name, stream));
+}
+
 void Writer::writeOutputFile() {
     //traverse streams
 
     int value = 0;
-    IntStream bestIntStream;
-    UnitStream bestUnitStream;
-    bool isIntStream;
-    bool finished = false;
+    //IntStream bestIntStream;
+    //UnitStream bestUnitStream;
 
     std::ofstream f;
     f.open(FILENAME);
-    std::string IntName = "a";
-    std::string UnitName = "a";
+    std::string streamName = "";
 
-    IntStream currStreamInt;
-    UnitStream currStream;
+    std::vector<Event>* currStream;
+    std::vector<Event>* bestStream;
+
+    bool finished = false;
     std::vector<int> ev_cnt(this->streams.size(), 0);
     int best_stream_idx = 0;
     int stream_idx = 0;
     while (!finished) {
         finished = true;
         uint32_t lowest_timestamp = UINT32_MAX;
-        for (std::vector<Stream>::iterator it = this->streams.begin(); it != streams.end(); it++) {
-            if (it->get_type() == INT_STREAM) {
-                currStreamInt = it->get_IntStream();
-                stream_idx = it - streams.begin();
-                if (currStreamInt.begin() + ev_cnt[stream_idx] >= currStreamInt.end()) {
-                    continue;
-                }
-                if (lowest_timestamp > (currStreamInt.begin() + ev_cnt[stream_idx])->timestamp) {
-                    bestIntStream = currStreamInt;
-                    IntName = it->name;
-                    isIntStream = true;
-                    finished = false;
-                    best_stream_idx = stream_idx;
-                    lowest_timestamp = ((currStreamInt.begin() + ev_cnt[stream_idx])->timestamp);
-                }
+        for (std::vector<OutputStream>::iterator it = this->streams.begin(); it != streams.end(); it++) {
+            std::vector<Event> tmp = it->stream.get_event_stream();
+            currStream = &tmp;
+            stream_idx = it - streams.begin();
+            if (currStream->begin() + ev_cnt[stream_idx] >= currStream->end()) {
+                continue;
             }
-            else {
-                currStream = it->get_UnitStream();
-                stream_idx = it - streams.begin();
-                if (currStream.begin() + ev_cnt[stream_idx] >= currStream.end()) {
-                    continue;
-                }
-                if (lowest_timestamp > (currStream.begin()+ ev_cnt[stream_idx])->timestamp) {
-                    bestUnitStream = currStream;
-                    UnitName = it->name;
-                    best_stream_idx = stream_idx;
-                    isIntStream = false;
-                    finished = false;
-                    lowest_timestamp = (currStream.begin()+ ev_cnt[stream_idx])->timestamp;
-                }
+            if (lowest_timestamp > (currStream->begin() + ev_cnt[stream_idx])->timestamp) {
+                bestStream = currStream;
+                streamName = it->name;
+                finished = false;
+                best_stream_idx = stream_idx;
+                lowest_timestamp = ((currStream->begin() + ev_cnt[stream_idx])->timestamp);
             }
         }
         if (!finished){
-            if (isIntStream) {
-                IntEvent ev = *(bestIntStream.begin() + ev_cnt[best_stream_idx]);
+            Event& ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
 
-                f << ev.timestamp << ": " << IntName << " = " << ev.value << "\n";
-                ev_cnt[best_stream_idx]++;
-                //print some stuff with ev
-            } else {
-
-                UnitEvent ev = *(bestUnitStream.begin()+ ev_cnt[best_stream_idx]);
-                f << ev.timestamp << ": " << UnitName << " = ()" << "\n";
-                ev_cnt[best_stream_idx]++;
-                //bestUnitStream->erase(bestUnitStream->begin());
-
-            }
+            f << ev.string_rep(streamName) << "\n";
+            ev_cnt[best_stream_idx]++;
         }
     }
     f.close();
@@ -98,7 +77,7 @@ void Writer::writeOutputFile() {
 
 
 
-
+/*
 void writeStream(IntStream s, UnitStream) {
 
     for (IntStream::iterator event = s.begin(); event != s.end(); ++event) {
@@ -107,3 +86,4 @@ void writeStream(IntStream s, UnitStream) {
 
 
 }
+ */

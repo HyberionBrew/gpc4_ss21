@@ -73,6 +73,8 @@ IntStream mod1(IntStream x, int value);
 // value % stream
 IntStream mod2(IntStream x, int value);
 
+// all two stream operations are SLIFT
+
 // x + y
 IntStream add(IntStream x, IntStream y);
 

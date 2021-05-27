@@ -9,12 +9,11 @@
 #include "Stream.h"
 
 class Writer {
-    std::vector<Stream> streams;
+    std::vector<OutputStream> streams;
     std::string FILENAME;
 public:
     Writer(std::string outputFile);
-    void addUnitStream(std::string name, UnitStream stream);
-    void addIntStream(std::string name, IntStream stream);
+    void addStream(std::string name, Stream& stream);
     void writeOutputFile();
 };
 

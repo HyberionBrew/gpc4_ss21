@@ -12,47 +12,56 @@
 /**
  * A Vector of UnitEvents which only contain a timestamp
  */
-typedef std::vector<UnitEvent> UnitStream;
+//typedef std::vector<UnitEvent> UnitStream;
 
 /**
  * A Vector of IntEvents which contain a timestamp and a value
  */
-typedef std::vector<IntEvent> IntStream;
+//typedef std::vector<IntEvent> IntStream;
 
-/**
- * Possible stream types
- */
-enum data_type {INT_STREAM, UNIT_STREAM};
 
 /**
  * Stream class, can contain either an IntStream or a UnitStream
  */
 class Stream {
-private:
-    IntStream intStream;
-    UnitStream unitStream;
-
-    data_type type;
-
 public:
-    std::string name;
-    Stream(std::string name, IntStream in);
-    Stream(std::string name, UnitStream in);
+    virtual std::vector<Event> get_event_stream() = 0;
+
     /**
      * Returns the stream's type (int or unit)
      * @return the type
      */
-    data_type get_type();
-    /**
-     * Returns the IntStream Vector
-     * @return the Vector
-     */
-    IntStream get_IntStream();
-    /**
-     * Returns the UnitStream Vector
-     * @return the Vector
-     */
-    UnitStream get_UnitStream();
+    bool is_equal_to(const Stream& other);
+};
+
+class IntStream : public Stream {
+private:
+
+public:
+    std::vector<Event> get_event_stream() override;
+    std::vector<IntEvent> stream;
+
+    IntStream();
+    IntStream(size_t size);
+    IntStream(std::vector<IntEvent> stream);
+};
+
+class UnitStream : public Stream {
+public:
+    std::vector<Event> get_event_stream() override;
+    std::vector<UnitEvent> stream;
+
+    UnitStream();
+    UnitStream(size_t size);
+    UnitStream(std::vector<UnitEvent> stream);
+};
+
+class OutputStream {
+public:
+    Stream& stream;
+    std::string name;
+
+    OutputStream(std::string name, Stream& stream);
 };
 
 
