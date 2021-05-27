@@ -11,10 +11,11 @@
 void readStreams();
 
 class Reader {
+    std::string FILENAME;
 public:
-    Reader(string inputFile);
-    UnitStream getUnitStream(string name);
-    IntStream getIntStream(string name);
-}
+    Reader(std::string inputFile);
+    UnitStream getUnitStream(std::string name);
+    IntStream getIntStream(std::string name);
+};
 
 #endif //GPU_TESSLA_READER_H

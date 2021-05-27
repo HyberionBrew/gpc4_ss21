@@ -6,17 +6,18 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include <string>
 using namespace std;
 
 
 Reader::Reader(string inputFile) {
-    inFile = inputFile;
+    this->FILENAME = inputFile;
 }
 
 UnitStream Reader::getUnitStream(string name) {
     fstream file;
-    file.open(inFile, ios::in);
+    file.open(this->FILENAME, ios::in);
     UnitStream readStream;
 
     if (file.is_open()) {
@@ -36,7 +37,7 @@ UnitStream Reader::getUnitStream(string name) {
         file.close();
     }
     if (readStream.size() == 0) {
-        cerr < "Stream " << name << " is not present in the input file";
+        cerr << "Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
     return readStream;
@@ -44,7 +45,7 @@ UnitStream Reader::getUnitStream(string name) {
 
 IntStream Reader::getIntStream(string name) {
     fstream file;
-    file.open(inFile, ios::in);
+    file.open(this->FILENAME, ios::in);
     IntStream readStream;
 
     if (file.is_open()) {
@@ -66,7 +67,7 @@ IntStream Reader::getIntStream(string name) {
         file.close();
     }
     if (readStream.size() == 0) {
-        cerr < "Stream " << name << " is not present in the input file";
+        cerr << "Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
     return readStream;
