@@ -4,7 +4,6 @@
 
 #include "StreamFunctions.h"
 
-
 IntStream time(IntStream s){
     IntStream result;
     for (IntStream::iterator it = s.begin() ; it != s.end(); ++it) {
@@ -78,35 +77,32 @@ IntStream count(UnitStream y) {
 IntStream merge(IntStream x, IntStream y) {
     IntStream outstream;
 
-    size_t max_size = std::max(x.size(), y.size());
-
     IntStream::iterator x_it = x.begin();
     IntStream::iterator y_it = y.begin();
 
-    bool x_end = false;
-    bool y_end = false;
+    bool x_end = x.size() > 0 ? false : true;
+    bool y_end = y.size() > 0 ? false : true;
 
     while(!x_end || !y_end){
         if (x_end){
             outstream.push_back((IntEvent){y_it->timestamp, y_it->value});
             y_it++;
-            if (y_it == y.end()) y_end = true;
         }
         else if (y_end) {
             outstream.push_back((IntEvent) {x_it->timestamp, x_it->value});
             x_it++;
-            if (x_it == x.end()) x_end = true;
         }
         else if (x_it->timestamp <= y_it->timestamp){
             outstream.push_back((IntEvent) {x_it->timestamp, x_it->value});
             x_it++;
-            if (x_it == x.end()) x_end = true;
         }
         else {
             outstream.push_back((IntEvent) {y_it->timestamp, y_it->value});
             y_it++;
-            if (y_it == y.end()) y_end = true;
         }
+
+        if (y_it == y.end()) y_end = true;
+        if (x_it == x.end()) x_end = true;
     }
     return outstream;
 }
@@ -114,40 +110,32 @@ IntStream merge(IntStream x, IntStream y) {
 UnitStream merge(UnitStream x, UnitStream y) {
     UnitStream outstream;
 
-    if (x.size() == 0 && y.size() == 0){
-        return outstream;
-    }
-
     UnitStream::iterator x_it = x.begin();
     UnitStream::iterator y_it = y.begin();
 
-    bool x_end = x.size() > 0 false;
-    bool y_end = false;
+    bool x_end = x.size() > 0 ? false : true;
+    bool y_end = y.size() > 0 ? false : true;
 
     while(!x_end || !y_end){
-        if (y_it == y.end()) y_end = true;
-        if (x_it == x.end()) x_end = true;
-
         if (x_end){
             outstream.push_back((UnitEvent){y_it->timestamp});
             y_it++;
-            if (y_it == y.end()) y_end = true;
         }
         else if (y_end) {
             outstream.push_back((UnitEvent) {x_it->timestamp});
             x_it++;
-            if (x_it == x.end()) x_end = true;
         }
         else if (x_it->timestamp <= y_it->timestamp){
             outstream.push_back(( UnitEvent){x_it->timestamp});
             x_it++;
-            if (x_it == x.end()) x_end = true;
         }
         else{
             outstream.push_back((UnitEvent){y_it->timestamp});
             y_it++;
-            if (y_it == y.end()) y_end = true;
         }
+
+        if (y_it == y.end()) y_end = true;
+        if (x_it == x.end()) x_end = true;
     }
     return outstream;
 }
