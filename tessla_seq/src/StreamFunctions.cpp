@@ -59,13 +59,14 @@ UnitStream delay(IntStream d, UnitStream r){
         }
         if ((currEventD->timestamp == currEventR->timestamp) ||
             (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp))) {
-            if (currEventR+1 != r.stream.end()){
-                if ((currEventR+1)->timestamp < (currEventD->timestamp + currEventD->value)){
-                    continue;
-                }
+
+            size_t target = currEventD->timestamp + currEventD->value;
+            currEventR++;
+            if (currEventR->timestamp >= target) {
+                UnitEvent node{target};
+                outstream.push_back(node);
             }
-            UnitEvent node{currEventD->timestamp + currEventD->value};
-            outstream.push_back(node);
+            currEventR--;
         }
     }
     UnitStream delayed(outstream);

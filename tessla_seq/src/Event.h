@@ -12,11 +12,19 @@
 /*
 typedef struct UnitEvent{
     size_t timestamp;
+
+    bool operator==(UnitEvent const & rhs) const {
+        return this->timestamp == rhs.timestamp;
+    }
 } UnitEvent;
 
 typedef struct IntEvent{
     size_t timestamp;
     int32_t value;
+
+    bool operator==(IntEvent const & rhs) const {
+        return (this->timestamp == rhs.timestamp) && (this->value == rhs.value);
+    }
 } IntEvent;
 */
 
