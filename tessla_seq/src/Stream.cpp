@@ -25,7 +25,7 @@ IntStream Stream::get_IntStream() {
 UnitStream Stream::get_UnitStream() {
     return this->unitStream;
 }
-
+/*
 bool Stream::is_equal_to(Stream other) {
     if (this->get_type != other->get_type()) {
         return false;
@@ -36,3 +36,4 @@ bool Stream::is_equal_to(Stream other) {
         return this->get_UnitStream() == other.get_UnitStream();
     }
 }
+*/
