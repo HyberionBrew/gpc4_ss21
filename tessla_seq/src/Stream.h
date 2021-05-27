@@ -44,6 +44,8 @@ public:
     IntStream();
     IntStream(size_t size);
     IntStream(std::vector<IntEvent> stream);
+
+    friend bool operator==(const IntStream& lhs, const IntStream& rhs);
 };
 
 class UnitStream : public Stream {
@@ -54,6 +56,8 @@ public:
     UnitStream();
     UnitStream(size_t size);
     UnitStream(std::vector<UnitEvent> stream);
+
+    friend bool operator==(const UnitStream& lhs, const UnitStream& rhs);
 };
 
 class OutputStream {

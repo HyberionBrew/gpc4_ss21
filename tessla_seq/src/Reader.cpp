@@ -30,13 +30,13 @@ UnitStream Reader::getUnitStream(string name) {
                 int timestamp = stoi(matches[1]);
                 if (name.compare(matches[2]) == 0) {
                     UnitEvent ue{timestamp};
-                    readStream.push_back(ue);
+                    readStream.stream.push_back(ue);
                 }
             }
         }
         file.close();
     }
-    if (readStream.size() == 0) {
+    if (readStream.stream.size() == 0) {
         cerr << "Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
@@ -60,13 +60,13 @@ IntStream Reader::getIntStream(string name) {
                 int value = stoi(matches[3]);
                 if (name.compare(matches[2]) == 0) {
                     IntEvent ie{timestamp, value};
-                    readStream.push_back(ie);
+                    readStream.stream.push_back(ie);
                 }
             }
         }
         file.close();
     }
-    if (readStream.size() == 0) {
+    if (readStream.stream.size() == 0) {
         cerr << "Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }

@@ -14,7 +14,7 @@ IntEvent::IntEvent(size_t ts, int32_t v){
 std::string IntEvent::string_rep(std::string name) {
     std::ostringstream str_rep;
     str_rep << this->timestamp << ": " << name << " = " << this->value;
-    return str_rep;
+    return str_rep.str();
 }
 
 UnitEvent::UnitEvent(size_t ts){
@@ -24,7 +24,7 @@ UnitEvent::UnitEvent(size_t ts){
 std::string UnitEvent::string_rep(std::string name) {
     std::ostringstream str_rep;
     str_rep << this->timestamp << ": " << name << " = ()";
-    return str_rep;
+    return str_rep.str();
 }
 
 
