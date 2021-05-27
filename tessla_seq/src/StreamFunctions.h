@@ -12,15 +12,27 @@
 #include <cstdint>
 #include <iostream>
 
-UnitStream unit();
-IntStream unit(int32_t val);
+// === BASIC OPERATIONS ===
 
+// returns a new stream with unit event at time 0
+UnitStream unit();
+
+// returns a new stream with int event at time 0
+IntStream def(int32_t val);
+
+// time operation for int stream
 IntStream time(IntStream s);
 
+// time operation for unit stream
+IntStream time(UnitStream s);
+
+// last operation (sample v at ticks of r)
 IntStream last(IntStream v, UnitStream r);
 
+// delay operation (delay events of d on ticks of r and close transitively)
 UnitStream delay(IntStream d, UnitStream r);
 
+// count operation (running counter of unit events on x)
 IntStream count(UnitStream x);
 
 /**
@@ -29,29 +41,51 @@ IntStream count(UnitStream x);
  * @param x
  * @param y
  * @return a new merged stream
- */
+ **/
 IntStream merge(IntStream x, IntStream y);
 
+// merge two unit streams
 UnitStream merge(UnitStream x, UnitStream y);
 
+// === ARITHMETIC OPERATIONS ===
+
+// stream + value
 IntStream add(IntStream x, int value);
 
-IntStream sub(IntStream x, int value);
+// stream - value
+IntStream sub1(IntStream x, int value);
 
+// value - stream
+IntStream sub2(IntStream x, int value);
+
+// stream * value
 IntStream mul(IntStream x, int value);
 
-IntStream div(IntStream x, int value);
+// stream / value
+IntStream div1(IntStream x, int value);
 
-IntStream mod(IntStream x, int value);
+// value / stream
+IntStream div2(IntStream x, int value);
 
+// stream % value
+IntStream mod1(IntStream x, int value);
+
+// value % stream
+IntStream mod2(IntStream x, int value);
+
+// x + y
 IntStream add(IntStream x, IntStream y);
 
+// x - y
 IntStream sub(IntStream x, IntStream y);
 
+// x * y
 IntStream mul(IntStream x, IntStream y);
 
+// x / y
 IntStream div(IntStream x, IntStream y);
 
+// x % y
 IntStream mod(IntStream x, IntStream y);
 
 #endif //GPU_TESSLA_STREAM_FUNCTIONS_H

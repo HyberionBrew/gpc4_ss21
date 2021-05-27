@@ -34,8 +34,11 @@ int main(int argc, char **argv){
     printIntStream(result1);
     printUnitStream(result2);
     Writer writeOut = Writer("output.txt");
+    printIntStream(result1);
+    printUnitStream(result2);
     writeOut.addIntStream("z1",result1);
-    writeOut.addUnitStream("z2",result2);
+    writeOut.addIntStream("z2",result1);
+    writeOut.addUnitStream("z3",result2);
     writeOut.writeOutputFile();
     return 0;
 }

@@ -20,7 +20,7 @@ UnitStream unit(){
     return result;
 }
 
-IntStream unit(int32_t val){
+IntStream def(int32_t val){
     IntStream result;
     result.push_back( (IntEvent) {0, val} );
     return result;
@@ -86,7 +86,7 @@ IntStream merge(IntStream x, IntStream y) {
     bool x_end = false;
     bool y_end = false;
 
-    while(!(x_end && y_end)){
+    while(!x_end || !y_end){
         if (x_end){
             outstream.push_back((IntEvent){y_it->timestamp, y_it->value});
             y_it++;
@@ -114,15 +114,20 @@ IntStream merge(IntStream x, IntStream y) {
 UnitStream merge(UnitStream x, UnitStream y) {
     UnitStream outstream;
 
-    size_t max_size = std::max(x.size(), y.size());
+    if (x.size() == 0 && y.size() == 0){
+        return outstream;
+    }
 
     UnitStream::iterator x_it = x.begin();
     UnitStream::iterator y_it = y.begin();
 
-    bool x_end = false;
+    bool x_end = x.size() > 0 false;
     bool y_end = false;
 
-    while(!(x_end && y_end)){
+    while(!x_end || !y_end){
+        if (y_it == y.end()) y_end = true;
+        if (x_it == x.end()) x_end = true;
+
         if (x_end){
             outstream.push_back((UnitEvent){y_it->timestamp});
             y_it++;

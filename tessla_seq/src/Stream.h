@@ -29,14 +29,15 @@ enum data_type {INT_STREAM, UNIT_STREAM};
  */
 class Stream {
 private:
-    union stream{
-        IntStream intStream;
-        UnitStream unitStream;
-    };
-    std::string name;
+    IntStream intStream;
+    UnitStream unitStream;
+
     data_type type;
 
 public:
+    std::string name;
+    Stream(std::string name, IntStream in);
+    Stream(std::string name, UnitStream in);
     /**
      * Returns the stream's type (int or unit)
      * @return the type

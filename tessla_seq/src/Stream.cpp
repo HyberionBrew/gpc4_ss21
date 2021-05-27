@@ -4,26 +4,24 @@
 
 #include "Stream.h"
 Stream::Stream(std::string name, IntStream in){
-    Stream::stream s;
-    s.intStream = in;
+    this->intStream = in;
     this->name = name;
-    data_type = INT_STREAM;
+    this->type = INT_STREAM;
 }
 Stream::Stream(std::string name,UnitStream in){
-    Stream::stream s;
-    s.unitStream = in;
+    this->unitStream = in;
     this->name = name;
-    data_type = UNIT_STREAM;
+    this->type = UNIT_STREAM;
 }
 
 data_type Stream::get_type() {
-    return type;
+    return this->type;
 }
 
-IntStream get_IntStream() {
-    return s.intStream;
+IntStream Stream::get_IntStream() {
+    return this->intStream;
 }
 
-UnitStream get_UnitStream() {
-    return s.unitStream;
+UnitStream Stream::get_UnitStream() {
+    return this->unitStream;
 }
