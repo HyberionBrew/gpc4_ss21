@@ -83,7 +83,8 @@ void Writer::writeOutputFile() {
                 ev_cnt[best_stream_idx]++;
                 //print some stuff with ev
             } else {
-                UnitEvent ev = *(bestUnitStream.begin());
+
+                UnitEvent ev = *(bestUnitStream.begin()+ ev_cnt[best_stream_idx]);
                 f << ev.timestamp << ": " << UnitName << " = ()" << "\n";
                 ev_cnt[best_stream_idx]++;
                 //bestUnitStream->erase(bestUnitStream->begin());

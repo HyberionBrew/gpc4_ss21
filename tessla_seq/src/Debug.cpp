@@ -7,11 +7,12 @@
 void printIntStream(IntStream s){
     std::cout << "Debug IntStream" << std::endl;
     for (IntStream::iterator it = s.begin() ; it != s.end(); ++it) {
-        std::cout << it->value << std::endl;
-        std::cout << "-" << std::endl;
-        std::cout <<it->timestamp << std::endl;
-        std::cout << std::endl;
+        std::cout << it->value;
+        std::cout << "-";
+        std::cout <<it->timestamp << " ";
+
     }
+    std::cout << std::endl;
 }
 
 void printUnitStream(UnitStream s){
