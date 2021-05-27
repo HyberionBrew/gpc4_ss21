@@ -23,34 +23,39 @@ UnitStream createTestStreamUnit(size_t s) {
     return testStream;
 }
 UnitStream createUnitTestStreamDelay(){
-
+    UnitStream testStream;
     UnitEvent ue{2};
     testStream.push_back(ue);
-    UnitEvent ue{7};
-    testStream.push_back(ue);
-    UnitEvent ue{8};
-    testStream.push_back(ue);
+    UnitEvent ue1{7};
+    testStream.push_back(ue1);
+    UnitEvent ue2{8};
+    testStream.push_back(ue2);
+    return testStream;
 }
 
 IntStream createIntTestStreamDelay(){
+    IntStream testStream;
     IntEvent x{1,1};
     testStream.push_back(x);
-    IntEvent x{2,2};
-    testStream.push_back(x);
-    IntEvent x{3,4};
-    testStream.push_back(x);
-    IntEvent x{4,1};
-    testStream.push_back(x);
-    IntEvent x{6,2};
-    testStream.push_back(x);
-    IntEvent x{7,3};
-    testStream.push_back(x);
+    IntEvent y{2,2};
+    testStream.push_back(y);
+    IntEvent z{3,4};
+    testStream.push_back(z);
+    IntEvent x1{4,1};
+    testStream.push_back(x1);
+    IntEvent x2{6,2};
+    testStream.push_back(x2);
+    IntEvent x3{7,3};
+    testStream.push_back(x3);
+    return testStream;
 }
 
-void delayTest()IntStream test2 = createIntTestStreamDelay();
+void delayTest(){
+    IntStream test2 = createIntTestStreamDelay();
     UnitStream test1 = createUnitTestStreamDelay();
     IntStream test2 = createIntTestStreamDelay();
-
+    UnitStream result2 = delay(test1,test2);
+    printUnitStream(result2);
 }
 /*
 void merge_test(){
@@ -74,7 +79,7 @@ int main(int argc, char **argv){
     Writer writeOut = Writer("output.txt");
     printIntStream(result1);
     printUnitStream(test_unit1);
-
+    delayTest();
     //printIntStream(result3);
     //writeOut.addIntStream("z1",result1);
     //writeOut.addIntStream("z2",result1);
