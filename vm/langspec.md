@@ -65,7 +65,7 @@ Delay   :   'delay' '(' ID ',' ID ')'
 
 Last    :   'last' '(' ID ',' ID ')'
 
-Time    :   'time' '(' ID ',' ID ')'
+Time    :   'time' '(' ID ')'
 
 Merge   :   'merge' '(' ID ',' ID ')'
 
