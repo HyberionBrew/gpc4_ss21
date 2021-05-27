@@ -94,6 +94,9 @@ IntStream merge(IntStream x, IntStream y) {
         }
         else if (x_it->timestamp <= y_it->timestamp){
             outstream.push_back((IntEvent) {x_it->timestamp, x_it->value});
+            if (x_it->timestamp == y_it->timestamp) {
+                y_it++;
+            }
             x_it++;
         }
         else {
