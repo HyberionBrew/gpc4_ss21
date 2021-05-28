@@ -49,12 +49,12 @@ LockQueue& LockQueue::operator=( const LockQueue & q ) {
     }
 }
  */
-bool operator==(const IntStream& lhs, const IntStream& rhs)
+bool operator==(const IntStream lhs, const IntStream rhs)
 {
     return lhs.stream == rhs.stream;
 }
 
-bool operator==(const UnitStream& lhs, const UnitStream& rhs)
+bool operator==(const UnitStream lhs, const UnitStream rhs)
 {
     return lhs.stream == rhs.stream;
 }

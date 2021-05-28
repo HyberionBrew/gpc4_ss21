@@ -3,12 +3,14 @@
 //
 
 #include "StreamFunctions.h"
+#include <tuple>
 
 IntStream time(Stream& s){
     IntStream result;
     std::vector<Event*> es = s.get_event_stream();
     for (auto & elem : es) {
-        IntEvent node(elem->timestamp,(int32_t)elem->timestamp);
+        Event* e = elem;
+        IntEvent node(e->get_timestamp(),(int32_t)e->get_timestamp());
         result.stream.push_back(node);
     }
     return result;
@@ -26,43 +28,45 @@ IntStream def(int32_t val){
     return result;
 }
 
-IntStream last(IntStream v, UnitStream r){
+IntStream last(IntStream v, Stream& r){
     IntStream result;
     std::vector<IntEvent>::iterator currEventV = v.stream.begin();
-    for (std::vector<UnitEvent>::iterator currEventR = r.stream.begin() ; currEventR != r.stream.end(); ++currEventR) {
-        if (currEventV->timestamp >= currEventR->timestamp){
-               continue;
+    std::vector<Event*> es = r.get_event_stream();
+    for (std::vector<Event*>::iterator currEventR = es.begin() ; currEventR != es.end(); ++currEventR) {
+        if (currEventV->get_timestamp() >= (*currEventR)->get_timestamp()){
+           continue;
         }
         else{
             if ((currEventV+1) != v.stream.end()){
-                while ((currEventV+1)->timestamp <= currEventR->timestamp && (currEventV+1) != v.stream.end()){
+                while ((currEventV+1) != v.stream.end() && (currEventV+1)->get_timestamp() <= (*currEventR)->get_timestamp()){
                     currEventV++;
                 }
             }
-            IntEvent node{currEventR->timestamp,currEventV->value};
+            IntEvent node{(*currEventR)->get_timestamp(),currEventV->value};
             result.stream.push_back(node);
         }
     }
     return result;
 }
 
-UnitStream delay(IntStream d, UnitStream r){
+UnitStream delay(IntStream d, Stream& r){
     std::vector<UnitEvent> outstream;
-    std::vector<UnitEvent>::iterator currEventR = r.stream.begin();
+    std::vector<Event*> rstream = r.get_event_stream();
+    std::vector<Event*>::iterator currEventR = rstream.begin();
     std::vector<UnitStream>::size_type currEventOutIndex = 0;
     for (std::vector<IntEvent>::iterator currEventD = d.stream.begin(); currEventD != d.stream.end(); ++currEventD) {
-        while (currEventR->timestamp < currEventD->timestamp && currEventR != r.stream.end()) {
+        while ((*currEventR)->get_timestamp() < currEventD->timestamp && currEventR != rstream.end()) {
             currEventR++;
         }
         while (currEventOutIndex < outstream.size() && outstream[currEventOutIndex].timestamp < outstream[currEventOutIndex].timestamp) {
             currEventOutIndex++;
         }
-        if ((currEventD->timestamp == currEventR->timestamp) ||
+        if ((currEventD->timestamp == (*currEventR)->get_timestamp()) ||
             (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp))) {
 
             size_t target = currEventD->timestamp + currEventD->value;
             currEventR++;
-            if (currEventR->timestamp >= target) {
+            if ((*currEventR)->get_timestamp() >= target) {
                 UnitEvent node{target};
                 outstream.push_back(node);
             }
@@ -95,8 +99,6 @@ IntStream merge(IntStream s1, IntStream s2) {
     bool y_end = y.size() == 0;
 
     while(!x_end || !y_end){
-        //std::printf("x: %zu (%d), y: %zu (%d)\n", x_it->timestamp, x_end, y_it->timestamp,y_end);
-
         if (x_end){
             outstream.push_back((IntEvent){y_it->timestamp, y_it->value});
             y_it++;
@@ -108,7 +110,6 @@ IntStream merge(IntStream s1, IntStream s2) {
         else if (x_it->timestamp <= y_it->timestamp){
             outstream.push_back((IntEvent) {x_it->timestamp, x_it->value});
             if (x_it->timestamp == y_it->timestamp){
-                std::cout << "Double Timestamp: " << x_it->timestamp << std::endl;
                 y_it++;
             }
             x_it++;
@@ -148,7 +149,6 @@ UnitStream merge(UnitStream s1, UnitStream s2) {
         else if (x_it->timestamp <= y_it->timestamp){
             outstream.push_back((UnitEvent){x_it->timestamp});
             if (x_it->timestamp == y_it->timestamp){
-                std::cout << "Double Timestamp: " << x_it->timestamp << std::endl;
                 y_it++;
             }
             x_it++;
@@ -164,57 +164,112 @@ UnitStream merge(UnitStream s1, UnitStream s2) {
     UnitStream merged(outstream);
     return merged;
 }
-/*
+
+// helpers for arithmetic functions
+
 std::tuple<IntStream, IntStream> slift_streams(IntStream x, IntStream y) {
-    // IntStream xp = merge(x,last(x,y));
-    // IntStream yp = merge(y,last(x,y));
-    return NULL;
+    IntStream xp = merge(x,last(x,y));
+    IntStream yp = merge(y,last(x,y));
+    return std::make_tuple(xp, yp);
 }
+
+IntStream const_lift(IntStream x, int value, bool reverse, int(*op)(int, int)) {
+    IntStream res;
+    for (auto &elem : x.stream) {
+        int val = reverse? op(elem.value, value) : op(value, elem.value);
+        res.stream.push_back(IntEvent(elem.timestamp, val));
+    }
+    return res;
+}
+
+/*
+IntStream lift(IntStream x, IntStream y, IntEvent(*f)(IntEvent*, IntEvent*)) {
+
+}
+ */
+
+IntEvent* int_add(IntEvent* x, IntEvent* y) {
+    if (x != nullptr && y != nullptr) { // assert x->timestamp == y->timestamp
+        return new IntEvent(x->timestamp, x->value+y->value);
+    } else {
+        return nullptr;
+    }
+}
+IntEvent* int_sub(IntEvent* x, IntEvent* y) {
+    if (x != nullptr && y != nullptr) { // assert x->timestamp == y->timestamp
+        return new IntEvent(x->timestamp, x->value-y->value);
+    } else {
+        return nullptr;
+    }
+}
+IntEvent* int_mul(IntEvent* x, IntEvent* y) {
+    if (x != nullptr && y != nullptr) { // assert x->timestamp == y->timestamp
+        return new IntEvent(x->timestamp, x->value*y->value);
+    } else {
+        return nullptr;
+    }
+}
+IntEvent* int_div(IntEvent* x, IntEvent* y) {
+    if (x != nullptr && y != nullptr) { // assert x->timestamp == y->timestamp
+        return new IntEvent(x->timestamp, x->value/y->value);
+    } else {
+        return nullptr;
+    }
+}
+IntEvent* int_mod(IntEvent* x, IntEvent* y) {
+    if (x != nullptr && y != nullptr) { // assert x->timestamp == y->timestamp
+        return new IntEvent(x->timestamp, x->value%y->value);
+    } else {
+        return nullptr;
+    }
+}
+
+int int_add(int x, int y) { return x + y; }
+int int_sub(int x, int y) { return x - y; }
+int int_mul(int x, int y) { return x * y; }
+int int_div(int x, int y) { return x / y; }
+int int_mod(int x, int y) { return x % y; }
 
 // stream + value
-IntStream add(IntStream x, int value){
-    //UnitStream::iterator x_it = x.begin();
-    //UnitStream::iterator y_it = y.begin();
-    //while(!x_end || !y_end){
-
-    //}
-}
+IntStream add(IntStream x, int value){ return const_lift(x,value,false,int_add); }
 
 // stream - value
 IntStream sub1(IntStream x, int value){
+    return const_lift(x,value,false,int_sub);
 
-};
+}
 
 // value - stream
 IntStream sub2(IntStream x, int value){
-
-};
+    return const_lift(x,value,true,int_sub);
+}
 
 // stream * value
 IntStream mul(IntStream x, int value){
-
-};
+    return const_lift(x,value,false,int_sub);
+}
 
 // stream / value
 IntStream div1(IntStream x, int value){
-
-};
+    return const_lift(x,value,false,int_div);
+}
 
 // value / stream
 IntStream div2(IntStream x, int value){
-
-};
+    return const_lift(x,value,true,int_div);
+}
 
 // stream % value
 IntStream mod1(IntStream x, int value){
-
-};
+    return const_lift(x,value,false,int_mod);
+}
 
 // value % stream
 IntStream mod2(IntStream x, int value){
+    return const_lift(x,value,true,int_mod);
+}
 
-};
-
+/*
 // x + y
 IntStream add(IntStream x, IntStream y){
 
@@ -240,4 +295,4 @@ IntStream mod(IntStream x, IntStream y){
 
 }
 
-*/
+ */

@@ -58,12 +58,12 @@ void Writer::writeOutputFile() {
             if (currStream->begin() + ev_cnt[stream_idx] >= currStream->end()) {
                 continue;
             }
-            if (lowest_timestamp > (*(currStream->begin() + ev_cnt[stream_idx]))->timestamp) {
+            if (lowest_timestamp > (*(currStream->begin() + ev_cnt[stream_idx]))->get_timestamp()) {
                 bestStream = currStream;
                 streamName = it->name;
                 finished = false;
                 best_stream_idx = stream_idx;
-                lowest_timestamp = ((*(currStream->begin() + ev_cnt[stream_idx]))->timestamp);
+                lowest_timestamp = ((*(currStream->begin() + ev_cnt[stream_idx]))->get_timestamp());
             }
         }
         if (!finished){

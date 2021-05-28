@@ -30,7 +30,7 @@ typedef struct IntEvent{
 
 class Event{
 public:
-    size_t timestamp;
+    virtual size_t get_timestamp() = 0;
     virtual std::string string_rep(std::string name) = 0;
 };
 
@@ -41,6 +41,7 @@ public:
 
     UnitEvent(size_t ts);
     std::string string_rep(std::string name) override;
+    size_t get_timestamp() override;
 
     friend bool operator==(const UnitEvent lhs, const UnitEvent rhs);
 };
@@ -53,6 +54,7 @@ public:
 
     IntEvent(size_t ts, int32_t v);
     std::string string_rep(std::string name) override;
+    size_t get_timestamp() override;
 
     friend bool operator==(const IntEvent lhs, const IntEvent rhs);
 };
