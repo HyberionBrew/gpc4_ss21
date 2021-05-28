@@ -46,12 +46,13 @@ void Writer::writeOutputFile() {
     std::vector<int> ev_cnt(this->streams.size(), 0);
     int best_stream_idx = 0;
     int stream_idx = 0;
+    std::vector<Event*> tmp;
     while (!finished) {
         std::cout << best_stream_idx << std::endl;
         finished = true;
         uint32_t lowest_timestamp = UINT32_MAX;
         for (std::vector<OutputStream>::iterator it = this->streams.begin(); it != streams.end(); it++) {
-            std::vector<Event*> tmp = it->stream.get_event_stream();
+            tmp = it->stream.get_event_stream();
             currStream = &tmp;
             stream_idx = it - streams.begin();
             if (currStream->begin() + ev_cnt[stream_idx] >= currStream->end()) {
@@ -70,6 +71,8 @@ void Writer::writeOutputFile() {
         if (!finished){
             std::cout << "71" << std::endl;
             // THIS ASSIGNMENT LEADS TO SEGV
+            std::cout << ev_cnt[best_stream_idx] << std::endl;
+            std::cout << bestStream->end()- bestStream->begin()<< std::endl;
             Event* ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
             std::cout << ev->timestamp << std::endl;
             std::cout << "73" << std::endl;
