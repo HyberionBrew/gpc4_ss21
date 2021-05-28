@@ -63,24 +63,12 @@ void Writer::writeOutputFile() {
                 streamName = it->name;
                 finished = false;
                 best_stream_idx = stream_idx;
-                std::cout << "65" << std::endl;
                 lowest_timestamp = ((*(currStream->begin() + ev_cnt[stream_idx]))->timestamp);
             }
-            std::cout << "68" << std::endl;
         }
         if (!finished){
-            std::cout << "71" << std::endl;
-            // THIS ASSIGNMENT LEADS TO SEGV
-            std::cout << ev_cnt[best_stream_idx] << std::endl;
-            std::cout << bestStream->end()- bestStream->begin()<< std::endl;
             Event* ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
-            std::cout << ev->timestamp << std::endl;
-            std::cout << "73" << std::endl;
-
-
-            // SEGV occurs here
             f << ev->string_rep(streamName) << "\n";
-            std::cout << "76" << std::endl;
             ev_cnt[best_stream_idx]++;
         }
     }
