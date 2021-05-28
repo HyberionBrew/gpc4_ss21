@@ -39,35 +39,36 @@ void Writer::writeOutputFile() {
     f.open(FILENAME);
     std::string streamName = "";
 
-    std::vector<Event>* currStream;
-    std::vector<Event>* bestStream;
+    std::vector<Event*>* currStream;
+    std::vector<Event*>* bestStream;
 
     bool finished = false;
     std::vector<int> ev_cnt(this->streams.size(), 0);
     int best_stream_idx = 0;
     int stream_idx = 0;
+    std::vector<Event*> tmp;
     while (!finished) {
+        std::cout << best_stream_idx << std::endl;
         finished = true;
         uint32_t lowest_timestamp = UINT32_MAX;
         for (std::vector<OutputStream>::iterator it = this->streams.begin(); it != streams.end(); it++) {
-            std::vector<Event> tmp = it->stream.get_event_stream();
+            tmp = it->stream.get_event_stream();
             currStream = &tmp;
             stream_idx = it - streams.begin();
             if (currStream->begin() + ev_cnt[stream_idx] >= currStream->end()) {
                 continue;
             }
-            if (lowest_timestamp > (currStream->begin() + ev_cnt[stream_idx])->timestamp) {
+            if (lowest_timestamp > (*(currStream->begin() + ev_cnt[stream_idx]))->timestamp) {
                 bestStream = currStream;
                 streamName = it->name;
                 finished = false;
                 best_stream_idx = stream_idx;
-                lowest_timestamp = ((currStream->begin() + ev_cnt[stream_idx])->timestamp);
+                lowest_timestamp = ((*(currStream->begin() + ev_cnt[stream_idx]))->timestamp);
             }
         }
         if (!finished){
-            Event& ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
-
-            f << ev.string_rep(streamName) << "\n";
+            Event* ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
+            f << ev->string_rep(streamName) << "\n";
             ev_cnt[best_stream_idx]++;
         }
     }

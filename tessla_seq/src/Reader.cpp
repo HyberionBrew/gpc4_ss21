@@ -29,7 +29,7 @@ UnitStream Reader::getUnitStream(string name) {
             if (regex_match(buf, matches, pattern)) {
                 int timestamp = stoi(matches[1]);
                 if (name.compare(matches[2]) == 0) {
-                    UnitEvent ue{timestamp};
+                    UnitEvent ue{static_cast<size_t>(timestamp)};
                     readStream.stream.push_back(ue);
                 }
             }
@@ -59,7 +59,7 @@ IntStream Reader::getIntStream(string name) {
                 int timestamp = stoi(matches[1]);
                 int value = stoi(matches[3]);
                 if (name.compare(matches[2]) == 0) {
-                    IntEvent ie{timestamp, value};
+                    IntEvent ie{static_cast<size_t>(timestamp), value};
                     readStream.stream.push_back(ie);
                 }
             }

@@ -25,18 +25,19 @@
  */
 class Stream {
 public:
-    virtual std::vector<Event> get_event_stream() = 0;
+    virtual std::vector<Event*> get_event_stream() = 0;
 
     /**
      * Returns the stream's type (int or unit)
      * @return the type
      */
     bool is_equal_to(const Stream& other);
+    virtual ~Stream();
 };
 
 class IntStream : public Stream {
 public:
-    std::vector<Event> get_event_stream() override;
+    std::vector<Event*> get_event_stream() override;
     std::vector<IntEvent> stream;
 
     IntStream();
@@ -48,7 +49,7 @@ public:
 
 class UnitStream : public Stream {
 public:
-    std::vector<Event> get_event_stream() override;
+    std::vector<Event*> get_event_stream() override;
     std::vector<UnitEvent> stream;
 
     UnitStream();

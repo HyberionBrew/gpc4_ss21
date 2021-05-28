@@ -12,12 +12,12 @@ IntEvent::IntEvent(size_t ts, int32_t v){
 }
 
 
-bool operator==(const UnitEvent& lhs, const UnitEvent& rhs)
+bool operator==(const UnitEvent lhs, const UnitEvent rhs)
 {
     return lhs.timestamp == rhs.timestamp;
 }
 
-bool operator==(const IntEvent& lhs, const IntEvent& rhs)
+bool operator==(const IntEvent lhs, const IntEvent rhs)
 {
     return lhs.timestamp == rhs.timestamp && lhs.value == rhs.value;
 }

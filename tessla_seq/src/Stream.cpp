@@ -8,14 +8,33 @@ IntStream::IntStream(std::vector<IntEvent> stream) {
     this->stream = stream;
 }
 
+IntStream::IntStream() {}
+
+std::vector<Event*> IntStream::get_event_stream() {
+    std::vector<Event*> vec;
+    for (auto & elem : this->stream) {
+        vec.push_back(&elem);
+    }
+    return vec;
+}
+
 UnitStream::UnitStream(std::vector<UnitEvent> stream) {
     this->stream = stream;
 }
 
-OutputStream::OutputStream(std::string name, Stream& stream) : name(name), stream(stream) {
+UnitStream::UnitStream() {}
 
+std::vector<Event*> UnitStream::get_event_stream() {
+    std::vector<Event*> vec;
+    for (auto & elem : this->stream) {
+        vec.push_back(&elem);
+    }
+    return vec;
 }
 
+OutputStream::OutputStream(std::string name, Stream& stream) : name(name), stream(stream) { }
+
+Stream::~Stream() {};
 //LockQueue& operator=(const LockQueue & q);  // Assignment Operator
 
 /*

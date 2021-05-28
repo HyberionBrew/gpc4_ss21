@@ -4,17 +4,17 @@ LDFLAGS =
 SRC_DIR = src/
 TEST_DIR = test/
 TARGET_DIR = bin/
-OBJS = Debug.o\
-	Event.o\
-	Reader.o\
+OBJS = Event.o\
 	Stream.o\
 	StreamFunctions.o\
-	Writer.o
+	Writer.o\
+	Reader.o\
+	Debug.o
 
 all: main
 	rm -f *.o
 
-main: main.o $(OBJS)
+main: $(OBJS) main.o
 	$(CC) $(CFLAGS) -o $(TARGET_DIR)$@ $^ $(LDFLAGS)
 
 %.o: $(SRC_DIR)%.cpp $(SRC_DIR)%.h
