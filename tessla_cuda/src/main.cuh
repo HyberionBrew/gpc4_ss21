@@ -5,4 +5,6 @@
 #ifndef TESSLA_CUDA_MAIN_CUH
 #define TESSLA_CUDA_MAIN_CUH
 
+//check for cuda sucess
+
 #endif //TESSLA_CUDA_MAIN_CUH
