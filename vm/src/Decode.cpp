@@ -4,6 +4,7 @@
 
 #include "Decode.h"
 
+/*
 Decode::Decode(std::string coil) {
     this->FILENAME = coil;
 };
@@ -15,3 +16,4 @@ int init() {
 int decode_next() {
     return 0;
 }
+ */

@@ -7,6 +7,7 @@
 
 #include <string>
 
+/*
 class decode {
     std::string FILENAME;
 public:
@@ -14,6 +15,7 @@ public:
     int decode_next();
     int init();
 };
+*/
 
 
 #endif //GPU_TESSLA_DECODE_H

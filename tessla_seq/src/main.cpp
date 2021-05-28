@@ -105,7 +105,10 @@ void merge_test(){
             s2.stream.push_back(ev);
         }
     }
+    printIntStream(s1);
+    printIntStream(s2);
     IntStream merged_stream = merge(s1, s2);
+    printIntStream(merged_stream);
     Writer wr("merge_output.txt");
     wr.addStream("s1", s1);
     wr.addStream("s2", s2);

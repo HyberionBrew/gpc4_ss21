@@ -6,9 +6,9 @@
 
 IntStream time(Stream& s){
     IntStream result;
-    std::vector<Event> es = s.get_event_stream();
-    for (std::vector<Event>::iterator it = es.begin() ; it != es.end(); ++it) {
-        IntEvent node(it->timestamp,(int32_t)it->timestamp);
+    std::vector<Event*> es = s.get_event_stream();
+    for (auto & elem : es) {
+        IntEvent node(elem->timestamp,(int32_t)elem->timestamp);
         result.stream.push_back(node);
     }
     return result;
@@ -74,7 +74,7 @@ UnitStream delay(IntStream d, UnitStream r){
 }
 
 IntStream count(UnitStream y) {
-    IntStream outstream(y.stream.size());
+    IntStream outstream;
     int32_t index = 0;
     for(std::vector<UnitEvent>::iterator it = y.stream.begin(); it != y.stream.end(); ++it) {
         outstream.stream.push_back((IntEvent){it->timestamp,index});
@@ -91,12 +91,11 @@ IntStream merge(IntStream s1, IntStream s2) {
     std::vector<IntEvent>::iterator x_it = x.begin();
     std::vector<IntEvent>::iterator y_it = y.begin();
 
-    size_t last_ts = -1;
-
     bool x_end = x.size() == 0;
     bool y_end = y.size() == 0;
 
     while(!x_end || !y_end){
+        //std::printf("x: %zu (%d), y: %zu (%d)\n", x_it->timestamp, x_end, y_it->timestamp,y_end);
 
         if (x_end){
             outstream.push_back((IntEvent){y_it->timestamp, y_it->value});
