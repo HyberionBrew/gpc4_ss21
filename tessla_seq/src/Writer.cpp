@@ -70,13 +70,13 @@ void Writer::writeOutputFile() {
         if (!finished){
             std::cout << "71" << std::endl;
             // THIS ASSIGNMENT LEADS TO SEGV
-            f << (*(bestStream->begin() + ev_cnt[best_stream_idx]))->string_rep(streamName) << std::endl;
-            // std::cout << ev->timestamp << std::endl;
+            Event* ev = *(bestStream->begin() + ev_cnt[best_stream_idx]);
+            std::cout << ev->timestamp << std::endl;
             std::cout << "73" << std::endl;
 
 
             // SEGV occurs here
-            // f << ev->string_rep(streamName) << "\n";
+            f << ev->string_rep(streamName) << "\n";
             std::cout << "76" << std::endl;
             ev_cnt[best_stream_idx]++;
         }
