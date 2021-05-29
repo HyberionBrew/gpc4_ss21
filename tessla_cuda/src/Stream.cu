@@ -12,6 +12,20 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
     this->size = size;
 }
 
+//DEVICE ONLY
+IntStream::IntStream(bool deviceOnly, size_t size) {
+    if (deviceOnly) {
+        int sizeAllocate = this->size * sizeof(int);
+        this->size = size;
+        CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
+        CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
+    }else{
+        printf("U are using this function wrong, just creates uninitalized stream ONLY on device (i.e. can not be copied back)");
+        exit(1);
+    }
+
+}
+
 
 void IntStream::print() {
     printf("IntStream\n");
@@ -27,12 +41,16 @@ void IntStream::free_device(){
     CHECK(cudaFree(this->device_values));
 }
 
-
+//TODO! implement Staged concurrent copy and execute
+//https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations
+// i.e. maybe have a function that doesnt just copy but also performs function?
 void IntStream::copy_to_device(){
     int sizeAllocate = this->size * sizeof(int);
 
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
+    //Aync copying - However excectution of the kernel weaits for it to complete! (since default stream 0 is used!)
+    // However CPU continues
     CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));
 }
@@ -40,6 +58,7 @@ void IntStream::copy_to_device(){
 void IntStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
+    printf("%d\n",this->host_values);
     memset(this->host_values, 0, sizeAllocate);
     memset(this->host_timestamp,  0, sizeAllocate);
     CHECK(cudaMemcpy(this->host_values, this->device_values, sizeAllocate, cudaMemcpyDeviceToHost));

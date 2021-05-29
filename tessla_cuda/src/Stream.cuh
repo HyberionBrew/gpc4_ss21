@@ -30,12 +30,12 @@ public:
 
     IntStream(int *timestamp,int *value, size_t size);
     //just allocate on host
-    IntStream(size_t size);
 
     void copy_to_device();
     void copy_to_host();
     void free_device();
     void free_host();
+    IntStream(bool deviceOnly, size_t size);
     void print();
 };
 

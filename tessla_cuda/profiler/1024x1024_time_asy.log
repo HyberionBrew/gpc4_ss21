@@ -1,0 +1,22 @@
+==23741== NVPROF is profiling process 23741, command: ./tessla_cuda
+==23741== Profiling application: ./tessla_cuda
+==23741== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   75.96%  4.9436ms         8  617.95us  523.20us  851.78us  [CUDA memcpy HtoD]
+                   18.12%  1.1791ms         2  589.54us  576.52us  602.56us  [CUDA memcpy DtoH]
+                    5.93%  385.63us         2  192.82us  191.04us  194.59us  time_cuda(int*, int*, int*, int)
+      API calls:   90.65%  114.45ms         1  114.45ms  114.45ms  114.45ms  cudaProfilerStart
+                    5.78%  7.2983ms        10  729.83us  562.00us  1.0994ms  cudaMemcpy
+                    2.01%  2.5391ms         8  317.39us  119.35us  355.76us  cudaFree
+                    0.68%  861.82us         8  107.73us  90.635us  131.93us  cudaMalloc
+                    0.21%  270.19us        97  2.7850us     213ns  121.25us  cuDeviceGetAttribute
+                    0.21%  262.81us         1  262.81us  262.81us  262.81us  cuDeviceTotalMem
+                    0.17%  220.26us         1  220.26us  220.26us  220.26us  cudaGetDeviceProperties
+                    0.15%  188.27us        16  11.766us  1.4170us  147.81us  cudaStreamCreate
+                    0.04%  51.015us         2  25.507us  9.1440us  41.871us  cudaLaunchKernel
+                    0.04%  49.477us         1  49.477us  49.477us  49.477us  cuDeviceGetName
+                    0.04%  48.875us        16  3.0540us  1.8830us  16.495us  cudaStreamDestroy
+                    0.01%  8.0590us         1  8.0590us  8.0590us  8.0590us  cuDeviceGetPCIBusId
+                    0.00%  2.7990us         3     933ns     229ns  2.2310us  cuDeviceGetCount
+                    0.00%  1.4680us         2     734ns     305ns  1.1630us  cuDeviceGet
+                    0.00%     445ns         1     445ns     445ns     445ns  cuDeviceGetUuid
