@@ -18,7 +18,8 @@ public:
 
 class IntStream{
 public:
-
+    //DO NOT USE DESTRUCTOR! LEADS TO ERROR IN CONJUNCTION WITH
+    //CHECK(cudaDeviceReset());
     size_t size;
     bool OnDevice;
     //two pointers one to value one to timestamp
@@ -30,9 +31,11 @@ public:
     IntStream(int *timestamp,int *value, size_t size);
     //just allocate on host
     IntStream(size_t size);
-    ~IntStream();
+
     void copy_to_device();
     void copy_to_host();
+    void free_device();
+    void print();
 };
 
 class UnitStream  {

@@ -13,56 +13,54 @@ void experimental_time(){
 
 
 int main(int argc, char **argv) {
+
     printf("%s Starting...\n", argv[0]);
+
     // set up device
     int dev = 0;
     cudaDeviceProp deviceProp;
     CHECK(cudaGetDeviceProperties(&deviceProp, dev));
     printf("Using Device %d: %s\n", dev, deviceProp.name);
-    //call experimental stream function time
 
+    //create & allocate experimental streams
     int size = 10;
 
     printf("SIZE: %d \n",(size_t)size * sizeof(int));
     int sizeAllocated = (size_t)size * sizeof(int);
-    int * timestamp = (int *) malloc(size * sizeof(int));
-    int * value = (int *) malloc(size* sizeof(int));
+    int * host_timestamp = (int *) malloc(size * sizeof(int));
+    int * host_value = (int *) malloc(size* sizeof(int));
     for (int i = 0; i< size;i++) {
-        *(timestamp+i) = i;
-        *(value+i) = i;
+        *(host_timestamp+i) = i;
+        *(host_value+i) = i;
     }
-    int * result = (int *) malloc(size* sizeof(int));
+    //initially empty stream values
+    int * host_timestampOut = (int *) malloc(size * sizeof(int));
+    int * host_valueOut = (int *) malloc(size* sizeof(int));
 
-    int * timestampOut = (int *) malloc(size * sizeof(int));
-    int * valueOut = (int *) malloc(size* sizeof(int));
-    printf("SIZE: %d \n",(size_t)size * sizeof(int));
-    memset(timestampOut,0,sizeAllocated);
-    memset(valueOut,0,sizeAllocated);
 
-    IntStream inputStream(timestamp,value,10);
-    IntStream outputStream(timestampOut,valueOut,10);
+    memset(host_timestampOut,0,sizeAllocated);
+    memset(host_valueOut,0,sizeAllocated);
+
+    IntStream inputStream(host_timestamp,host_value,size);
+    IntStream outputStream(host_timestampOut,host_valueOut,size);
 
     inputStream.copy_to_device();
-
     outputStream.copy_to_device();
 
-   time(inputStream, outputStream);
+    time(&inputStream, &outputStream);
 
-   CHECK(cudaDeviceSynchronize());
-   CHECK(cudaGetLastError());
-   //printf("outputStream: %d \n",outputStream.timestamp_host[i]);
-   //outputStream.copy_to_host();
-   printf("ptr %d \n",outputStream.timestamp_device);
-    CHECK(cudaMemcpy(result, outputStream.timestamp_device, sizeAllocated, cudaMemcpyDeviceToHost));
-   for (int i = 0; i< size;i++) {
-       printf("output: %d \n",outputStream.timestamp_host[i]);
-   }
-   //look at destructur cudaFree()
-   //inputStream.free();
-   //print(outputStream);
-   //outputStream.free();*/
-    free(timestamp);
-    free(value);
-    //CHECK(cudaDeviceReset()); //not working because of destructor
+    //copy back and ouput
+    outputStream.print();
+    printf("\n");
+    outputStream.copy_to_host();
+    outputStream.print();
+    printf("\n");
+    outputStream.free_device();
+    inputStream.free_device();
+    free(host_timestampOut);
+    free(host_valueOut);
+    free(host_value);
+    free(host_timestamp);
+    CHECK(cudaDeviceReset()); //not working with destructor! --> I think we just shouldn't use destructor
     return(0);
 }

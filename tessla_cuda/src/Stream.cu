@@ -16,7 +16,16 @@ IntStream::IntStream(size_t size) {
     this->size = size;
 }
 
-IntStream::~IntStream(){
+void IntStream::print() {
+    printf("IntStream\n");
+    printf("t|value\n");
+    for (int i = 0; i< this->size;i++) {
+        printf("%d|%d \n",this->timestamp_host[i],this->value_host[i]);
+    }
+    printf("end IntStream\n");
+}
+
+void IntStream::free_device(){
     CHECK(cudaFree(this->timestamp_device));
     CHECK(cudaFree(this->value_device));
 }

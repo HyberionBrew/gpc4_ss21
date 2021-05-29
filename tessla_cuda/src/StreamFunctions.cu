@@ -1,17 +1,21 @@
 //
 // Created by fabian on 28.05.21.
 //
-#include "StreamFunctions.cuh"
+#include <cuda_runtime.h>
+#include <sys/time.h>
+#include "main.cuh"
 #include "helper.cuh"
+#include "Stream.cuh"
+#include "StreamFunctions.cuh"
 #include "device_information.cuh"
 
-void time(IntStream input, IntStream result){
+void time(IntStream *input, IntStream *result){
     //already malloced on host at this time
     //are both streams allocated on the device?
 
     //choose block sizes
     // spawn threads in increments of 32
-    int threads = input.size;
+    int threads = input->size;
     //shift block size until 1024 than shift block size until maximal? Do we have to schedule twice
     int block_size = 1;
     int blocks = 1;
@@ -36,7 +40,7 @@ void time(IntStream input, IntStream result){
     }
 
     //the pointers are now surely on device
-    time_cuda<<<blocks,block_size>>>(input.timestamp_device, result.timestamp_device, result.value_device, threads);
+    time_cuda<<<blocks,block_size>>>(input->timestamp_device, result->timestamp_device, result->value_device, threads);
     printf("Scheduled with <<<%d,%d>>> \n",blocks,block_size);
 
 };
