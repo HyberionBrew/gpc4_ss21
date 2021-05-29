@@ -118,6 +118,7 @@ void merge_test(){
 
 int main(int argc, char **argv){
     // Test streams
+    std::cout << "Test" << std::endl;
     merge_test();
     /*IntStream test1 = createTestStreamInt(10,1);
     IntStream test2 = createTestStreamInt(15,3);

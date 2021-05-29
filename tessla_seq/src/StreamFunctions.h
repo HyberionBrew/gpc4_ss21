@@ -20,17 +20,14 @@ UnitStream unit();
 // returns a new stream with int event at time 0
 IntStream def(int32_t val);
 
-// time operation for int stream
-IntStream time(IntStream s);
-
-// time operation for unit stream
-IntStream time(UnitStream s);
+// time operation
+IntStream time(Stream& s);
 
 // last operation (sample v at ticks of r)
-IntStream last(IntStream v, UnitStream r);
+IntStream last(IntStream v, Stream& r);
 
 // delay operation (delay events of d on ticks of r and close transitively)
-UnitStream delay(IntStream d, UnitStream r);
+UnitStream delay(IntStream d, Stream& r);
 
 // count operation (running counter of unit events on x)
 IntStream count(UnitStream x);

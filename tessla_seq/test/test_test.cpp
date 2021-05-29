@@ -4,24 +4,12 @@
 #include "../src/Reader.h"
 #include "../src/Writer.h"
 #include "../src/StreamFunctions.h"
+#include "../src/Debug.h"
 
 // Usage:
 // make test TEST_SRC=test/test_test.cpp
 
-TEST_CASE("Basic Test Cases") {
-    SECTION("bt_add1") {
-        Reader inReader = Reader("test/data/bt_add1.in");
-        IntStream inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("test/data/bt_add1.out");
-        IntStream intendedResult = outReader.getIntStream("x");
-
-        /* TODO: Implement add
-        IntStream result = add(inStream, 1);
-
-        REQUIRE(result == intendedResult);
-        */
-
-    }
+TEST_CASE("Basic Stream Operations") {
 
     SECTION("bt_delay") {
         Reader inReader = Reader("test/data/bt_delay.in");
@@ -74,4 +62,39 @@ TEST_CASE("Basic Test Cases") {
         REQUIRE(result == intendedResult);
     }
 
+}
+
+TEST_CASE("Arithmetic Test Cases") {
+
+    SECTION("bt_addc") {
+        Reader inReader = Reader("test/data/bt_addc.in");
+        IntStream inStream = inReader.getIntStream("x");
+        Reader outReader = Reader("test/data/bt_addc.out");
+        IntStream intendedResult = outReader.getIntStream("x");
+
+        IntStream result = add(inStream, 1);
+        REQUIRE(result == intendedResult);
+    }
+
+    /*
+    SECTION("bt_subc") {
+        Reader inReader = Reader("test/data/bt_subc.in");
+        IntStream inStream = inReader.getIntStream("x");
+        Reader outReader = Reader("test/data/bt_subc.out");
+        IntStream intendedResult = outReader.getIntStream("x");
+
+        IntStream result = sub1(inStream, 2);
+        REQUIRE(result == intendedResult);
+    }
+
+    SECTION("bt_mulc") {
+        Reader inReader = Reader("test/data/bt_subc.in");
+        IntStream inStream = inReader.getIntStream("x");
+        Reader outReader = Reader("test/data/bt_subc.out");
+        IntStream intendedResult = outReader.getIntStream("x");
+
+        IntStream result = mul(inStream, 3);
+        REQUIRE(result == intendedResult);
+    }
+     */
 }

@@ -28,6 +28,10 @@ std::string IntEvent::string_rep(std::string name) {
     return str_rep.str();
 }
 
+size_t IntEvent::get_timestamp() {
+    return this->timestamp;
+}
+
 UnitEvent::UnitEvent(size_t ts){
     this->timestamp = ts;
 }
@@ -38,4 +42,7 @@ std::string UnitEvent::string_rep(std::string name) {
     return str_rep.str();
 }
 
+size_t UnitEvent::get_timestamp() {
+    return this->timestamp;
+}
 

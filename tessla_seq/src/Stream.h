@@ -31,6 +31,7 @@ public:
      * Returns the stream's type (int or unit)
      * @return the type
      */
+     // probably superfluous
     bool is_equal_to(const Stream& other);
     virtual ~Stream();
 };
@@ -44,7 +45,7 @@ public:
     IntStream(size_t size);
     IntStream(std::vector<IntEvent> stream);
 
-    friend bool operator==(IntStream lhs, IntStream rhs);
+    friend bool operator==(const IntStream lhs, const IntStream rhs);
 };
 
 class UnitStream : public Stream {
@@ -56,7 +57,7 @@ public:
     UnitStream(size_t size);
     UnitStream(std::vector<UnitEvent> stream);
 
-    friend bool operator==(UnitStream lhs, UnitStream rhs);
+    friend bool operator==(const UnitStream lhs, const UnitStream rhs);
 };
 
 class OutputStream {
