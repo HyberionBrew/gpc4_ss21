@@ -25,7 +25,6 @@ int main(int argc, char **argv) {
     //create & allocate experimental streams
     int size = 10;
 
-    printf("SIZE: %d \n",(size_t)size * sizeof(int));
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
     int * host_value = (int *) malloc(size* sizeof(int));
@@ -51,10 +50,9 @@ int main(int argc, char **argv) {
 
     //copy back and ouput
     outputStream.print();
-    printf("\n");
+
     outputStream.copy_to_host();
     outputStream.print();
-    printf("\n");
     outputStream.free_device();
     inputStream.free_device();
     free(host_timestampOut);

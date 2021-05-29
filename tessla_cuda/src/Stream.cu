@@ -7,8 +7,8 @@
 #include "helper.cuh"
 
 IntStream::IntStream(int *timestamp,int *value, size_t size) {
-    this->timestamp_host = timestamp;
-    this->value_host = value;
+    this->host_timestamp = timestamp;
+    this->host_values = value;
     this->size = size;
 }
 
@@ -20,42 +20,41 @@ void IntStream::print() {
     printf("IntStream\n");
     printf("t|value\n");
     for (int i = 0; i< this->size;i++) {
-        printf("%d|%d \n",this->timestamp_host[i],this->value_host[i]);
+        printf("%d|%d \n",this->host_timestamp[i],this->host_values[i]);
     }
     printf("end IntStream\n");
 }
 
 void IntStream::free_device(){
-    CHECK(cudaFree(this->timestamp_device));
-    CHECK(cudaFree(this->value_device));
+    CHECK(cudaFree(this->device_timestamp));
+    CHECK(cudaFree(this->device_values));
 }
 
 UnitStream::UnitStream(int*timestamp,size_t size, bool OnDevice) {
-    this->timestamp_device = timestamp;
+    this->device_timestamp = timestamp;
     this->size = size;
     this->OnDevice = false;
 }
 
 void IntStream::copy_to_device(){
     int sizeAllocate = this->size * sizeof(int);
-    //this->timestamp_device = (int*)malloc(sizeAllocate);
-    //this->value_device = (int*)malloc(sizeAllocate);
-    //memset(this->timestamp_device,0,sizeAllocate);
-    //memset(this->value_device,0,sizeAllocate);
-    CHECK(cudaMalloc((int**)&this->timestamp_device, sizeAllocate));
-    printf("ptr %d \n",timestamp_device);
-    CHECK(cudaMalloc((int**)&this->value_device, sizeAllocate));
-    CHECK(cudaMemcpy(this->timestamp_device, this->timestamp_host, sizeAllocate, cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(this->value_device, this->value_host, sizeAllocate, cudaMemcpyHostToDevice));
+    //this->device_timestamp = (int*)malloc(sizeAllocate);
+    //this->device_values = (int*)malloc(sizeAllocate);
+    //memset(this->device_timestamp,0,sizeAllocate);
+    //memset(this->device_values,0,sizeAllocate);
+    CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
+    CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
+    CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));
 
 }
 
 void IntStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
-    memset(this->value_host, 0, sizeAllocate);
-    memset(this->timestamp_host,  0, sizeAllocate);
-    CHECK(cudaMemcpy(this->value_host, this->value_device, sizeAllocate, cudaMemcpyDeviceToHost));
-    CHECK(cudaMemcpy(this->timestamp_host, this->timestamp_device, sizeAllocate, cudaMemcpyDeviceToHost));
+    memset(this->host_values, 0, sizeAllocate);
+    memset(this->host_timestamp,  0, sizeAllocate);
+    CHECK(cudaMemcpy(this->host_values, this->device_values, sizeAllocate, cudaMemcpyDeviceToHost));
+    CHECK(cudaMemcpy(this->host_timestamp, this->device_timestamp, sizeAllocate, cudaMemcpyDeviceToHost));
 
 }

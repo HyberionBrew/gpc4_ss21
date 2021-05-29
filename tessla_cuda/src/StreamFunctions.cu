@@ -40,7 +40,7 @@ void time(IntStream *input, IntStream *result){
     }
 
     //the pointers are now surely on device
-    time_cuda<<<blocks,block_size>>>(input->timestamp_device, result->timestamp_device, result->value_device, threads);
+    time_cuda<<<blocks,block_size>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads);
     printf("Scheduled with <<<%d,%d>>> \n",blocks,block_size);
 
 };

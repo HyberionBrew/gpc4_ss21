@@ -23,10 +23,10 @@ public:
     size_t size;
     bool OnDevice;
     //two pointers one to value one to timestamp
-    int * timestamp_host;
-    int * value_host;
-    int * timestamp_device;
-    int * value_device;
+    int * host_timestamp;
+    int * host_values;
+    int * device_timestamp;
+    int * device_values;
 
     IntStream(int *timestamp,int *value, size_t size);
     //just allocate on host
@@ -42,8 +42,8 @@ class UnitStream  {
 public:
     size_t size;
     bool OnDevice;
-    int * timestamp_host;
-    int * timestamp_device;
+    int * host_timestamp;
+    int * device_timestamp;
     UnitStream(int *timestamp, size_t size, bool OnDevice);
     void copy_to_device();
     void copy_to_host();
