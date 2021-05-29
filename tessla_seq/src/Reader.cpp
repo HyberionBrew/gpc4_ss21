@@ -51,7 +51,7 @@ IntStream Reader::getIntStream(string name) {
     if (file.is_open()) {
         string buf;
         // match each line to regex
-        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*([0-9]+)\\s*");
+        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*(-?[0-9]+)\\s*");
         while (getline(file, buf)) {
             // match each line to regex
             smatch matches;
