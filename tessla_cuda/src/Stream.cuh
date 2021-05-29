@@ -18,31 +18,37 @@ public:
 
 class IntStream{
 public:
-
+    //DO NOT USE DESTRUCTOR! LEADS TO ERROR IN CONJUNCTION WITH
+    //CHECK(cudaDeviceReset());
     size_t size;
     bool OnDevice;
     //two pointers one to value one to timestamp
-    int * timestamp_host;
-    int * value_host;
-    int * timestamp_device;
-    int * value_device;
+    int * host_timestamp;
+    int * host_values;
+    int * device_timestamp;
+    int * device_values;
 
     IntStream(int *timestamp,int *value, size_t size);
     //just allocate on host
-    IntStream(size_t size);
-    ~IntStream();
+
     void copy_to_device();
     void copy_to_host();
+    void free_device();
+    void free_host();
+    IntStream(bool deviceOnly, size_t size);
+    void print();
 };
 
 class UnitStream  {
 public:
     size_t size;
     bool OnDevice;
-    int * timestamp_host;
-    int * timestamp_device;
-    UnitStream(int *timestamp, size_t size, bool OnDevice);
+    int * host_timestamp;
+    int * device_timestamp;
+    UnitStream(int *timestamp, size_t size);
     void copy_to_device();
     void copy_to_host();
+    void free_device();
+    void print();
 };
 #endif //TESSLA_CUDA_STREAM_CUH

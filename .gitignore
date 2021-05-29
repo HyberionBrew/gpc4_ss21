@@ -5,4 +5,5 @@
 *.ptx
 *.cubin
 *.fatbin
+tessla_cuda/profiler/temp_profiler/
 test/run_test
