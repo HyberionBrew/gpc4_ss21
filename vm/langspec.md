@@ -26,7 +26,7 @@ These mark streams _exclusively_ containing Integer or Unit Values, respectively
 
 # This is a comment 
 
-def x = nil # This is also a comment
+def x = () # This is also a comment
 ```
 ## Grammar
 
@@ -91,8 +91,8 @@ ID      :   [A-Za-z][0-9A-Za-z_]*
 
 ICONST  :   [0-9]+
 
-TYPE    :   'Event[Int]'
-        |   'Event[Unit]'
+TYPE    :   'Events[Int]'
+        |   'Events[Unit]'
 ```
 
 
