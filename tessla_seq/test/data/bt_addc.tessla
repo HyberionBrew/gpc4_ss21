@@ -1,3 +1,0 @@
-in x : Events[Int]
-def y = x + 1
-out y
