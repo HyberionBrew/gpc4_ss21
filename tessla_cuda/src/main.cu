@@ -26,33 +26,37 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 1024*1024;
+    int size = 10;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
+    int * host_unit_timestamp = (int *) malloc(size * sizeof(int));
     int * host_value = (int *) malloc(size* sizeof(int));
-    int * host_timestamp2 = (int *) malloc(size * sizeof(int));
-    int * host_value2 = (int *) malloc(size* sizeof(int));
+    //int * host_timestamp2 = (int *) malloc(size * sizeof(int));
+    //int * host_value2 = (int *) malloc(size* sizeof(int));
     for (int i = 0; i< size;i++) {
-        *(host_timestamp2+i) = i;
-        *(host_value2+i) = i;
+        *(host_timestamp+i) = i;
+        *(host_unit_timestamp+i) = i;
+        *(host_value+i) = i;
     }
     //initially empty stream values
     int * host_timestampOut = (int *) malloc(size * sizeof(int));
     int * host_valueOut = (int *) malloc(size* sizeof(int));
-    int * host_timestampOut2 = (int *) malloc(size * sizeof(int));
-    int * host_valueOut2 = (int *) malloc(size* sizeof(int));
+    //int * host_timestampOut2 = (int *) malloc(size * sizeof(int));
+    //int * host_valueOut2 = (int *) malloc(size* sizeof(int));
     CHECK(cudaProfilerStart());
 
-    memset(host_timestampOut2,0,sizeAllocated);
-    memset(host_valueOut2,0,sizeAllocated);
+    //memset(host_timestampOut2,0,sizeAllocated);
+    //memset(host_valueOut2,0,sizeAllocated);
     memset(host_timestampOut,0,sizeAllocated);
     memset(host_valueOut,0,sizeAllocated);
 
     IntStream inputStream(host_timestamp,host_value,size);
     IntStream outputStream(host_timestampOut,host_valueOut,size);
-    IntStream inputStream2(host_timestamp2,host_value2,size);
-    IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
+    //IntStream inputStream2(host_timestamp2,host_value2,size);
+    //IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
+    printf("hist %d \n",host_unit_timestamp);
+    UnitStream inputUnitStream(host_unit_timestamp,size);
     // create streams for parallel kernel launches
     int MAX_STREAMS = 16; // check if this is really max
     // I think we can +2 streams for in/out sync? but not sure
@@ -72,25 +76,30 @@ int main(int argc, char **argv) {
 
     //end config
     inputStream.copy_to_device();
+    inputUnitStream.copy_to_device();
     outputStream.copy_to_device();
-    inputStream2.copy_to_device();
-    outputStream2.copy_to_device();
-    time(&inputStream, &outputStream, stream[0]);
-    time(&inputStream2, &outputStream2, stream[1]);
+    //outputStream.copy_to_device();
+    //inputStream2.copy_to_device();
+    //outputStream2.copy_to_device();
+    //time(&inputStream, &outputStream, stream[0]);
+
+    last(&inputStream, &inputUnitStream, &outputStream, stream[0]);
     //copy back and output
     //outputStream.print();
     outputStream.copy_to_host();
-    //outputStream.print();
-    outputStream2.free_device();
-    inputStream2.free_device();
+
+    outputStream.print();
+    //outputStream2.free_device();
+    //inputStream2.free_device();
     outputStream.free_device();
     inputStream.free_device();
+    inputUnitStream.free_device();
 
-    free(host_timestampOut2);
-    free(host_valueOut2);
-    free(host_value2);
-    free(host_timestamp2);
-
+    //free(host_timestampOut2);
+    //free(host_valueOut2);
+    //free(host_value2);
+    //free(host_timestamp2);
+    free(host_unit_timestamp);
     free(host_timestampOut);
     free(host_valueOut);
     free(host_value);

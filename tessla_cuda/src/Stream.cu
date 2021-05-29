@@ -12,7 +12,7 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
     this->size = size;
 }
 
-//DEVICE ONLY
+//DEVICE ONLY dont use
 IntStream::IntStream(bool deviceOnly, size_t size) {
     if (deviceOnly) {
         int sizeAllocate = this->size * sizeof(int);
@@ -77,7 +77,7 @@ void UnitStream::print() {
 
 
 UnitStream::UnitStream(int*timestamp,size_t size) {
-    this->device_timestamp = timestamp;
+    this->host_timestamp = timestamp;
     this->size = size;
 }
 
@@ -89,6 +89,8 @@ void UnitStream::free_device(){
 void UnitStream::copy_to_device(){
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
+    printf("th %d \n",this->device_timestamp);
+    printf("th %d \n",this->host_timestamp);
     CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
 
 }
