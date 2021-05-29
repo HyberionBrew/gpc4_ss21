@@ -35,6 +35,7 @@ public:
     void copy_to_device();
     void copy_to_host();
     void free_device();
+    void free_host();
     void print();
 };
 
@@ -44,8 +45,10 @@ public:
     bool OnDevice;
     int * host_timestamp;
     int * device_timestamp;
-    UnitStream(int *timestamp, size_t size, bool OnDevice);
+    UnitStream(int *timestamp, size_t size);
     void copy_to_device();
     void copy_to_host();
+    void free_device();
+    void print();
 };
 #endif //TESSLA_CUDA_STREAM_CUH

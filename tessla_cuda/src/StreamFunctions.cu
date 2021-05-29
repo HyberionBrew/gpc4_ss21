@@ -23,7 +23,7 @@ void time(IntStream *input, IntStream *result){
     //cannot schedule all at once
     if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
         printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
-        return;
+        //return;
     }
     for (int bs = 1; bs <= MAX_THREADS_PER_BLOCK;bs<<=1){
         if (block_size > threads){
@@ -31,8 +31,8 @@ void time(IntStream *input, IntStream *result){
         }
         block_size = bs;
     }
-
-    for (int bl=1; bl <= MAX_BLOCKS; bl++){
+    //TODO! MAX_BLOCKS seems to not exist/be scheduled
+    for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
         blocks = bl;
         if (bl*block_size > threads){
             break;

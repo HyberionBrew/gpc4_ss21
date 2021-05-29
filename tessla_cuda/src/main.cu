@@ -15,15 +15,16 @@ void experimental_time(){
 int main(int argc, char **argv) {
 
     printf("%s Starting...\n", argv[0]);
-
     // set up device
     int dev = 0;
     cudaDeviceProp deviceProp;
     CHECK(cudaGetDeviceProperties(&deviceProp, dev));
+    //might wanna derive MAX_THREADS and so on from here! TODO!
     printf("Using Device %d: %s\n", dev, deviceProp.name);
 
     //create & allocate experimental streams
-    int size = 10;
+    //still working for size = 1024*1024*10
+    int size = 1024*256;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -43,22 +44,25 @@ int main(int argc, char **argv) {
     IntStream inputStream(host_timestamp,host_value,size);
     IntStream outputStream(host_timestampOut,host_valueOut,size);
 
+    //end config
     inputStream.copy_to_device();
     outputStream.copy_to_device();
 
     time(&inputStream, &outputStream);
 
-    //copy back and ouput
-    outputStream.print();
-
+    //copy back and output
+    //outputStream.print();
     outputStream.copy_to_host();
-    outputStream.print();
+    //outputStream.print();
+
     outputStream.free_device();
     inputStream.free_device();
     free(host_timestampOut);
     free(host_valueOut);
     free(host_value);
     free(host_timestamp);
-    CHECK(cudaDeviceReset()); //not working with destructor! --> I think we just shouldn't use destructor
+
+    //not working with destructor! --> I think we just shouldn't use destructor
+    CHECK(cudaDeviceReset());
     return(0);
 }
