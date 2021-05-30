@@ -5,9 +5,35 @@
 #ifndef GPC4_SS21_INSTRINTERFACE_H
 #define GPC4_SS21_INSTRINTERFACE_H
 
+#include <cstddef>
+#include <cstdint>
+#include <queue>
+#include <atomic>
+
+// Careful! This is a single reader multiple writer construction!!!
+
+// Instruction type enum
+enum instructionType{inst_add, inst_mul, inst_sub, inst_div, inst_mod, inst_delay, inst_last, inst_time_in,
+        inst_time_un, inst_merge_in, inst_merge_un, inst_count, inst_addi, inst_muli, inst_subi, inst_subii,
+        inst_divi, inst_divii, inst_modi, inst_modii, inst_default, inst_load, inst_load4, inst_load6,
+        inst_load8, inst_store, inst_free, inst_unit, inst_clean, inst_exit};
+
+typedef struct Instruction {
+    instructionType type;
+    size_t r1;
+    size_t r2;
+    size_t rd;
+    int32_t imm;
+} Instruction;
 
 class InstrInterface {
-
+private:
+    std::queue<Instruction> queue;
+    std::atomic<int> size;
+public:
+    void push(Instruction inst);
+    Instruction pop();
+    bool is_empty();
 };
 
 

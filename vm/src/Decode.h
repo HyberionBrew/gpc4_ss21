@@ -5,6 +5,7 @@
 #ifndef GPU_TESSLA_DECODE_H
 #define GPU_TESSLA_DECODE_H
 
+#include "InstrInterface.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -18,9 +19,13 @@ typedef struct IOStream {
 class Decode {
     std::ifstream coil;
     int currMV = 1;
+    InstrInterface* instrInterface;
+    int registerWidth;
 private:
     void parse_header();
     void print_header();
+    size_t read_register(unsigned char opcode);
+    int32_t read_imm(unsigned char opcode);
 public:
     int majorV;
     int minorV;

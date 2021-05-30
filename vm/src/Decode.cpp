@@ -23,7 +23,10 @@ enum init_instream_states{inst_stby, inst_h1, inst_h2, inst_h3, inst_h4, inst_r1
 enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4};
 
 
-Decode::Decode(std::string coil_file) {
+Decode::Decode(std::string coil_file, InstrInterface* instrInterface) {
+    // Couple the instruction interface
+    this->instrInterface = instrInterface;
+
     coil.open(coil_file, std::ios::binary);
     // Make sure the file exists
     if (coil.fail()) {
@@ -312,8 +315,10 @@ void Decode::parse_header() {
         if (!regbw_trans && regBytelState == reg_h4) {
             if (byte == 0x00) {
                 wideAddresses = false;
+                registerWidth = 2;
             } else if (byte == 0x01) {
                 wideAddresses = true;
+                registerWidth = 4;
             } else {
                 throw std::runtime_error(ill + " Unsupported register width.");
             }
@@ -418,125 +423,164 @@ bool Decode::decode_next() {
     unsigned char optype = msb_mask && byte;
     unsigned char opcode = byte;
 
-    // Set register width
-    int register_width = 2;
-    if (wideAddresses) {
-        register_width = 4;
-    }
+    Instruction inst;
 
     // If this is an exit instruction, return
     if (!(optype ^ EXIT)) {
         // Operation is EXIT
+        inst.type = inst_exit;
+        instrInterface->push(inst);
         return true;
     }
 
     // Read first register address
-    coil >> byte;
-
-    if (coil.fail()) {
-        // Unexpected file error
-        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-    }
-    size_t r1 = byte;
-
-    for (int i = 1; i < register_width; i++) {
-        coil >> byte;
-
-        if (coil.fail()) {
-            // Unexpected file error
-            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-        }
-        r1 = r1 << 8;
-        r1 += byte;
-    }
+    inst.r1 = read_register(opcode);
 
     if (!(optype ^ RTYPE)) {
         // Operation is R-Type
-        // Read second register address
-        coil >> byte;
-
-        if (coil.fail()) {
-            // Unexpected file error
-            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-        }
-        size_t r2 = byte;
-
-        for (int i = 1; i < register_width; i++) {
-            coil >> byte;
-
-            if (coil.fail()) {
-                // Unexpected file error
-                throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-            }
-            r2 = r2 << 8;
-            r2 += byte;
-        }
-        // Read return register address
-        coil >> byte;
-
-        if (coil.fail()) {
-            // Unexpected file error
-            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-        }
-        size_t rd = byte;
-
-        for (int i = 1; i < register_width; i++) {
-            coil >> byte;
-
-            if (coil.fail()) {
-                // Unexpected file error
-                throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
-            }
-            rd = rd << 8;
-            rd += byte;
-        }
+        // Read second and return register address
+        inst.r2 = read_register(opcode);
+        inst.rd = read_register(opcode);
 
         switch (opcode) {
             case 0x08:
                 // Add
+                inst.type = inst_add;
                 break;
             case 0x09:
                 // Mul
+                inst.type = inst_mul;
                 break;
             case 0x0A:
                 // Sub
+                inst.type = inst_sub;
                 break;
             case 0x0B:
                 // Div
+                inst.type = inst_div;
                 break;
             case 0x0C:
                 // Mod
+                inst.type = inst_mod;
                 break;
             case 0x0D:
                 // Delay
+                inst.type = inst_delay;
                 break;
             case 0x0E:
                 // Last
+                inst.type = inst_last;
                 break;
             case 0x0F:
                 // TimeIn
+                inst.type = inst_time_in;
                 break;
             case 0x10:
                 // TimeUn
+                inst.type = inst_time_un;
                 break;
             case 0x11:
                 // MergeIn
+                inst.type = inst_merge_in;
                 break;
             case 0x12:
                 // MergeUn
+                inst.type = inst_merge_un;
                 break;
             case 0x13:
                 // Count
+                inst.type = inst_count;
                 break;
             default:
                 // Unknown instruction type
                 throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
         }
-
     } else if (!(optype ^ ITYPE)) {
         // Operation is I-Type
+        // Read immediate and return register
+        inst.imm = read_imm(opcode);
+        inst.rd = read_register(opcode);
+
+        switch (opcode) {
+            case 0x48:
+                // AddI
+                inst.type = inst_addi;
+                break;
+            case 0x49:
+                // MulI
+                inst.type = inst_muli;
+                break;
+            case 0x4A:
+                // SubI
+                inst.type = inst_subi;
+                break;
+            case 0x4B:
+                // SubII
+                inst.type = inst_subii;
+                break;
+            case 0x4C:
+                // DivI
+                inst.type = inst_divi;
+                break;
+            case 0x4D:
+                // DivII
+                inst.type = inst_divii;
+                break;
+            case 0x4E:
+                // ModI
+                inst.type = inst_modi;
+                break;
+            case 0x4F:
+                // ModII
+                inst.type = inst_modii;
+                break;
+            case 0x50:
+                // Default
+                inst.type = inst_default;
+                break;
+            default:
+                // Unknown instruction type
+                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+        }
     } else if (!(optype ^ MTYPE)) {
         // Operation is M-Type
+        switch (opcode) {
+            case 0x88:
+                // Load
+                inst.type = inst_load;
+                break;
+            case 0x89:
+                // Load4
+                inst.type = inst_load4;
+                break;
+            case 0x8A:
+                // Load6
+                inst.type = inst_load6;
+                break;
+            case 0x8B:
+                // Load8
+                inst.type = inst_load8;
+                break;
+            case 0x8C:
+                // Store
+                inst.type = inst_store;
+                break;
+            case 0x8D:
+                // Free
+                inst.type = inst_free;
+                break;
+            case 0x8E:
+                // Unit
+                inst.type = inst_unit;
+                break;
+            case 0x8F:
+                // Clean
+                inst.type = inst_clean;
+                break;
+            default:
+                // Unknown instruction type
+                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+        }
     } else {
         // Unreachable code. Something weird happened.
         assert(false);
@@ -544,8 +588,54 @@ bool Decode::decode_next() {
     return 0;
 }
 
-void queue_instruction() {
-    // TODO write instruction enum and implement this
+size_t Decode::read_register(unsigned char opcode) {
+    unsigned char byte;
+    size_t r;
+    // Read register address
+    coil >> byte;
+
+    if (coil.fail()) {
+        // Unexpected file error
+        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+    }
+    r = byte;
+
+    for (int i = 1; i < registerWidth; i++) {
+        coil >> byte;
+
+        if (coil.fail()) {
+            // Unexpected file error
+            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        }
+        r = r << 8;
+        r += byte;
+    }
+    return r;
+}
+
+int32_t Decode::read_imm(unsigned char opcode) {
+    unsigned char byte;
+    int32_t imm;
+    // Read register address
+    coil >> byte;
+
+    if (coil.fail()) {
+        // Unexpected file error
+        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+    }
+    imm = byte;
+
+    for (int i = 1; i < 4; i++) {
+        coil >> byte;
+
+        if (coil.fail()) {
+            // Unexpected file error
+            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        }
+        imm = imm << 8;
+        imm += byte;
+    }
+    return imm;
 }
 
 void Decode::print_header() {
