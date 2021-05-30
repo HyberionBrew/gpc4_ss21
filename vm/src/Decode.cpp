@@ -7,6 +7,12 @@
 #include <fstream>
 #include <assert.h>
 
+// Op types
+#define RTYPE 0b00000000;
+#define ITYPE 0b01000000;
+#define MTYPE 0b10000000;
+#define EXIT  0b11000000;
+
 // State machines
 enum init_read_states{head_read_spec, head_error, head_unknown_field, head_read_field, head_delim_needed, head_read_string, head_ready, head_accept};
 enum init_delim_states{del_stby, delim_started};
@@ -397,9 +403,149 @@ void Decode::parse_header() {
     }
 }
 
-int Decode::decode_next() {
-    std::cout << "Hello world!" << std::endl;
+bool Decode::decode_next() {
+
+    // Read in the next byte
+    unsigned char byte;
+    coil >> byte;
+
+    if (coil.fail()) {
+        // Unexpected file error
+        throw std::runtime_error("Error reading coil file.");
+    }
+
+    unsigned char msb_mask = 0b11000000;
+    unsigned char optype = msb_mask && byte;
+    unsigned char opcode = byte;
+
+    // Set register width
+    int register_width = 2;
+    if (wideAddresses) {
+        register_width = 4;
+    }
+
+    // If this is an exit instruction, return
+    if (!(optype ^ EXIT)) {
+        // Operation is EXIT
+        return true;
+    }
+
+    // Read first register address
+    coil >> byte;
+
+    if (coil.fail()) {
+        // Unexpected file error
+        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+    }
+    size_t r1 = byte;
+
+    for (int i = 1; i < register_width; i++) {
+        coil >> byte;
+
+        if (coil.fail()) {
+            // Unexpected file error
+            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        }
+        r1 = r1 << 8;
+        r1 += byte;
+    }
+
+    if (!(optype ^ RTYPE)) {
+        // Operation is R-Type
+        // Read second register address
+        coil >> byte;
+
+        if (coil.fail()) {
+            // Unexpected file error
+            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        }
+        size_t r2 = byte;
+
+        for (int i = 1; i < register_width; i++) {
+            coil >> byte;
+
+            if (coil.fail()) {
+                // Unexpected file error
+                throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+            }
+            r2 = r2 << 8;
+            r2 += byte;
+        }
+        // Read return register address
+        coil >> byte;
+
+        if (coil.fail()) {
+            // Unexpected file error
+            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        }
+        size_t rd = byte;
+
+        for (int i = 1; i < register_width; i++) {
+            coil >> byte;
+
+            if (coil.fail()) {
+                // Unexpected file error
+                throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+            }
+            rd = rd << 8;
+            rd += byte;
+        }
+
+        switch (opcode) {
+            case 0x08:
+                // Add
+                break;
+            case 0x09:
+                // Mul
+                break;
+            case 0x0A:
+                // Sub
+                break;
+            case 0x0B:
+                // Div
+                break;
+            case 0x0C:
+                // Mod
+                break;
+            case 0x0D:
+                // Delay
+                break;
+            case 0x0E:
+                // Last
+                break;
+            case 0x0F:
+                // TimeIn
+                break;
+            case 0x10:
+                // TimeUn
+                break;
+            case 0x11:
+                // MergeIn
+                break;
+            case 0x12:
+                // MergeUn
+                break;
+            case 0x13:
+                // Count
+                break;
+            default:
+                // Unknown instruction type
+                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+        }
+
+    } else if (!(optype ^ ITYPE)) {
+        // Operation is I-Type
+    } else if (!(optype ^ MTYPE)) {
+        // Operation is M-Type
+    } else {
+        // Unreachable code. Something weird happened.
+        assert(false);
+    }
     return 0;
+}
+
+void queue_instruction() {
+    // TODO write instruction enum and implement this
 }
 
 void Decode::print_header() {

@@ -26,7 +26,7 @@ public:
     int minorV;
     bool wideAddresses;
     Decode(std::string coil_file);
-    int decode_next();
+    bool decode_next();
     std::vector<IOStream> in_streams;
     std::vector<IOStream> out_streams;
 };
