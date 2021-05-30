@@ -49,7 +49,7 @@ void IntStream::copy_to_device(){
 
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
-    //Aync copying - However excectution of the kernel weaits for it to complete! (since default stream 0 is used!)
+    // Async copying - However excectution of the kernel waits for it to complete! (since default stream 0 is used!)
     // However CPU continues
     CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));

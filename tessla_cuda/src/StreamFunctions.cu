@@ -8,6 +8,16 @@
 #include "Stream.cuh"
 #include "StreamFunctions.cuh"
 #include "device_information.cuh"
+
+#define MAX_STREAMS 10
+//Memory pointer for the streams
+//TODO! not used
+// implement pointer passed memory (i.e. not as it is done currently!)
+// https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#dynamic-global-memory-allocation-and-operations
+// DISCUSS HOW TO BEST DO THIS
+// example https://forums.developer.nvidia.com/t/how-to-allocate-global-dynamic-memory-on-device-from-host/71011/2
+__device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
+
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
 // ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
 // Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
@@ -79,34 +89,44 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
             break;
         }
     }
-    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values, threads);
+    //TODO! check that no expection is thrown at launch!
+    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values, inputInt->size, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
 //we should also hand this function the number of invalid input values! -> we have invalid values!
-//TODO! not working yet!
-__global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int size){
-    unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int elements = size;
+//TODO! check what happens for == and adjust >= or > accordingly (/remove else)
+// wikipedia binary search: https://en.wikipedia.org/wiki/Binary_search_algorithm
+__global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
     int local_unit_timestamp = unit_stream_timestamps[i];
-    int currentArrayPos = (int) size/2;
-    int smallest = INT_MIN;
+    int L = 0;
+    int R = intStreamSize-1;
+    int m = 0;
+    output_timestamps[i] = unit_stream_timestamps[i];
+    int out =  INT_MIN;
+
     if (i<size) {
-        while (elements != 0) {
-            elements = (int) elements / 2;
-            if (currentArrayPos < size ) {
-                if (local_unit_timestamp < input_values[currentArrayPos]) {
-                    //go to the left!
-                    currentArrayPos = currentArrayPos-elements;
-                } else {
-                    //explore further to the right!
-                    smallest = input_values[currentArrayPos];
-                    currentArrayPos = currentArrayPos + elements;
-                }
+        while (L<=R) {
+            // is this needed? TODO! check and discuss
+            //maybe it helps? CHECK!
+            __syncthreads();
+            m = (int) (L+R)/2;
+            if (input_timestamp[m]<local_unit_timestamp){
+                L = m + 1;
+                out = input_values[m];
+                //output_values[i] = input_values[m];
+            }
+            else if (input_timestamp[m]>=local_unit_timestamp){
+                R = m -1;
+            }
+            else{
+                // how to handle == ? look up!
+                out = input_values[m];
+                break;
             }
         }
-        output_timestamps[i] = unit_stream_timestamps[i];
-        output_values[i] = smallest;
+        output_values[i] = out;
     }
 }
 
@@ -117,4 +137,17 @@ __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* out
         output_timestamps[i] = input_timestamp[i];
         output_values[i] = input_timestamp[i];
     }
+}
+
+__global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    //search for timestamps[i] value in unitEvents. If found:
+    // counterTarget = input_values[i]
+    // counter = 0
+    // while (counter != counterTarget)
+    //  counter++;
+    //  if unitEvent at counter+
+    //      reset //i.e. return
+    //  if
+    //
 }

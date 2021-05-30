@@ -13,6 +13,10 @@ void experimental_time(){
 }
 
 
+void experimental_last(){
+
+}
+
 
 int main(int argc, char **argv) {
 
@@ -26,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 10;
+    int size = 1000000;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -34,6 +38,19 @@ int main(int argc, char **argv) {
     int * host_value = (int *) malloc(size* sizeof(int));
     //int * host_timestamp2 = (int *) malloc(size * sizeof(int));
     //int * host_value2 = (int *) malloc(size* sizeof(int));
+    /*
+    *(host_timestamp) = 3;
+    *(host_timestamp+1) = 6;
+    *(host_timestamp+2) = 8;
+    *(host_value) = 1;
+    *(host_value+1) = 3;
+    *(host_value+2) = 6;
+
+    *(host_unit_timestamp) = 0;
+    *(host_unit_timestamp+1) = 2;
+    *(host_unit_timestamp+2) = 4;
+    *(host_unit_timestamp+3) = 5;
+    *(host_unit_timestamp+4) = 9;*/
     for (int i = 0; i< size;i++) {
         *(host_timestamp+i) = i;
         *(host_unit_timestamp+i) = i;
@@ -76,19 +93,21 @@ int main(int argc, char **argv) {
 
     //end config
     inputStream.copy_to_device();
+    //inputStream.print();
     inputUnitStream.copy_to_device();
     outputStream.copy_to_device();
     //outputStream.copy_to_device();
     //inputStream2.copy_to_device();
     //outputStream2.copy_to_device();
     //time(&inputStream, &outputStream, stream[0]);
-
+    //inputUnitStream.print();
+    //inputStream.print();
     last(&inputStream, &inputUnitStream, &outputStream, stream[0]);
     //copy back and output
     //outputStream.print();
     outputStream.copy_to_host();
 
-    outputStream.print();
+//    outputStream.print();
     //outputStream2.free_device();
     //inputStream2.free_device();
     outputStream.free_device();
