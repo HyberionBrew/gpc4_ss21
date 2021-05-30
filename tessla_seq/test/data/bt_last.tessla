@@ -1,4 +1,0 @@
-in v : Events[Int]
-in r : Events[Unit]
-def y = last(v,r)
-out y

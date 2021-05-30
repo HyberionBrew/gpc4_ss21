@@ -1,4 +1,0 @@
-in d : Events[Int]
-in r : Events[Unit]
-def y = delay(d,r)
-out y
