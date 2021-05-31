@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 1000000;
+    int size = 5;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     int * host_value = (int *) malloc(size* sizeof(int));
     //int * host_timestamp2 = (int *) malloc(size * sizeof(int));
     //int * host_value2 = (int *) malloc(size* sizeof(int));
-    /*
+
     *(host_timestamp) = 3;
     *(host_timestamp+1) = 6;
     *(host_timestamp+2) = 8;
@@ -50,12 +50,13 @@ int main(int argc, char **argv) {
     *(host_unit_timestamp+1) = 2;
     *(host_unit_timestamp+2) = 4;
     *(host_unit_timestamp+3) = 5;
-    *(host_unit_timestamp+4) = 9;*/
-    for (int i = 0; i< size;i++) {
+    *(host_unit_timestamp+4) = 9;
+
+    /*for (int i = 0; i< size;i++) {
         *(host_timestamp+i) = i;
         *(host_unit_timestamp+i) = i;
         *(host_value+i) = i;
-    }
+    }*/
     //initially empty stream values
     int * host_timestampOut = (int *) malloc(size * sizeof(int));
     int * host_valueOut = (int *) malloc(size* sizeof(int));
@@ -104,9 +105,9 @@ int main(int argc, char **argv) {
     //inputStream.print();
     last(&inputStream, &inputUnitStream, &outputStream, stream[0]);
     //copy back and output
-    //outputStream.print();
-    outputStream.copy_to_host();
 
+    outputStream.copy_to_host();
+    outputStream.print();
 //    outputStream.print();
     //outputStream2.free_device();
     //inputStream2.free_device();

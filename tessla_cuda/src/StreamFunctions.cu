@@ -16,6 +16,7 @@
 // https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#dynamic-global-memory-allocation-and-operations
 // DISCUSS HOW TO BEST DO THIS
 // example https://forums.developer.nvidia.com/t/how-to-allocate-global-dynamic-memory-on-device-from-host/71011/2
+
 __device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
 
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
@@ -94,27 +95,54 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
+//reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
+__device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, unsigned int tid, const int i){
+    //each thread loads one Element from global to shared memory
+    if (i<size) {
+        sdata[tid] = 0;
+        printf("data %d \n",output_timestamp[i] );
+        if (output_timestamp[i] < 0) {
+            sdata[tid] = 1;
+            printf("call\n");
+        }
+        for (unsigned int s = size / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                sdata[tid] += sdata[tid + s];
+            }
+            __syncthreads();
+        }
+        //write result of block atomically to global memory
+        if (tid == 0) atomicAdd(valid,sdata[0]);
+    }
+}
+
 //we should also hand this function the number of invalid input values! -> we have invalid values!
 //TODO! check what happens for == and adjust >= or > accordingly (/remove else)
 // wikipedia binary search: https://en.wikipedia.org/wiki/Binary_search_algorithm
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int tid = threadIdx.x;
     int local_unit_timestamp = unit_stream_timestamps[i];
+    __shared__ int sdata[1024];
+
+   //printf("data %d \n",*(sdata));
     int L = 0;
     int R = intStreamSize-1;
     int m = 0;
-    output_timestamps[i] = unit_stream_timestamps[i];
+    output_timestamps[i] = INT_MIN;
     int out =  INT_MIN;
-
+    int* valid =(int*) malloc(sizeof(int));
+    //TODO! implement more efficient version with local shared memory?
     if (i<size) {
         while (L<=R) {
             // is this needed? TODO! check and discuss
             //maybe it helps? CHECK!
-            __syncthreads();
+           //__syncthreads();
             m = (int) (L+R)/2;
             if (input_timestamp[m]<local_unit_timestamp){
                 L = m + 1;
                 out = input_values[m];
+                output_timestamps[i] = unit_stream_timestamps[i];
                 //output_values[i] = input_values[m];
             }
             else if (input_timestamp[m]>=local_unit_timestamp){
@@ -123,11 +151,19 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
             else{
                 // how to handle == ? look up!
                 out = input_values[m];
+                output_timestamps[i] = unit_stream_timestamps[i];
                 break;
             }
         }
         output_values[i] = out;
+        __syncthreads();
+        count_valid(sdata,output_timestamps,valid, size,tid,i);
+
     }
+    if (i == 0){
+       printf(" valid %d \n", *valid);
+    }
+    free(valid);
 }
 
 // working

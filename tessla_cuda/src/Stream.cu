@@ -58,7 +58,6 @@ void IntStream::copy_to_device(){
 void IntStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
-    printf("%d\n",this->host_values);
     memset(this->host_values, 0, sizeAllocate);
     memset(this->host_timestamp,  0, sizeAllocate);
     CHECK(cudaMemcpy(this->host_values, this->device_values, sizeAllocate, cudaMemcpyDeviceToHost));
