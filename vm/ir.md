@@ -73,7 +73,6 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 0x8C    | Store                 | Download virtual register from VRAM (=> output stream)|
 | 0x8D    | Free                  | Free pseudo register                                  |
 | 0x8E    | Unit                  | Create Stream with def event at time 0                |
-| 0x8F    | Clean                 | Mark pseudo register as clean (allow one write)       |
 
 ### Exit (0xFF)
 | opcode  | Control Instruction   |   Semantics                                           |

@@ -8,10 +8,10 @@
 #include <assert.h>
 
 // Op types
-#define RTYPE 0b00000000;
-#define ITYPE 0b01000000;
-#define MTYPE 0b10000000;
-#define EXIT  0b11000000;
+constexpr unsigned char RTYPE = 0b00000000;
+constexpr unsigned char ITYPE = 0b01000000;
+constexpr unsigned char MTYPE = 0b10000000;
+constexpr unsigned char EXIT = 0xFF;
 
 // State machines
 enum init_read_states{head_read_spec, head_error, head_unknown_field, head_read_field, head_delim_needed, head_read_string, head_ready, head_accept};
@@ -23,9 +23,9 @@ enum init_instream_states{inst_stby, inst_h1, inst_h2, inst_h3, inst_h4, inst_r1
 enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4};
 
 
-Decode::Decode(std::string coil_file, InstrInterface* instrInterface) {
+Decode::Decode(std::string coil_file, InstrInterface* interface) {
     // Couple the instruction interface
-    this->instrInterface = instrInterface;
+    instrInterface = interface;
 
     coil.open(coil_file, std::ios::binary);
     // Make sure the file exists
@@ -80,7 +80,7 @@ void Decode::parse_header() {
     bool outst_trans = false;
 
     // Current variables for stream IO
-    IOStream* current;
+    IOStream current;
 
     // Read the actual header fields
     while (readState != head_accept && coil.peek() != EOF) {
@@ -97,18 +97,16 @@ void Decode::parse_header() {
             // In case of finished string, save everything
             if (byte == 0x00) {
                 // Save the current stream
-                assert(current != nullptr);
-                current->name = bytes;
+                current.name = bytes;
                 if (instreamState == inst_r4) {
                     // Add the stream to the input streams
-                    in_streams.push_back(*current);
+                    in_streams.push_back(current);
                 } else if (outstreamState == outst_r4) {
-                    out_streams.push_back(*current);
+                    out_streams.push_back(current);
                 } else {
                     throw std::runtime_error("Bad state machine configuration while parsing header. String parsed when no string needed.");
                 }
                 // Free the current read stream representation
-                current = nullptr;
                 bytes.clear();
                 // Require head field delimiter
                 readState = head_delim_needed;
@@ -245,30 +243,27 @@ void Decode::parse_header() {
 
         // Read output stream register address
         if (outstreamState == outst_r3) {
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             readState = head_read_string;
             outstreamState = outst_r4;
             outst_trans = true;
         }
         if (outstreamState == outst_r2) {
-            assert(current != nullptr);
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             outstreamState = outst_r3;
             outst_trans = true;
         }
         if (outstreamState == outst_r1) {
-            assert(current != nullptr);
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             outstreamState = outst_r2;
             outst_trans = true;
         }
         // Make sure we have not transitioned this cycle and start reading
         if (!outst_trans && outstreamState == outst_h4) {
-            current = new IOStream;
-            current->regname = byte;
+            current.regname = byte;
             if (wideAddresses) {
                 outstreamState = outst_r1;
             } else {
@@ -279,30 +274,27 @@ void Decode::parse_header() {
 
         // Read input stream register address
         if (instreamState == inst_r3) {
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             readState = head_read_string;
             instreamState = inst_r4;
             inst_trans = true;
         }
         if (instreamState == inst_r2) {
-            assert(current != nullptr);
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             instreamState = inst_r3;
             inst_trans = true;
         }
         if (instreamState == inst_r1) {
-            assert(current != nullptr);
-            current->regname = current->regname << 8;
-            current->regname = current->regname + byte;
+            current.regname = current.regname << 8;
+            current.regname = current.regname + byte;
             instreamState = inst_r2;
             inst_trans = true;
         }
         // Make sure we have not transitioned this cycle and start reading
         if (!inst_trans && instreamState == inst_h4) {
-            current = new IOStream;
-            current->regname = byte;
+            current.regname = byte;
             if (wideAddresses) {
                 instreamState = inst_r1;
             } else {
@@ -426,11 +418,11 @@ bool Decode::decode_next() {
     Instruction inst;
 
     // If this is an exit instruction, return
-    if (!(optype ^ EXIT)) {
+    if (!(opcode ^ EXIT)) {
         // Operation is EXIT
         inst.type = inst_exit;
         instrInterface->push(inst);
-        return true;
+        return false;
     }
 
     // Read first register address
@@ -446,6 +438,7 @@ bool Decode::decode_next() {
             case 0x08:
                 // Add
                 inst.type = inst_add;
+                instrInterface->push({})
                 break;
             case 0x09:
                 // Mul
@@ -573,10 +566,6 @@ bool Decode::decode_next() {
                 // Unit
                 inst.type = inst_unit;
                 break;
-            case 0x8F:
-                // Clean
-                inst.type = inst_clean;
-                break;
             default:
                 // Unknown instruction type
                 throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
@@ -585,7 +574,9 @@ bool Decode::decode_next() {
         // Unreachable code. Something weird happened.
         assert(false);
     }
-    return 0;
+
+    instrInterface->push(inst);
+    return true;
 }
 
 size_t Decode::read_register(unsigned char opcode) {
