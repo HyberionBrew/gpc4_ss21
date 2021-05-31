@@ -60,8 +60,12 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
         }
     }
 
+    //create kernel memory
+
     //the pointers are now surely on device
     time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads);
+
+    //kernel free
     printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
 
 };
@@ -90,36 +94,41 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
             break;
         }
     }
+
+    //TODO! make iterative!
+    if (blocks > 1024){
+        printf("Blocks to many");
+        exit(1);
+    }
+    int* block_red;
+    cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
-    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values, inputInt->size, threads);
+    last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, unsigned int tid, const int i){
     //each thread loads one Element from global to shared memory
-    if (i<size) {
-        sdata[tid] = 0;
-        printf("data %d \n",output_timestamp[i] );
-        if (output_timestamp[i] < 0) {
-            sdata[tid] = 1;
-            printf("call\n");
-        }
-        for (unsigned int s = size / 2; s > 0; s >>= 1) {
-            if (tid < s) {
-                sdata[tid] += sdata[tid + s];
-            }
-            __syncthreads();
-        }
-        //write result of block atomically to global memory
-        if (tid == 0) atomicAdd(valid,sdata[0]);
+    sdata[tid] = 0;
+    if (output_timestamp[i] < 0) {
+        sdata[tid] = 1;
+        printf("%d ? %d\n",i,output_timestamp[i]);
     }
+    for (unsigned int s = (int)size / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    //result to array
+    if (tid == 0) *valid=sdata[0];
 }
 
 //we should also hand this function the number of invalid input values! -> we have invalid values!
 //TODO! check what happens for == and adjust >= or > accordingly (/remove else)
 // wikipedia binary search: https://en.wikipedia.org/wiki/Binary_search_algorithm
-__global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
+__global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int tid = threadIdx.x;
     int local_unit_timestamp = unit_stream_timestamps[i];
@@ -131,9 +140,9 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     int m = 0;
     output_timestamps[i] = INT_MIN;
     int out =  INT_MIN;
-    int* valid =(int*) malloc(sizeof(int));
     //TODO! implement more efficient version with local shared memory?
     if (i<size) {
+        block_red[ blockIdx.x] = 0;
         while (L<=R) {
             // is this needed? TODO! check and discuss
             //maybe it helps? CHECK!
@@ -157,13 +166,16 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
         }
         output_values[i] = out;
         __syncthreads();
-        count_valid(sdata,output_timestamps,valid, size,tid,i);
+        int size = 1024;
 
+        count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,tid,i);
+        if (tid == 0)
+            printf(" valid %d %d\n", block_red[blockIdx.x], blockIdx.x);
     }
-    if (i == 0){
-       printf(" valid %d \n", *valid);
-    }
-    free(valid);
+
+
+    __syncthreads();
+
 }
 
 // working

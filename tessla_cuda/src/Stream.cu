@@ -19,13 +19,12 @@ IntStream::IntStream(bool deviceOnly, size_t size) {
         this->size = size;
         CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
         CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
-    }else{
+    }
+    else{
         printf("U are using this function wrong, just creates uninitalized stream ONLY on device (i.e. can not be copied back)");
         exit(1);
     }
-
 }
-
 
 void IntStream::print() {
     printf("IntStream\n");
