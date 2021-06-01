@@ -47,8 +47,8 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 0x0D    | Delay                 | Delay Operation (first operand int, second def)       |
 | 0x0E    | Last                  | Last Operation (first operand int, second def)        |
 | 0x0F    | Time                  | Time Operation                                        |
-| 0x11    | Merge                 | Merge         Streams                                 |
-| 0x13    | Count                 | Count Operation                                       |
+| 0x10    | Merge                 | Merge         Streams                                 |
+| 0x11    | Count                 | Count Operation                                       |
 
 ### I-Type (MSB 01)
 | opcode  | I-Instruction         |   Semantics                                           |
@@ -86,12 +86,12 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 * Header fields must appear in order, not required fields may be omitted
 * For Input streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
 
-| Header (HEX)  |     Meaning                       |      alternatives                                  |
-|---------------|-----------------------------------|----------------------------------------------------|
-| 53 50 45 43   | Specification version (required)  | Version of the language specification              |
-| 52 45 47 4C   | Register byte length              | 0x00 -> 2 Bytes, 0x01 -> 4 Bytes                   |
-| 49 4E 53 54   | Input stream name                 | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
-| 4F 55 53 54   | Output stream name                | 2/4 Bytes reg name, ASCII stream name |
+| Header (HEX)  |     Meaning                                   |      alternatives                                  |
+|---------------|-----------------------------------------------|----------------------------------------------------|
+| 53 50 45 43   | Specification version (required)              | Version of the language specification              |
+| 52 45 47 4C   | Register byte length                          | 0x00 -> 2 Bytes, 0x01 -> 4 Bytes                   |
+| 49 4E 53 54   | Input stream name (may appear more than once) | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
+| 4F 55 53 54   | Output stream name (may appear more than once)| 2/4 Bytes reg name, ASCII stream name              |
 
 # Example
 Example for version number 1.0, 2 byte register length, i1 as input stream in register 1234 and o2 as output in register 4321:

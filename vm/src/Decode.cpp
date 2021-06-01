@@ -23,12 +23,14 @@ enum init_reg_bytel_states{reg_stby, reg_h1, reg_h2, reg_h3, reg_h4};
 enum init_instream_states{inst_stby, inst_h1, inst_h2, inst_h3, inst_h4, inst_r1, inst_r2, inst_r3, inst_r4, inst_r5};
 enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4};
 
+// Future work: change ifstream to streambuf
 
 Decode::Decode(std::string coil_file, InstrInterface & interface) : instrInterface(interface) {
     // Couple the instruction interface
     instrInterface = interface;
 
-    coil.open(coil_file, std::ios::binary);
+    coil.unsetf(std::ios::skipws);
+    coil.open(coil_file, std::ifstream::binary | std::ifstream::in);
     // Make sure the file exists
     if (coil.fail()) {
         // It does not. Exit.
@@ -291,7 +293,6 @@ void Decode::parse_header() {
         if (instreamState == inst_r3) {
             current.regname = current.regname << 8;
             current.regname = current.regname + byte;
-            readState = head_read_string;
             instreamState = inst_r4;
             inst_trans = true;
         }
@@ -427,7 +428,7 @@ bool Decode::decode_next() {
     }
 
     unsigned char msb_mask = 0b11000000;
-    unsigned char optype = msb_mask && byte;
+    unsigned char optype = msb_mask & byte;
     unsigned char opcode = byte;
 
     Instruction inst;
@@ -442,7 +443,6 @@ bool Decode::decode_next() {
 
     // Read first register address
     inst.r1 = read_register(opcode);
-
     if (!(optype ^ RTYPE)) {
         // Operation is R-Type
         // Read second and return register address
@@ -479,14 +479,14 @@ bool Decode::decode_next() {
                 inst.type = inst_last;
                 break;
             case 0x0F:
-                // TimeIn
+                // Time
                 inst.type = inst_time;
                 break;
-            case 0x11:
-                // MergeIn
+            case 0x10:
+                // Merge
                 inst.type = inst_merge;
                 break;
-            case 0x13:
+            case 0x11:
                 // Count
                 inst.type = inst_count;
                 break;
@@ -578,6 +578,7 @@ bool Decode::decode_next() {
         }
     } else {
         // Unreachable code. Something weird happened.
+        std::cout << std::hex << (int)opcode;
         assert(false);
     }
 

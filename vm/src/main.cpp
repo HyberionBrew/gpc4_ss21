@@ -13,7 +13,7 @@
 #include <sstream>
 
 std::string usage_string = "Usage: arc [-D | -t | -s] -v coil_file input_file";
-constexpr scheduler DEFAULT_SCHEDULER = gpu;
+constexpr scheduler DEFAULT_SCHEDULER = debug;
 
 void decode (InstrInterface & interface, std::string coil_file, bool verbose) {
 
@@ -82,9 +82,10 @@ int main(int argc, char **argv) {
 
     // Read in command line arguments
     scheduler scheduler = DEFAULT_SCHEDULER;
-    char opt;
+    const char * optstring = "Dtsvc:i:";
     bool verbose = false;
-    while (getopt(argc, argv, &opt) != -1) {
+    char opt;
+    while ((opt = getopt(argc, argv, optstring)) != -1) {
         // Set the right scheduler/execution method
         if (opt == 'D' || opt == 't' || opt == 's') {
             if (scheduler != DEFAULT_SCHEDULER) {
