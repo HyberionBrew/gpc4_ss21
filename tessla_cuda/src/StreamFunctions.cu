@@ -71,52 +71,97 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
 };
 
 
-void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
-    int threads = (int) inputUnit->size;
-    int block_size = 1;
-    int blocks = 1;
+void calcThreadsBlocks(int threads, int *block_size, int*blocks){
+    *block_size = 1;
+    *blocks = 1;
     if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
         printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
         //return;
     }
     //schedule in warp size
     for (int bs = 32; bs <= MAX_THREADS_PER_BLOCK;bs +=32){
-        if (block_size > threads){
+        if (*block_size > threads){
             break;
         }
-        block_size = bs;
+        *block_size = bs;
     }
     //TODO! MAX_BLOCKS?
     // the number of blocks per kernel launch should be in the thousands.
     for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
-        blocks = bl;
-        if (bl*block_size > threads){
+        *blocks = bl;
+        if (bl**block_size > threads){
             break;
         }
     }
 
-    //TODO! make iterative!
-    if (blocks > 1024){
-        printf("Blocks to many");
-        exit(1);
+    //TODO! make iterative! see last for hints
+    if (*blocks > 1024){
+        printf("Many Blocks");
+        return;
     }
+}
+
+void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
+    int threads = (int) inputUnit->size;
+    int block_size =1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
     int* block_red;
     cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
     last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads);
+    int leftBlocks = blocks;
+    //TODO! implement and check below functions! for schedulings > 1024 blocks
+    /* while(leftBlocks>1024)
+        calcThreadsBlocks(leftBlocks,&block_size,&blocks);
+        reduce_blocks<<<blocks, block_size, 0, stream>>>(block_red, leftBlocks);
+        leftBlocks = blocks;
+    };*/
+    int* offset;
+    cudaMalloc((void**)&offset, sizeof(int));
+    final_reduce<<<1, block_size, 0, stream>>>(block_red, leftBlocks, offset);
+
+    cudaFree(offset);
     cudaFree(block_red);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
+__global__ void final_reduce(int* block_red,int size,int* offset) {
+    __shared__ int sdata[1024];
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int tid = threadIdx.x;
+    if (i < size) {
+        sdata[tid] = block_red[i];
+        __syncthreads();
+        for (unsigned int s = (int)1024 / 2; s > 0; s >>= 1) {
+            if (s < size){
+                if (tid < s) {
+                    if ((i+s+1) > size){
+                        sdata[tid] += 0;
+                    }
+                    else {
+                        sdata[tid] += sdata[tid + s];
+                    }
+                }
+            }
+            __syncthreads();
+        }
+
+        if (i == 0){
+            *offset = sdata[0];
+            printf("The offset: %d \n",*offset);
+        }
+    }
+}
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, int MaxSize, unsigned int tid, const int i){
     //each thread loads one Element from global to shared memory
     sdata[tid] = 0;
+
     if (output_timestamp[i] < 0) {
         sdata[tid] = 1;
         //printf("%d ? %d\n",i,output_timestamp[i]);
     }
-
     __syncthreads();
     for (unsigned int s = (int)size / 2; s > 0; s >>= 1) {
         if (s < size){
@@ -178,6 +223,7 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
         //__syncthreads(); //should be unneeded
         block_red[blockIdx.x] = 0; //not really needed
         count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
+    }
 
 }
 

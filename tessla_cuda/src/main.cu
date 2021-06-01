@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 
 
     for (int i = 0; i< size;i++) {
-        *(host_timestamp+i) = i+2000;
+        *(host_timestamp+i) = i+100010;
         *(host_unit_timestamp+i) = i;
         *(host_value+i) = i;
     }
