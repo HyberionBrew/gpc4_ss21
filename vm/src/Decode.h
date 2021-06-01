@@ -11,10 +11,13 @@
 #include <vector>
 #include <cstddef>
 
-typedef struct IOStream {
+enum ioStreamType{unit, integer};
+
+struct IOStream {
     std::string name;
     size_t regname;
-} IOStream;
+    ioStreamType type;
+};
 
 class Decode {
     std::ifstream coil;

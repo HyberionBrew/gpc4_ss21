@@ -36,17 +36,11 @@ bool DebugScheduler::next() {
         case inst_last:
             std::cout << line << ": Last, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
             break;
-        case inst_time_in:
+        case inst_time:
             std::cout << line << ": TimeIn, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
             break;
-        case inst_time_un:
-            std::cout << line << ": TimeUn, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
-            break;
-        case inst_merge_in:
+        case inst_merge:
             std::cout << line << ": MergeIn, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
-            break;
-        case inst_merge_un:
-            std::cout << line << ": MergeUn, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
             break;
         case inst_count:
             std::cout << line << ": Count, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
