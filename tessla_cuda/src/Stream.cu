@@ -6,6 +6,15 @@
 #include "Stream.cuh"
 #include "helper.cuh"
 
+IntStream::IntStream(int *timestamp,int *value, size_t size, int offs) {
+    this->host_timestamp = timestamp;
+    this->host_values = value;
+    this->size = size;
+    //TODO! this is per object tf. problems
+    this->host_offset = (int *) malloc(size* sizeof(int));
+    *this->host_offset = offs;
+
+}
 IntStream::IntStream(int *timestamp,int *value, size_t size) {
     this->host_timestamp = timestamp;
     this->host_values = value;
@@ -15,8 +24,8 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
     memset( this->host_offset,0,sizeof(int));
 
 }
-
 //DEVICE ONLY dont use
+// THIS CAN BE DELETED!
 IntStream::IntStream(bool deviceOnly, size_t size) {
     if (deviceOnly) {
         int sizeAllocate = this->size * sizeof(int);
@@ -33,6 +42,7 @@ IntStream::IntStream(bool deviceOnly, size_t size) {
 void IntStream::print() {
     printf("IntStream\n");
     printf("t|value\n");
+    //
     for (int i = *this->host_offset; i< this->size;i++) {
         printf("%d|%d \n",this->host_timestamp[i],this->host_values[i]);
     }
@@ -85,6 +95,13 @@ void UnitStream::print() {
     printf("end UnitStream\n");
 }
 
+
+UnitStream::UnitStream(int*timestamp,size_t size, int offs) {
+    this->host_timestamp = timestamp;
+    this->size = size;
+    this->host_offset = (int *) malloc(size* sizeof(int));
+    *this->host_offset = offs;
+}
 
 UnitStream::UnitStream(int*timestamp,size_t size) {
     this->host_timestamp = timestamp;

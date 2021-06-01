@@ -110,7 +110,7 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
     int* block_red;
     cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
-    last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads);
+    last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
     int leftBlocks = blocks;
     //TODO! implement and check below functions! for schedulings > 1024 blocks
     /* while(leftBlocks>1024)
@@ -179,26 +179,40 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
 }
 
 //we should also hand this function the number of invalid input values! -> we have invalid values!
-//TODO! IMPORTANT CURRENTLY ONLY WORKING ON COMPLETE STREAMS
-__global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
+//TODO! IMPORTANT CURRENTLY ONLY WORKING ON COMPLETE STREAMS think about it!
+__global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int tid = threadIdx.x;
-    int local_unit_timestamp = unit_stream_timestamps[i];
-    __shared__ int sdata[1024];
+    //shift accordingly to offset
+    unit_stream_timestamps += *offsUnit;
 
-   //printf("data %d \n",*(sdata));
-    int L = 0;
-    int R = intStreamSize-1;
-    int m = 0;
-    output_timestamps[i] = INT_MIN;
-    int out =  INT_MIN;
+    input_timestamp += *offsInt;
+    input_values += *offsInt;
 
+    size -= *offsUnit;
+    intStreamSize -= *offsInt;
+    if (i==0) {
+        printf("offs %d \n", *offsInt);
+        printf("new size %d \n", size);
+        printf("new size Int %d \n", intStreamSize);
+    }
     if (i<size) {
+
+        int local_unit_timestamp = unit_stream_timestamps[i];
+        __shared__ int sdata[1024];
+
+       //printf("data %d \n",*(sdata));
+        int L = 0; //TODO! = offsetIntStream;
+        int R = intStreamSize;
+        int m;
+        output_timestamps[i] = INT_MIN;
+        int out =  INT_MIN;
+        //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
 
         while (L<=R) {
             // is this needed? TODO! check and discuss
             //maybe it helps? CHECK!
-           //__syncthreads();
+           __syncthreads();
             m = (int) (L+R)/2;
             if (input_timestamp[m]<local_unit_timestamp){
                 L = m + 1;
@@ -217,6 +231,7 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
             }
         }
         output_values[i] = out;
+        printf("%d \n", output_values[i]);
         //__syncthreads(); //should be unneeded
         block_red[blockIdx.x] = 0; //not really needed
         count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
@@ -227,7 +242,10 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
 // working
 __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values,int size, int*offset, int* resultOffset){
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= *offset && i<size){
+    input_timestamp += *offset;
+    output_timestamps += *offset;
+    output_values += *offset;
+    if ( i<size-*offset){
         output_timestamps[i] = input_timestamp[i];
         output_values[i] = input_timestamp[i];
     }

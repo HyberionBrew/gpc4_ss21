@@ -14,7 +14,67 @@ void experimental_time(){
 
 
 void experimental_last(){
+    printf("--------- experimental last start -----------\n");
+    int size = 5;
 
+    int sizeAllocated = (size_t)size * sizeof(int);
+    int * host_timestamp = (int *) malloc(size * sizeof(int));
+    int * host_unit_timestamp = (int *) malloc(size * sizeof(int));
+    int * host_value = (int *) malloc(size* sizeof(int));
+
+
+    for (int i = 0; i< size;i++) {
+        *(host_timestamp+i) = i+10;
+        *(host_unit_timestamp+i) = i;
+        *(host_value+i) = i;
+    }
+
+    *(host_timestamp) = INT_MIN;
+    *(host_timestamp+1) = 6;
+    *(host_timestamp+2) = 8;
+    *(host_value) = INT_MIN;
+    *(host_value+1) = 3;
+    *(host_value+2) = 6;
+
+    *(host_unit_timestamp) = 0;
+    *(host_unit_timestamp+1) = 2;
+    *(host_unit_timestamp+2) = 4;
+    *(host_unit_timestamp+3) = 5;
+    *(host_unit_timestamp+4) = 9;
+
+    int * host_timestampOut = (int *) malloc(size * sizeof(int));
+    int * host_valueOut = (int *) malloc(size* sizeof(int));
+
+    memset(host_timestampOut,0,sizeAllocated);
+    memset(host_valueOut,0,sizeAllocated);
+
+    IntStream inputStream(host_timestamp,host_value, size,1);
+    IntStream outputStream(host_timestampOut,host_valueOut,size);
+    UnitStream inputUnitStream(host_unit_timestamp,size);
+    inputStream.print();
+    inputUnitStream.print();
+    printf("%d ???\n",*inputStream.host_offset);
+    //device copies
+    inputStream.copy_to_device();
+    inputUnitStream.copy_to_device();
+    outputStream.copy_to_device();
+
+    last(&inputStream, &inputUnitStream, &outputStream, 0);
+
+    outputStream.copy_to_host();
+    outputStream.print();
+
+    //frees
+    outputStream.free_device();
+    inputStream.free_device();
+    inputUnitStream.free_device();
+
+    free(host_unit_timestamp);
+    free(host_timestampOut);
+    free(host_valueOut);
+    free(host_value);
+    free(host_timestamp);
+    printf("--------- experimental last end -----------\n");
 }
 
 
@@ -31,7 +91,7 @@ int main(int argc, char **argv) {
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
     int size = 5;
-
+    experimental_last();
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
     int * host_unit_timestamp = (int *) malloc(size * sizeof(int));
