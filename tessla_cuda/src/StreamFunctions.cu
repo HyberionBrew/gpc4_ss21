@@ -95,7 +95,7 @@ void calcThreadsBlocks(int threads, int *block_size, int*blocks){
         }
     }
 
-    //TODO! make iterative! see last for hints
+    //TODO! make iterative! see last for hints (code already there)
     if (*blocks > 1024){
         printf("Many Blocks");
         return;
@@ -122,7 +122,6 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
 
     cudaFree(block_red);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
-    printf("RESULT pointer: %d", result->device_offset);
 }
 
 __global__ void final_reduce(int* block_red,int size,int* offset) {

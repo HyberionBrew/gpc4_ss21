@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 5;
+    int size = 10000;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -77,7 +77,6 @@ int main(int argc, char **argv) {
     IntStream outputStream(host_timestampOut,host_valueOut,size);
     IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
     //IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
-    printf("hist %d \n",host_unit_timestamp);
     UnitStream inputUnitStream(host_unit_timestamp,size);
     // create streams for parallel kernel launches
     int MAX_STREAMS = 16; // check if this is really max
@@ -105,17 +104,17 @@ int main(int argc, char **argv) {
     //inputStream2.copy_to_device();
     outputStream2.copy_to_device();
     //time(&inputStream, &outputStream, stream[0]);
-    inputUnitStream.print();
-    inputStream.print();
+    //inputUnitStream.print();
+    //inputStream.print();
     last(&inputStream, &inputUnitStream, &outputStream, stream[0]);
     time(&outputStream,&outputStream2, stream[0]);
     //copy back and output
-    printf("time \n");
+    //printf("time \n");
     outputStream2.copy_to_host();
-    outputStream2.print();
+    //outputStream2.print();
 
     outputStream.copy_to_host();
-    outputStream.print();
+    //outputStream.print();
 
 
 
