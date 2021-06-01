@@ -84,14 +84,14 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 * Fields are always delimited by `0xF0F0`
 * End of header marked by `0xFFFF`
 * Header fields must appear in order, not required fields may be omitted
-* For Input/Output streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
+* For Input streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
 
 | Header (HEX)  |     Meaning                       |      alternatives                                  |
 |---------------|-----------------------------------|----------------------------------------------------|
 | 53 50 45 43   | Specification version (required)  | Version of the language specification              |
 | 52 45 47 4C   | Register byte length              | 0x00 -> 2 Bytes, 0x01 -> 4 Bytes                   |
 | 49 4E 53 54   | Input stream name                 | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
-| 4F 55 53 54   | Output stream name                | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
+| 4F 55 53 54   | Output stream name                | 2/4 Bytes reg name, ASCII stream name |
 
 ## Example
 Example for version number 1.0, 2 byte register length, i1 as input stream in register 1234 and o2 as output in register 4321:

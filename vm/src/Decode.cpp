@@ -21,7 +21,7 @@ enum init_term_states{term_stby, term_started};
 enum init_spec_field_states{spec_stby, spec_h1, spec_h2, spec_h3, spec_h4, spec_v1, spec_v2, spec_v3};
 enum init_reg_bytel_states{reg_stby, reg_h1, reg_h2, reg_h3, reg_h4};
 enum init_instream_states{inst_stby, inst_h1, inst_h2, inst_h3, inst_h4, inst_r1, inst_r2, inst_r3, inst_r4, inst_r5};
-enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4, outst_r5};
+enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4};
 
 
 Decode::Decode(std::string coil_file, InstrInterface & interface) : instrInterface(interface) {
@@ -101,7 +101,7 @@ void Decode::parse_header() {
                 if (instreamState == inst_r5) {
                     // Add the stream to the input streams
                     in_streams.push_back(current);
-                } else if (outstreamState == outst_r5) {
+                } else if (outstreamState == outst_r4) {
                     out_streams.push_back(current);
                 } else {
                     throw std::runtime_error("Bad state machine configuration while parsing header. String parsed when no string needed.");
@@ -242,24 +242,10 @@ void Decode::parse_header() {
         }
 
         // Read output stream register address
-        if (outstreamState == outst_r4) {
-            if (byte == 0x00) {
-                // Unit stream
-                current.type = unit;
-            } else if (byte == 0x01) {
-                // Integer stream
-                current.type = integer;
-            } else {
-                // Unsupported stream type
-                throw std::runtime_error("Unsupported output stream type.");
-            }
-            readState = head_read_string;
-            outstreamState = outst_r5;
-            outst_trans = true;
-        }
         if (outstreamState == outst_r3) {
             current.regname = current.regname << 8;
             current.regname = current.regname + byte;
+            readState = head_read_string;
             outstreamState = outst_r4;
             outst_trans = true;
         }
