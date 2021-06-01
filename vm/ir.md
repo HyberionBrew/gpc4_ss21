@@ -47,7 +47,7 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 0x0D    | Delay                 | Delay Operation (first operand int, second def)       |
 | 0x0E    | Last                  | Last Operation (first operand int, second def)        |
 | 0x0F    | Time                  | Time Operation                                        |
-| 0x10    | Merge                 | Merge         Streams                                 |
+| 0x10    | Merge                 | Merge Streams                                         |
 | 0x11    | Count                 | Count Operation                                       |
 
 ### I-Type (MSB 01)
