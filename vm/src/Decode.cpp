@@ -660,7 +660,13 @@ void Decode::print_header() {
     }
     std::cout << "Input streams:" << std::endl;
     for (std::vector<IOStream>::iterator current = in_streams.begin(); current != in_streams.end(); current++) {
-        std::cout << current->name << " in pseudo register " << current->regname << std::endl;
+        std::cout << current->name << " in pseudo register " << current->regname << " of type ";
+        if (current->type == unit) {
+            std::cout << "UNIT";
+        } else {
+            std::cout << "INTEGER";
+        }
+        std::cout << std::endl;
     }
     std::cout << "Output streams:" << std::endl;
     for (std::vector<IOStream>::iterator current = out_streams.begin(); current != out_streams.end(); current++) {

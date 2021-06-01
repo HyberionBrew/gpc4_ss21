@@ -93,6 +93,6 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 49 4E 53 54   | Input stream name                 | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
 | 4F 55 53 54   | Output stream name                | 2/4 Bytes reg name, ASCII stream name |
 
-## Example
+# Example
 Example for version number 1.0, 2 byte register length, i1 as input stream in register 1234 and o2 as output in register 4321:
-`58 52 41 59 53 50 45 43 00 01 00 00 F0 F0 52 45 47 4C 00 F0 F0 49 4E 53 54 04 D2 00 69 31 00 F0 F0 4F 55 53 54 10 E1 01 6f 32 00 F0 F0 FF FF`
+`58 52 41 59 53 50 45 43 00 01 00 00 F0 F0 52 45 47 4C 00 F0 F0 49 4E 53 54 04 D2 00 69 31 00 F0 F0 4F 55 53 54 10 E1 6f 32 00 F0 F0 FF FF FF`
