@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 10000;
+    int size = 100010;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -42,17 +42,18 @@ int main(int argc, char **argv) {
 
 
     for (int i = 0; i< size;i++) {
-        *(host_timestamp+i) = i;
+        *(host_timestamp+i) = i+2000;
         *(host_unit_timestamp+i) = i;
         *(host_value+i) = i;
     }
 
-    *(host_timestamp) = 3;
+    /**(host_timestamp) = 3;
     *(host_timestamp+1) = 6;
     *(host_timestamp+2) = 8;
     *(host_value) = 1;
     *(host_value+1) = 3;
-    *(host_value+2) = 6;
+    *(host_value+2) = 6;*/
+
 
     *(host_unit_timestamp) = 0;
     *(host_unit_timestamp+1) = 2;

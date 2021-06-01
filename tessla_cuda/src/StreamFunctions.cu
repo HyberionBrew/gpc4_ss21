@@ -104,20 +104,30 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
     cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
     last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads);
+    cudaFree(block_red);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
-__device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, unsigned int tid, const int i){
+__device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, int MaxSize, unsigned int tid, const int i){
     //each thread loads one Element from global to shared memory
     sdata[tid] = 0;
     if (output_timestamp[i] < 0) {
         sdata[tid] = 1;
-        printf("%d ? %d\n",i,output_timestamp[i]);
+        //printf("%d ? %d\n",i,output_timestamp[i]);
     }
+
+    __syncthreads();
     for (unsigned int s = (int)size / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            sdata[tid] += sdata[tid + s];
+        if (s < size){
+            if (tid < s) {
+                if ((i+s+1) > MaxSize){
+                    sdata[tid] += 0;
+                }
+                else {
+                    sdata[tid] += sdata[tid + s];
+                }
+            }
         }
         __syncthreads();
     }
@@ -140,9 +150,9 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
     int m = 0;
     output_timestamps[i] = INT_MIN;
     int out =  INT_MIN;
-    //TODO! implement more efficient version with local shared memory?
+
     if (i<size) {
-        block_red[ blockIdx.x] = 0;
+
         while (L<=R) {
             // is this needed? TODO! check and discuss
             //maybe it helps? CHECK!
@@ -165,16 +175,9 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
             }
         }
         output_values[i] = out;
-        __syncthreads();
-        int size = 1024;
-
-        count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,tid,i);
-        if (tid == 0)
-            printf(" valid %d %d\n", block_red[blockIdx.x], blockIdx.x);
-    }
-
-
-    __syncthreads();
+        //__syncthreads(); //should be unneeded
+        block_red[blockIdx.x] = 0; //not really needed
+        count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
 
 }
 
