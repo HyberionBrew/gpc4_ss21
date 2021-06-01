@@ -158,7 +158,7 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
 
     if (output_timestamp[i] < 0) {
         sdata[tid] = 1;
-        //printf("%d ? %d\n",i,output_timestamp[i]);
+        //    printf("%d ? %d\n",i,output_timestamp[i]);
     }
     __syncthreads();
     for (unsigned int s = (int)size / 2; s > 0; s >>= 1) {
@@ -175,7 +175,7 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
         __syncthreads();
     }
     //result to array
-    if (tid == 0) *valid=sdata[0];
+    if (tid == 0) *valid=*valid+sdata[0];
 }
 
 //we should also hand this function the number of invalid input values! -> we have invalid values!
@@ -191,11 +191,13 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
 
     size -= *offsUnit;
     intStreamSize -= *offsInt;
-    if (i==0) {
-        printf("offs %d \n", *offsInt);
-        printf("new size %d \n", size);
-        printf("new size Int %d \n", intStreamSize);
-    }
+    output_timestamps[i] = INT_MIN;
+
+    output_timestamps += *offsUnit;
+    output_values += *offsUnit;
+    int out =  INT_MIN;
+
+    __syncthreads(); //should be irrelevant
     if (i<size) {
 
         int local_unit_timestamp = unit_stream_timestamps[i];
@@ -205,8 +207,7 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
         int L = 0; //TODO! = offsetIntStream;
         int R = intStreamSize;
         int m;
-        output_timestamps[i] = INT_MIN;
-        int out =  INT_MIN;
+
         //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
 
         while (L<=R) {
@@ -231,9 +232,7 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
             }
         }
         output_values[i] = out;
-        printf("%d \n", output_values[i]);
-        //__syncthreads(); //should be unneeded
-        block_red[blockIdx.x] = 0; //not really needed
+        block_red[blockIdx.x] = *offsUnit;
         count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
     }
 

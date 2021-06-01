@@ -36,7 +36,7 @@ void experimental_last(){
     *(host_value+1) = 3;
     *(host_value+2) = 6;
 
-    *(host_unit_timestamp) = 0;
+    *(host_unit_timestamp) = INT_MIN;
     *(host_unit_timestamp+1) = 2;
     *(host_unit_timestamp+2) = 4;
     *(host_unit_timestamp+3) = 5;
@@ -50,10 +50,9 @@ void experimental_last(){
 
     IntStream inputStream(host_timestamp,host_value, size,1);
     IntStream outputStream(host_timestampOut,host_valueOut,size);
-    UnitStream inputUnitStream(host_unit_timestamp,size);
+    UnitStream inputUnitStream(host_unit_timestamp,size,1);
     inputStream.print();
     inputUnitStream.print();
-    printf("%d ???\n",*inputStream.host_offset);
     //device copies
     inputStream.copy_to_device();
     inputUnitStream.copy_to_device();

@@ -82,14 +82,13 @@ void IntStream::copy_to_host() {
     CHECK(cudaMemcpy(this->host_values, this->device_values, sizeAllocate, cudaMemcpyDeviceToHost));
     CHECK(cudaMemcpy(this->host_offset, this->device_offset, sizeof(int), cudaMemcpyDeviceToHost));
     CHECK(cudaMemcpy(this->host_timestamp, this->device_timestamp, sizeAllocate, cudaMemcpyDeviceToHost));
-    printf("host offset;: %d\n",*this->host_offset);
 }
 
 
 void UnitStream::print() {
     printf("UnitStream\n");
     printf("t\n");
-    for (int i = 0; i< this->size;i++) {
+    for (int i = *this->host_offset; i< this->size;i++) {
         printf("%d \n",this->host_timestamp[i]);
     }
     printf("end UnitStream\n");
