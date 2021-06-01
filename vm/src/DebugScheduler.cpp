@@ -6,14 +6,13 @@
 #include <iostream>
 #include <assert.h>
 
-DebugScheduler::DebugScheduler(InstrInterface *interface) {
-    instrInterface = interface;
+DebugScheduler::DebugScheduler(InstrInterface & interface) : Scheduler(interface) {
     line = 0;
 }
 
 bool DebugScheduler::next() {
     line++;
-    Instruction inst = instrInterface->pop();
+    Instruction inst = instrInterface.pop();
     switch (inst.type) {
         case inst_add:
             std::cout << line << ": Add, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;

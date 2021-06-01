@@ -18,9 +18,10 @@ struct Register {
 
 class Scheduler {
 protected:
-    InstrInterface* instrInterface;
+    InstrInterface & instrInterface;
 public:
-    Scheduler(InstrInterface* interface);
+    Scheduler() = delete;
+    Scheduler(InstrInterface & interface);
     virtual bool next() = 0;
 };
 

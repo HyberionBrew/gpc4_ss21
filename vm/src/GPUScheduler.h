@@ -12,7 +12,7 @@ private:
     std::vector<Instruction> lookahead;
     std::vector<Register> registers;
 public:
-    GPUScheduler(InstrInterface* interface);
+    GPUScheduler(InstrInterface & interface);
     bool next () override;
 };
 

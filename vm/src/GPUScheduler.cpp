@@ -6,8 +6,7 @@
 
 // TODO remember to resolve "free" update counters
 
-GPUScheduler::GPUScheduler(InstrInterface *interface) {
-    instrInterface = interface;
+GPUScheduler::GPUScheduler(InstrInterface & interface) : Scheduler(interface) {
 }
 
 bool GPUScheduler::next() {

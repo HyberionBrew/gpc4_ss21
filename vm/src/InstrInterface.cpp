@@ -23,10 +23,11 @@ void InstrInterface::push(Instruction inst) {
 }
 
 Instruction InstrInterface::pop() {
-    Instruction* inst_data = nullptr;
+    void* data = nullptr;
     // Wait for element to be dequeued
-    while ( (inst_data = lfqueue_single_deq_must(&queue)) == NULL) {
+    while ( (data = lfqueue_single_deq_must(&queue)) == NULL) {
     }
+    Instruction* inst_data = (Instruction*)data;
     Instruction inst = *inst_data;
     free(inst_data);
     return inst;

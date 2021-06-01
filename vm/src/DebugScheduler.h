@@ -11,7 +11,7 @@ class DebugScheduler : public Scheduler {
 private:
     size_t line;
 public:
-    DebugScheduler(InstrInterface* interface);
+    DebugScheduler(InstrInterface & interface);
     bool next() override;
 };
 

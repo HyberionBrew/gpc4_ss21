@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <assert.h>
+#include <sstream>
 
 // Op types
 constexpr unsigned char RTYPE = 0b00000000;
@@ -23,7 +24,7 @@ enum init_instream_states{inst_stby, inst_h1, inst_h2, inst_h3, inst_h4, inst_r1
 enum init_outstream_states{outst_stby, outst_h1, outst_h2, outst_h3, outst_h4, outst_r1, outst_r2, outst_r3, outst_r4, outst_r5};
 
 
-Decode::Decode(std::string coil_file, InstrInterface* interface) {
+Decode::Decode(std::string coil_file, InstrInterface & interface) : instrInterface(interface) {
     // Couple the instruction interface
     instrInterface = interface;
 
@@ -50,7 +51,6 @@ Decode::Decode(std::string coil_file, InstrInterface* interface) {
     }
     bytes.clear();
     parse_header();
-    print_header();
 };
 
 
@@ -450,7 +450,7 @@ bool Decode::decode_next() {
     if (!(opcode ^ EXIT)) {
         // Operation is EXIT
         inst.type = inst_exit;
-        instrInterface->push(inst);
+        instrInterface.push(inst);
         return false;
     }
 
@@ -467,7 +467,6 @@ bool Decode::decode_next() {
             case 0x08:
                 // Add
                 inst.type = inst_add;
-                instrInterface->push({})
                 break;
             case 0x09:
                 // Mul
@@ -507,7 +506,7 @@ bool Decode::decode_next() {
                 break;
             default:
                 // Unknown instruction type
-                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+                throw_insttype_error(opcode);
         }
     } else if (!(optype ^ ITYPE)) {
         // Operation is I-Type
@@ -554,7 +553,7 @@ bool Decode::decode_next() {
                 break;
             default:
                 // Unknown instruction type
-                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+                throw_insttype_error(opcode);
         }
     } else if (!(optype ^ MTYPE)) {
         // Operation is M-Type
@@ -589,15 +588,30 @@ bool Decode::decode_next() {
                 break;
             default:
                 // Unknown instruction type
-                throw std::runtime_error("Error at opcode " << (int)opcode << ". Unknown instruction type.");
+                throw_insttype_error(opcode);
         }
     } else {
         // Unreachable code. Something weird happened.
         assert(false);
     }
 
-    instrInterface->push(inst);
+    instrInterface.push(inst);
     return true;
+}
+
+void Decode::throw_insttype_error(unsigned char opcode) {
+    std::stringstream sstr;
+    sstr << "Error at opcode ";
+    sstr << std::hex << (int)opcode;
+    sstr << ". Unknown instruction type.";
+    throw std::runtime_error(sstr.str());
+}
+
+void Decode::throw_read_error(unsigned char opcode) {
+    std::stringstream sstr;
+    sstr << "Error reading coil file at opcode ";
+    sstr << std::hex << (int)opcode;
+    throw std::runtime_error(sstr.str());
 }
 
 size_t Decode::read_register(unsigned char opcode) {
@@ -608,7 +622,7 @@ size_t Decode::read_register(unsigned char opcode) {
 
     if (coil.fail()) {
         // Unexpected file error
-        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        throw_read_error(opcode);
     }
     r = byte;
 
@@ -617,7 +631,7 @@ size_t Decode::read_register(unsigned char opcode) {
 
         if (coil.fail()) {
             // Unexpected file error
-            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+            throw_read_error(opcode);
         }
         r = r << 8;
         r += byte;
@@ -633,7 +647,7 @@ int32_t Decode::read_imm(unsigned char opcode) {
 
     if (coil.fail()) {
         // Unexpected file error
-        throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+        throw_read_error(opcode);
     }
     imm = byte;
 
@@ -642,7 +656,7 @@ int32_t Decode::read_imm(unsigned char opcode) {
 
         if (coil.fail()) {
             // Unexpected file error
-            throw std::runtime_error("Error reading coil file at opcode " << (int)opcode);
+            throw_read_error(opcode);
         }
         imm = imm << 8;
         imm += byte;
