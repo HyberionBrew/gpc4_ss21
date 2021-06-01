@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 10000;
+    int size = 5;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -111,10 +111,10 @@ int main(int argc, char **argv) {
     //copy back and output
     //printf("time \n");
     outputStream2.copy_to_host();
-    //outputStream2.print();
+    outputStream2.print();
 
     outputStream.copy_to_host();
-    //outputStream.print();
+    outputStream.print();
 
 
 

@@ -179,8 +179,7 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
 }
 
 //we should also hand this function the number of invalid input values! -> we have invalid values!
-//TODO! check what happens for == and adjust >= or > accordingly (/remove else)
-// wikipedia binary search: https://en.wikipedia.org/wiki/Binary_search_algorithm
+//TODO! IMPORTANT CURRENTLY ONLY WORKING ON COMPLETE STREAMS
 __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int tid = threadIdx.x;
