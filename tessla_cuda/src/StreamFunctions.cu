@@ -19,6 +19,74 @@
 
 __device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
 
+void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
+
+}
+
+
+// binary search
+// on failure returns INT_MIN
+// returns position of the Element with value x
+__device__ int lookUpElement(int size,int searchValue, int * input_timestamp){
+    int L = 0;
+    int R = size;
+    int m = INT_MIN;
+    int out = INT_MIN;
+    //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
+
+    while (L<=R) {
+        // is this needed? TODO! check and discuss
+        //maybe it helps? CHECK!
+        __syncthreads();
+        m = (int) (L+R)/2;
+        if (input_timestamp[m]<searchValue){
+            L = m + 1;
+        }
+        else if (input_timestamp[m]>searchValue){
+            R = m -1;
+        }
+        else{
+            out = m;
+            break;
+        }
+    }
+    return out;
+}
+
+
+
+// call function recursively first one is different
+__global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* offsInt, int* offsUnit, int*offsResult,int size){
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int tid = threadIdx.x;
+    //TODO! shift for non valid values!
+    //one thread per unit stream
+    // in the each iteration we at most! get UnitStream size out
+    // HAVE TO LINK WITH RUNTIME LIBRARY! important!!
+    int* initalArray;
+    //TODO! properly call cuda malloc
+    if (i ==0) {
+        cudaMalloc((int **) &initalArray, sizeof(int) * size); //size is the unitStream size
+    }
+    if (i < size){
+        //look if exists equivalent timestamp
+        int value = unit_stream_timestamps[i] ;
+        int indexInt = lookUpElement(size, value, input_timestamp);
+        if (indexInt > 0){
+            // if there could be a valid corresponding value found
+            
+        }
+    }
+    if (i == 0){
+        cudaFree(initalArray);
+    }
+
+
+}
+
+__device__ void delay_cuda_rec(){
+
+}
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
 // ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
 // Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
