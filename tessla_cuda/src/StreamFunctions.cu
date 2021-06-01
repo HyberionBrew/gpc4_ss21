@@ -63,7 +63,8 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
     //create kernel memory
 
     //the pointers are now surely on device
-    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads);
+    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
+
 
     //kernel free
     printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
@@ -89,7 +90,7 @@ void calcThreadsBlocks(int threads, int *block_size, int*blocks){
     // the number of blocks per kernel launch should be in the thousands.
     for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
         *blocks = bl;
-        if (bl**block_size > threads){
+        if (bl* (*block_size) > threads){
             break;
         }
     }
@@ -117,13 +118,11 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
         reduce_blocks<<<blocks, block_size, 0, stream>>>(block_red, leftBlocks);
         leftBlocks = blocks;
     };*/
-    int* offset;
-    cudaMalloc((void**)&offset, sizeof(int));
-    final_reduce<<<1, block_size, 0, stream>>>(block_red, leftBlocks, offset);
+    final_reduce<<<1, block_size, 0, stream>>>(block_red, leftBlocks, result->device_offset);
 
-    cudaFree(offset);
     cudaFree(block_red);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
+    printf("RESULT pointer: %d", result->device_offset);
 }
 
 __global__ void final_reduce(int* block_red,int size,int* offset) {
@@ -228,12 +227,13 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
 }
 
 // working
-__global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values,int size){
-    unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i<size){
+__global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values,int size, int*offset, int* resultOffset){
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= *offset && i<size){
         output_timestamps[i] = input_timestamp[i];
         output_values[i] = input_timestamp[i];
     }
+    if (i == 0) *resultOffset = *offset;
 }
 
 __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){

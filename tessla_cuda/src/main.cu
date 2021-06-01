@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
-    int size = 100010;
+    int size = 5;
 
     int sizeAllocated = (size_t)size * sizeof(int);
     int * host_timestamp = (int *) malloc(size * sizeof(int));
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 
 
     for (int i = 0; i< size;i++) {
-        *(host_timestamp+i) = i+100010;
+        *(host_timestamp+i) = i;
         *(host_unit_timestamp+i) = i;
         *(host_value+i) = i;
     }
@@ -64,18 +64,18 @@ int main(int argc, char **argv) {
     //initially empty stream values
     int * host_timestampOut = (int *) malloc(size * sizeof(int));
     int * host_valueOut = (int *) malloc(size* sizeof(int));
-    //int * host_timestampOut2 = (int *) malloc(size * sizeof(int));
-    //int * host_valueOut2 = (int *) malloc(size* sizeof(int));
+    int * host_timestampOut2 = (int *) malloc(size * sizeof(int));
+    int * host_valueOut2 = (int *) malloc(size* sizeof(int));
     CHECK(cudaProfilerStart());
 
-    //memset(host_timestampOut2,0,sizeAllocated);
-    //memset(host_valueOut2,0,sizeAllocated);
+    memset(host_timestampOut2,0,sizeAllocated);
+    memset(host_valueOut2,0,sizeAllocated);
     memset(host_timestampOut,0,sizeAllocated);
     memset(host_valueOut,0,sizeAllocated);
 
-    IntStream inputStream(host_timestamp,host_value,size);
+    IntStream inputStream(host_timestamp,host_value, size);
     IntStream outputStream(host_timestampOut,host_valueOut,size);
-    //IntStream inputStream2(host_timestamp2,host_value2,size);
+    IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
     //IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
     printf("hist %d \n",host_unit_timestamp);
     UnitStream inputUnitStream(host_unit_timestamp,size);
@@ -103,19 +103,25 @@ int main(int argc, char **argv) {
     outputStream.copy_to_device();
     //outputStream.copy_to_device();
     //inputStream2.copy_to_device();
-    //outputStream2.copy_to_device();
+    outputStream2.copy_to_device();
     //time(&inputStream, &outputStream, stream[0]);
-    //inputUnitStream.print();
-    //inputStream.print();
+    inputUnitStream.print();
+    inputStream.print();
     last(&inputStream, &inputUnitStream, &outputStream, stream[0]);
+    time(&outputStream,&outputStream2, stream[0]);
     //copy back and output
+    printf("time \n");
+    outputStream2.copy_to_host();
+    outputStream2.print();
 
     outputStream.copy_to_host();
-   // outputStream.print();
-//    outputStream.print();
-    //outputStream2.free_device();
+    outputStream.print();
+
+
+
     //inputStream2.free_device();
     outputStream.free_device();
+    outputStream2.free_device();
     inputStream.free_device();
     inputUnitStream.free_device();
 
