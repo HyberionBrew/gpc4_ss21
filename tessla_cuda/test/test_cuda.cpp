@@ -1,4 +1,5 @@
 #include <string.h>
+#include <vector>
 #include "../../test/catch2/catch.hpp"
 #include "../src/Reader.cuh"
 #include "../src/Stream.cuh"
@@ -29,9 +30,9 @@ TEST_CASE("Basic Stream Operations") {
         outputStream.copy_to_host();
 
         // Compare kernel result to correct data
-        for (int i = 0; i < size; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-        }
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp, outputStream.host_timestamp + sizeof(outputStream.host_timestamp) / sizeof(int));
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+        REQUIRE(kernelTimestamps == correctTimestamps);
 
         // Cleanup
         inputStreamD.free_device();
@@ -65,10 +66,12 @@ TEST_CASE("Basic Stream Operations") {
         outputStream.copy_to_host();
 
         // Compare kernel result to correct data
-        for (int i = 0; i < size; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-            REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
-        }
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp, outputStream.host_timestamp + sizeof(outputStream.host_timestamp) / sizeof(int));
+        std::vector<int> kernelValues(outputStream.host_values, outputStream.host_values + sizeof(outputStream.host_values) / sizeof(int));
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + sizeof(CORRECT_STREAM.host_values) / sizeof(int));
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
 
         // Cleanup
         inputStreamV.free_device();
@@ -79,7 +82,6 @@ TEST_CASE("Basic Stream Operations") {
     }
 
     SECTION("merge() (not implemented yet)") {
-        // TODO
         // Read input and correct output data
         Reader inReader = Reader("../test/data/bt_merge.in");
         IntStream inputStreamX = inReader.getIntStream("x");
@@ -104,10 +106,12 @@ TEST_CASE("Basic Stream Operations") {
         outputStream.copy_to_host();
 
         // Compare kernel result to correct data
-        for (int i = 0; i < size; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-            REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
-        }
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp, outputStream.host_timestamp + sizeof(outputStream.host_timestamp) / sizeof(int));
+        std::vector<int> kernelValues(outputStream.host_values, outputStream.host_values + sizeof(outputStream.host_values) / sizeof(int));
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + sizeof(CORRECT_STREAM.host_values) / sizeof(int));
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
 
         // Cleanup
         inputStreamX.free_device();
@@ -141,10 +145,12 @@ TEST_CASE("Basic Stream Operations") {
             outputStream.copy_to_host();
 
             // Compare kernel result to correct data
-            for (int i = 0; i < size; i++) {
-                REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-                REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
-            }
+            std::vector<int> kernelTimestamps(outputStream.host_timestamp, outputStream.host_timestamp + sizeof(outputStream.host_timestamp) / sizeof(int));
+            std::vector<int> kernelValues(outputStream.host_values, outputStream.host_values + sizeof(outputStream.host_values) / sizeof(int));
+            std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+            std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + sizeof(CORRECT_STREAM.host_values) / sizeof(int));
+            REQUIRE(kernelTimestamps == correctTimestamps);
+            REQUIRE(kernelValues == correctValues);
 
             // Cleanup
             inputStream.free_device();
@@ -176,10 +182,12 @@ TEST_CASE("Basic Stream Operations") {
             outputStream.copy_to_host();
 
             // Compare kernel result to correct data
-            for (int i = 0; i < size; i++) {
-                REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-                REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
-            }
+            std::vector<int> kernelTimestamps(outputStream.host_timestamp, outputStream.host_timestamp + sizeof(outputStream.host_timestamp) / sizeof(int));
+            std::vector<int> kernelValues(outputStream.host_values, outputStream.host_values + sizeof(outputStream.host_values) / sizeof(int));
+            std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+            std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + sizeof(CORRECT_STREAM.host_values) / sizeof(int));
+            REQUIRE(kernelTimestamps == correctTimestamps);
+            REQUIRE(kernelValues == correctValues);
 
             // Cleanup
             inputStream.free_device();
