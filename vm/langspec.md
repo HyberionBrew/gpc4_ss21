@@ -31,31 +31,36 @@ def x = () # This is also a comment
 ## Grammar
 
 All enquoted strings are terminals.
-Unenquoted `(`, `)`, `*`, `[`, `]`, `-`, and `+` have the usual regular expression semantics.
+Unenquoted `(`, `)`, `*`, `[`, `]`, `?`,`-` and `+` have the usual regular expression semantics.
 
 ```
 Program :   ( Stat '\n' )*
 
-Stat    :   DefStat
-        |   AssStat
-        |   IOStat 
+Stat    :   Define
+        |   Assign 
+        |   Input 
+        |   Output
         
-IOStat  :   'in' ID ':' TYPE 
-        |   'out' ID
+Input   :   'in' ID ':' TYPE '\n'
+        
+Output  :   'out' ID '\n'
 
-DefStat :   'def' ID '=' RHS 
-
-AssStat :   ID '=' RHS 
+Define  :   'def' ID '=' RHS '\n'
 
 RHS     :   ID
+        |   UnFunc
+        |   BinFunc
+        |   SLift
+        |   Arith
         |   Unit
         |   Default
-        |   SLift
-        |   Delay
-        |   Last
-        |   Time
-        |   Merge
+
+UnFunc  :   Time
         |   Count
+
+BinFunc :   Delay
+        |   Last
+        |   Merge
  
 Unit    :   '()'
 
@@ -76,7 +81,8 @@ SLift   :   ID '+' ID
         |   ID '-' ID
         |   ID '/' ID
         |   ID '%' ID
-        |   ID '+' ICONST
+
+Arith   :   ID '+' ICONST
         |   ID '*' ICONST
         |   ID '-' ICONST
         |   ID '/' ICONST
@@ -89,7 +95,7 @@ SLift   :   ID '+' ID
         
 ID      :   [A-Za-z][0-9A-Za-z_]*
 
-ICONST  :   [0-9]+
+ICONST  :   -?[0-9]+
 
 TYPE    :   'Events[Int]'
         |   'Events[Unit]'
@@ -103,6 +109,6 @@ TYPE    :   'Events[Int]'
 | `def`      | Variable assignment |
 | `in`,`out`      | Marking as Input / Output |
 | `delay`, `last`, `time`      | Basic Operators |
-| `merge`,`filter`,`count`      | Compound Operators |
+| `merge`,`count`      | Compound Operators |
 | `next`     | Reserved |
 
