@@ -118,38 +118,75 @@ TEST_CASE("Basic Stream Operations") {
     }
 
     SECTION("time()") {
-        // Read input and correct output data
-        Reader inReader = Reader("../test/data/bt_time.in");
-        IntStream inputStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_time.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("x");
+        SECTION("time() with small dataset") {
+            // Read input and correct output data
+            Reader inReader = Reader("../test/data/bt_time.in");
+            IntStream inputStream = inReader.getIntStream("x");
+            Reader outReader = Reader("../test/data/bt_time.out");
+            IntStream CORRECT_STREAM = outReader.getIntStream("x");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM.size;
-        int sizeAllocated = (size_t) size * sizeof(int);
-        int *host_timestampOut = (int *) malloc(size * sizeof(int));
-        int *host_valueOut = (int*) malloc(size * sizeof(int));
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-        IntStream outputStream(host_timestampOut, host_valueOut, size);
+            // Prepare empty output stream to fill
+            int size = CORRECT_STREAM.size;
+            int sizeAllocated = (size_t) size * sizeof(int);
+            int *host_timestampOut = (int *) malloc(size * sizeof(int));
+            int *host_valueOut = (int*) malloc(size * sizeof(int));
+            memset(host_timestampOut, 0, sizeAllocated);
+            memset(host_valueOut, 0, sizeAllocated);
+            IntStream outputStream(host_timestampOut, host_valueOut, size);
 
-        // Run kernel
-        inputStream.copy_to_device();
-        outputStream.copy_to_device();
-        time(&inputStream, &outputStream, 0);
-        outputStream.copy_to_host();
+            // Run kernel
+            inputStream.copy_to_device();
+            outputStream.copy_to_device();
+            time(&inputStream, &outputStream, 0);
+            outputStream.copy_to_host();
 
-        // Compare kernel result to correct data
-        for (int i = 0; i < size; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
-            REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
+            // Compare kernel result to correct data
+            for (int i = 0; i < size; i++) {
+                REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
+                REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
+            }
+
+            // Cleanup
+            inputStream.free_device();
+            outputStream.free_device();
+            free(host_valueOut);
+            free(host_timestampOut);
         }
+        
+        SECTION("time() with bigger dataset (~109k/250k events)") {
+            // Read input and correct output data
+            Reader inReader = Reader("../test/data/bt_time.bigger.in");
+            IntStream inputStream = inReader.getIntStream("z");
+            Reader outReader = Reader("../test/data/bt_time.bigger.out");
+            IntStream CORRECT_STREAM = outReader.getIntStream("y");
 
-        // Cleanup
-        inputStream.free_device();
-        outputStream.free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
+            // Prepare empty output stream to fill
+            int size = CORRECT_STREAM.size;
+            int sizeAllocated = (size_t) size * sizeof(int);
+            int *host_timestampOut = (int *) malloc(size * sizeof(int));
+            int *host_valueOut = (int*) malloc(size * sizeof(int));
+            memset(host_timestampOut, 0, sizeAllocated);
+            memset(host_valueOut, 0, sizeAllocated);
+            IntStream outputStream(host_timestampOut, host_valueOut, size);
+
+            // Run kernel
+            inputStream.copy_to_device();
+            outputStream.copy_to_device();
+            time(&inputStream, &outputStream, 0);
+            outputStream.copy_to_host();
+
+            // Compare kernel result to correct data
+            for (int i = 0; i < size; i++) {
+                REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
+                REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
+            }
+
+            // Cleanup
+            inputStream.free_device();
+            outputStream.free_device();
+            free(host_valueOut);
+            free(host_timestampOut);
+        }
     }
     
 }

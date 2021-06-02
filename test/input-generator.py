@@ -27,8 +27,11 @@ def main():
     if args.unitweights is None:
         unitstreams = []
     else:
-    unitstreams = list(zip(UNITSTREAM_NAMES, args.unitweights))
-    intstreams = list(zip(INTSTREAM_NAMES, args.intweights))
+        unitstreams = list(zip(UNITSTREAM_NAMES, args.unitweights))
+    if args.intweights is None:
+        intstreams = []
+    else:
+        intstreams = list(zip(INTSTREAM_NAMES, args.intweights))
 
     for i in range(0, args.length + 1):
         for (name, weight) in unitstreams:
