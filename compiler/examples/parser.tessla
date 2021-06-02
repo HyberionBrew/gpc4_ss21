@@ -1,0 +1,6 @@
+in x : Events[Int]
+in u Events[Unit]
+def y = x + 1 + 3
+def z = merge(x,y) =
+q = x = 3
+out y :

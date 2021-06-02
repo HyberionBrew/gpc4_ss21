@@ -1,0 +1,9 @@
+in x : Events[Unit]
+def y = x + 1
+# this is a test
+def z = merge(x,y)
+def y = y + 1 # hello /* 1232
+def x = y + 1
+z = y # + 1
+x = y / 0
+out y

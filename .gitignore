@@ -159,3 +159,4 @@ test/run_test
 *.o
 tessla_seq/bin
 vm/bin
+/compiler/target/

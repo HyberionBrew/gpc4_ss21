@@ -1,0 +1,9 @@
+in x : Events[Unit]
+def y = x + 1 \?
+def z = mr(x,y)
+def y = y + 1
+def x = y + 1\\
+z = y + # 1
+x = y + 1
+in a : Events[u]
+out y

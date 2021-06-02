@@ -1,0 +1,21 @@
+in x : Events[Int] #            0 [120]                             0
+in f : Events[Int] #not compiled                                    1
+in e : Events[Int] #            1 [101]                             2
+in g : Events[Int] #            2 [103]                             3
+#                                           Load 0
+def y = time(x) #               3 [121]     Time 0, 3               4
+def z = x + y #                 4 [122]     Add 0, 3, 4             5
+#                                           Free 0
+#                                           Free 3
+def a = y # not compiled,                                           6
+def b = x + 1 #not compiled                                         7
+def c = count(b) #not compiled                                      8
+#                                           Load 1
+#                                           Load 2
+def d = delay(e,g) #            5 [100]     Delay 1, 2, 0           9
+def h = merge(e,g) #            0 [120]     Merge 1, 2, 3          10
+#                                           Free 1
+#                                           Free 2
+out z #                                     Store 4                11
+out d #                                     Store 0                12
+out h #                                     Store 3                13
