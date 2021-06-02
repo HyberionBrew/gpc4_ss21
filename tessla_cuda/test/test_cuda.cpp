@@ -7,52 +7,31 @@
 
 TEST_CASE("Basic tests") {
     SECTION("time()") {
-        int size = 4;
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/bt_time.in");
+        IntStream inputStream = inReader.getIntStream("x");
+        Reader outReader = Reader("../test/data/bt_time.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("x");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
         int sizeAllocated = (size_t) size * sizeof(int);
-
-        int inTimestamps[4];
-        int inInts[4];
-        int outTimestamps[4];
-        int outInts[4];
-
-        inTimestamps[0] = 2;
-        inTimestamps[1] = 5;
-        inTimestamps[2] = 6;
-        inTimestamps[3] = 9;
-
-        inInts[0] = 1;
-        inInts[1] = 3;
-        inInts[2] = 9;
-        inInts[3] = 4;
-
-        outTimestamps[0] = 2;
-        outTimestamps[1] = 5;
-        outTimestamps[2] = 6;
-        outTimestamps[3] = 9;
-
-        outInts[0] = 2;
-        outInts[1] = 5;
-        outInts[2] = 6;
-        outInts[3] = 9;
-
         int *host_timestampOut = (int *) malloc(size * sizeof(int));
         int *host_valueOut = (int*) malloc(size * sizeof(int));
         memset(host_timestampOut, 0, sizeAllocated);
         memset(host_valueOut, 0, sizeAllocated);
-
-        IntStream inputStream(inTimestamps, inInts, size);
         IntStream outputStream(host_timestampOut, host_valueOut, size);
 
+        // Run kernel
         inputStream.copy_to_device();
         outputStream.copy_to_device();
-
         time(&inputStream, &outputStream, 0);
-
         outputStream.copy_to_host();
 
+        // Compare kernel result to correct data
         for (int i = 0; i < size; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == outTimestamps[i]);
-            REQUIRE(outputStream.host_values[i] == outInts[i]);
+            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
+            REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
         }
 
         // Cleanup
