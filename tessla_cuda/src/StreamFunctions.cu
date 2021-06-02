@@ -263,3 +263,59 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
     //  if
     //
 }
+
+// https://stackoverflow.com/questions/30729106/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
+/**
+ * See the following paper for parallel merging of sorted arrays:
+ * O. Green, R. Mccoll, and D. Bader
+ * GPU merge path: a GPU merging algorithm
+ * International Conference on Supercomputing
+ * November 2014
+ * URL: https://www.researchgate.net/publication/254462662_GPU_merge_path_a_GPU_merging_algorithm
+ *
+ * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
+ */
+void merge(int* s1_ts, int* s2_ts, int* out_ts, int threads, cudaStream_t stream){
+    // Using the pseudo-code in the paper
+    int a_len = sizeof(s1_ts) / sizeof(s1_ts[0]);
+    int b_len = sizeof(s2_ts) / sizeof(s2_ts[0]);
+    int a_diag[threads];
+    int b_diag[threads];
+
+    for (size_t i = 0; i < threads; i++){
+        a_diag[i] = a_len;
+        b_diag[i] = b_len;
+    }
+    int block_size = 1;
+    int blocks = 1;
+
+    // Export to function maybe -> reusable (e.g. with a config struct)
+    if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
+        printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
+        //return;
+    }
+
+    for (int bs = 32; bs <= MAX_THREADS_PER_BLOCK;bs +=32){
+        if (block_size > threads){
+            break;
+        }
+        block_size = bs;
+    }
+    //TODO! check how many MAX_BLOCKS
+    for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
+        blocks = bl;
+        if (bl*block_size > threads){
+            break;
+        }
+    }
+    //merge_cuda<<<blocks, block_size, 0, stream>>>();
+    //
+}
+
+__global__ void merge_cuda(int* s1_ts, int* s2_ts, int* out_ts, int threads){
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    // Just using UnitStreams for now
+
+
+}
+
