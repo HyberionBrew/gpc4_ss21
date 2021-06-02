@@ -42,64 +42,38 @@ TEST_CASE("Basic tests") {
     }
     
     SECTION("last()") {
-        int size = 5;
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/bt_last.in");
+        IntStream inputStreamV = inReader.getIntStream("v");
+        UnitStream inputStreamR = inReader.getUnitStream("r");
+        Reader outReader = Reader("../test/data/bt_last.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
         int sizeAllocated = (size_t) size * sizeof(int);
-
-        int inTimestamps[3];
-        int inInts[3];
-        int unitInTimestamps[5];
-        int outTimestamps[4];
-        int outInts[4];
-
-        inTimestamps[0] = 3;
-        inTimestamps[1] = 6;
-        inTimestamps[2] = 8;
-
-        inInts[0] = 1;
-        inInts[1] = 3;
-        inInts[2] = 6;
-
-        unitInTimestamps[0] = 0;
-        unitInTimestamps[1] = 2;
-        unitInTimestamps[2] = 4;
-        unitInTimestamps[3] = 5;
-        unitInTimestamps[4] = 9;
-
-        outTimestamps[0] = 4;
-        outTimestamps[1] = 5;
-        outTimestamps[2] = 9;
-
-        outInts[0] = 1;
-        outInts[1] = 1;
-        outInts[2] = 6;
-
         int *host_timestampOut = (int *) malloc(size * sizeof(int));
         int *host_valueOut = (int*) malloc(size * sizeof(int));
         memset(host_timestampOut, 0, sizeAllocated);
         memset(host_valueOut, 0, sizeAllocated);
-
-        IntStream inputStream(inTimestamps, inInts, size);
-        UnitStream unitInputStream(unitInTimestamps, size);
         IntStream outputStream(host_timestampOut, host_valueOut, size);
 
-        inputStream.copy_to_device();
-        unitInputStream.copy_to_device();
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
         outputStream.copy_to_device();
-
-        // last(&inputStream, &unitInputStream, &outputStream, 0); // Not working right now
-
+        //last(&inputStreamV, &inputStreamR, &outputStream, 0); // TODO: Not working right now
         outputStream.copy_to_host();
 
-/*
-        for (int i = 0; i < 3; i++) {
-            REQUIRE(outputStream.host_timestamp[i] == outTimestamps[i]);
-            REQUIRE(outputStream.host_values[i] == outInts[i]);
+        // Compare kernel result to correct data
+        for (int i = 0; i < size; i++) {
+            REQUIRE(outputStream.host_timestamp[i] == CORRECT_STREAM.host_timestamp[i]);
+            REQUIRE(outputStream.host_values[i] == CORRECT_STREAM.host_values[i]);
         }
-        */
 
         // Cleanup
-        inputStream.free_device();
-        unitInputStream.free_device();
+        inputStreamV.free_device();
+        inputStreamR.free_device();
         outputStream.free_device();
         free(host_valueOut);
         free(host_timestampOut);
