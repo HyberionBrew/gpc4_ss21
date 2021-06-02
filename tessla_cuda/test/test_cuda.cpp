@@ -1,5 +1,6 @@
 #include <string.h>
 #include "../../test/catch2/catch.hpp"
+#include "../src/Reader.cuh"
 #include "../src/Stream.cuh"
 #include "../src/StreamFunctions.cuh"
 
@@ -124,4 +125,33 @@ TEST_CASE("Basic tests") {
         free(host_valueOut);
         free(host_timestampOut);
     }
+}
+
+TEST_CASE("Reader (bt_delay.in)") {
+    Reader reader = Reader("../test/data/bt_delay.in");
+
+    SECTION("Read existing IntStream correctly") {
+        int CORRECT_STREAM_SIZE = 6;
+        int CORRECT_STREAM_TIMESTAMPS[CORRECT_STREAM_SIZE] = {1, 2, 3, 4, 6, 7};
+        int CORRECT_STREAM_INTS[CORRECT_STREAM_SIZE] = {1, 2, 4, 1, 2, 3};
+
+        IntStream dStream = reader.getIntStream("d");
+        REQUIRE(dStream.size == CORRECT_STREAM_SIZE);
+        for (int i = 0; i < CORRECT_STREAM_SIZE; i++) {
+            REQUIRE(dStream.host_timestamp[i] == CORRECT_STREAM_TIMESTAMPS[i]);
+            REQUIRE(dStream.host_values[i] == CORRECT_STREAM_INTS[i]);
+        }
+    }
+
+    SECTION("Read existing UnitStream correctly") {
+        int CORRECT_STREAM_SIZE = 3;
+        int CORRECT_STREAM_TIMESTAMPS[CORRECT_STREAM_SIZE] = {2, 7, 8};
+
+        UnitStream dStream = reader.getUnitStream("r");
+        REQUIRE(dStream.size == CORRECT_STREAM_SIZE);
+        for (int i = 0; i < CORRECT_STREAM_SIZE; i++) {
+            REQUIRE(dStream.host_timestamp[i] == CORRECT_STREAM_TIMESTAMPS[i]);
+        }
+    }
+
 }
