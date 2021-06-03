@@ -51,15 +51,29 @@ TEST_CASE("Basic Stream Operations") {
     }
 
     SECTION("bt_time") {
-        Reader inReader = Reader("../test/data/bt_time.in");
-        IntStream xStreamIn = inReader.getIntStream("x");
+        SECTION("bt_time small dataset") {
+            Reader inReader = Reader("../test/data/bt_time.in");
+            IntStream xStreamIn = inReader.getIntStream("x");
 
-        Reader outReader = Reader("../test/data/bt_time.out");
-        IntStream intendedResult = outReader.getIntStream("x");
+            Reader outReader = Reader("../test/data/bt_time.out");
+            IntStream intendedResult = outReader.getIntStream("x");
 
-        IntStream result = time(xStreamIn);
+            IntStream result = time(xStreamIn);
 
-        REQUIRE(result == intendedResult);
+            REQUIRE(result == intendedResult);
+        }
+
+        SECTION("bt_time bigger dataset") {
+            Reader inReader = Reader("../test/data/bt_time.bigger.in");
+            IntStream xStreamIn = inReader.getIntStream("z");
+
+            Reader outReader = Reader("../test/data/bt_time.bigger.out");
+            IntStream intendedResult = outReader.getIntStream("y");
+
+            IntStream result = time(xStreamIn);
+
+            REQUIRE(result == intendedResult);
+        }
     }
 
 }
