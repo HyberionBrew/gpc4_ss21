@@ -275,17 +275,12 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
  *
  * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
  */
-void merge(int* s1_ts, int* s2_ts, int* out_ts, int threads, cudaStream_t stream){
-    // Using the pseudo-code in the paper
-    int a_len = sizeof(s1_ts) / sizeof(s1_ts[0]);
-    int b_len = sizeof(s2_ts) / sizeof(s2_ts[0]);
-    int a_diag[threads];
-    int b_diag[threads];
+void merge(int *s1_h, int *s2_h, int *out_h, int threads){
 
-    for (size_t i = 0; i < threads; i++){
+    /*for (size_t i = 0; i < threads; i++){
         a_diag[i] = a_len;
         b_diag[i] = b_len;
-    }
+    }*/
     int block_size = 1;
     int blocks = 1;
 
@@ -308,13 +303,89 @@ void merge(int* s1_ts, int* s2_ts, int* out_ts, int threads, cudaStream_t stream
             break;
         }
     }
-    //merge_cuda<<<blocks, block_size, 0, stream>>>();
-    //
+
+    // Using the pseudo-code in the paper
+    int a_len = sizeof(s1_h) / sizeof(s1_h[0]);
+    int b_len = sizeof(s2_h) / sizeof(s2_h[0]);
+    int *a_diag;
+    int *b_diag;
+    int *s1_d, *s2_d, *out_d;
+
+    // Diag arrays for the algorithm
+    cudaMalloc((void**) &a_diag, threads*sizeof(int));
+    cudaMalloc((void**) &b_diag, threads*sizeof(int));
+
+    // cudaMalloc Timestamp arrays
+    cudaMalloc((void**) &s1_d, a_len*sizeof(int));
+    cudaMalloc((void**) &s2_d, b_len*sizeof(int));
+    cudaMalloc((void**) &out_d, (a_len+b_len)*sizeof(int));
+
+    // Copy input arrays to device
+    cudaMemcpy(s1_d, s1_h, a_len*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(s2_d, s2_h, a_len*sizeof(int), cudaMemcpyHostToDevice);
+
+    // 3, 2, 1, go
+    merge_cuda<<<blocks, block_size>>>(s1_d, s2_d, out_d);
+
 }
 
-__global__ void merge_cuda(int* s1_ts, int* s2_ts, int* out_ts, int threads){
+__global__ void merge_cuda(int *a, int *b, int *c, int *a_diag, int *b_diag){
+    // Thread
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
+
     // Just using UnitStreams for now
+    int threads = sizeof(a_diag)/sizeof(a_diag[0]);
+    int a_len = sizeof(a) / sizeof(a[0]);
+    int b_len = sizeof(b) / sizeof(b[0]);
+    int index = (i * (a_len + b_len)) / threads;
+
+    int a_top = index > a_len ? a_len : index;
+    int b_top = index > a_len ? a_len - index : 0;
+    int a_bottom = b_top;
+/**
+ * while true do
+of f set ⇐ (a top − a bottom )/2
+a i ⇐ a top − of f set
+b i ⇐ b top + of f set
+if A[a i ] > B[b i − 1] then
+if A[a i − 1] > B[b i ] then
+A diag [i] ⇐ a i
+B diag [i] ⇐ b i
+else
+a top ⇐ a i − 1
+b top ⇐ b i + 1
+end if
+else
+a bottom ⇐ a i + 1
+end if
+end while
+end for
+for each i in threads in parallel do
+merge(A, A diag [i], B, B diag [i], C, i ∗ length/threads)
+end for
+ */
+
+    // Binary search
+    while(true){
+        int offset = (a_top - a_bottom) / 2;
+        int a_i = a_top - offset;
+        int b_i = b_top + offset;
+        if (a[a_i] > b[b_i - 1]){
+            if (a[a_i - 1] > b[b_i]){
+                a_diag[i] = a_i;
+                b_diag[i] = b_i;
+                break;
+            }
+            else{
+                a_top = a_i - 1;
+                b_top = b_i + 1;
+            }
+        }
+        else{
+            a_bottom = a_i + 1;
+        }
+    }
+
 
 
 }
