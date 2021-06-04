@@ -275,7 +275,7 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
  *
  * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
  */
-void merge(int *s1_h, int *s2_h, int *out_h, int threads){
+void merge(int *s1_h, int *s2_h, int threads){
 
     /*for (size_t i = 0; i < threads; i++){
         a_diag[i] = a_len;
@@ -327,66 +327,116 @@ void merge(int *s1_h, int *s2_h, int *out_h, int threads){
     // 3, 2, 1, go
     merge_cuda<<<blocks, block_size>>>(s1_d, s2_d, out_d);
 
+    // Copy back results
+    int out_size = (a_len + b_len) * sizeof(int);
+    int *out_h = (int*)malloc(out_size);
+    cudaMemcpy(out_h, out_d, out_size, cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < out_size; i++){
+        std::cout << out_h[i] << ", ";
+    }
+    std::cout << std::endl;
 }
 
-__global__ void merge_cuda(int *a, int *b, int *c, int *a_diag, int *b_diag){
-    // Thread
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;
-
+__device__ merge_path(int *a, int *b, int diag, int a_len, int b_len) {
     // Just using UnitStreams for now
-    int threads = sizeof(a_diag)/sizeof(a_diag[0]);
-    int a_len = sizeof(a) / sizeof(a[0]);
-    int b_len = sizeof(b) / sizeof(b[0]);
-    int index = (i * (a_len + b_len)) / threads;
-
-    int a_top = index > a_len ? a_len : index;
-    int b_top = index > a_len ? a_len - index : 0;
-    int a_bottom = b_top;
-/**
- * while true do
-of f set ⇐ (a top − a bottom )/2
-a i ⇐ a top − of f set
-b i ⇐ b top + of f set
-if A[a i ] > B[b i − 1] then
-if A[a i − 1] > B[b i ] then
-A diag [i] ⇐ a i
-B diag [i] ⇐ b i
-else
-a top ⇐ a i − 1
-b top ⇐ b i + 1
-end if
-else
-a bottom ⇐ a i + 1
-end if
-end while
-end for
-for each i in threads in parallel do
-merge(A, A diag [i], B, B diag [i], C, i ∗ length/threads)
-end for
- */
+    int begin = max(0, diag - b_len);               // Start of search window
+    int end = min(diag, a_len);                     // End of search window
 
     // Binary search
-    while(true){
-        int offset = (a_top - a_bottom) / 2;
-        int a_i = a_top - offset;
-        int b_i = b_top + offset;
-        if (a[a_i] > b[b_i - 1]){
-            if (a[a_i - 1] > b[b_i]){
-                a_diag[i] = a_i;
-                b_diag[i] = b_i;
-                break;
-            }
-            else{
-                a_top = a_i - 1;
-                b_top = b_i + 1;
+    while(begin < end){
+        int mid = (end - begin) / 2;
+        int a_val = a[mid];
+        int b_val = b[diag - 1 - mid];
+
+        if (a_val < b_val) {
+            begin = mid + 1;
+        }
+        else{
+            end = mid;
+        }
+    }
+    return begin;
+}
+
+// Device internal sequential merge of small partitions
+__device__ void merge_serial(int *a, int *b, int *c,
+                             int a_start, int b_start,
+                             int vpt, int tidx,
+                             int a_len, int b_len){
+    int a_i = a_start;
+    int b_i = b_start;
+    int a_val = a[a_i];
+    int b_val = b[b_i];
+
+    bool a_done = false;
+    bool b_done = false;
+
+    // Could possibly be optimized since only the last block needs range checks
+    // #pragma unroll is also an option according to https://moderngpu.github.io/merge.html
+    for(int i = 0; i < vpt; ++i) {
+        // Break if last block doesn't fit
+        if (a_done && b_done){
+            break;
+        }
+
+        if (a_done){
+            c[tidx*vpt + i] = b_val;
+            b_i++;
+        }
+        else if (b_done){
+            c[tidx*vpt + i] = a_val;
+            a_i++;
+        }
+        else if (a_val <= b_val){
+            c[tidx*vpt + i] = a_val;
+            a_i++;
+            if (a_val == b_val){
+                // Invalidate b values with overlapping timestamps
+                b_val = -1;
+                b[b_i] = -1;
             }
         }
         else{
-            a_bottom = a_i + 1;
+            c[tidx*vpt + i] = b_val;
+            b_i++;
+        }
+
+        if (a_i >= a_len){
+            a_done = true;
+        }
+        else{
+            a_val = a[a_i];
+        }
+
+        if (b_i >= b_len){
+            b_done = true;
+        }
+        else{
+            b_val = b[b_i];
         }
     }
-
-
-
+    __syncthreads();
 }
+
+// https://moderngpu.github.io/merge.html
+// https://github.com/moderngpu/moderngpu/blob/V1.1/include/device/ctamerge.cuh
+__global__ void merge_cuda(int *a, int *b, int *c, int threads){
+    // Thread
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+    int a_len = sizeof(a) / sizeof(a[0]);           // Length of input a
+    int b_len = sizeof(b) / sizeof(b[0]);           // Length of input b
+    int vpt = (a_len + b_len) / threads;            // Values per thread
+    int diag = i * vpt;                             // Binary search constraint
+
+    int intersect = merge_path(a, b, diag);
+    int a_start = intersect;
+    int b_start = diag - intersect;
+
+    merge_serial(a, b, c, a_start, b_start, vpt, i);
+}
+
+
+
 
