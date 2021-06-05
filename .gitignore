@@ -155,7 +155,11 @@ fabric.properties
 *.fatbin
 tessla_cuda/profiler/temp_profiler/
 test/run_test
+# CMake
+CMakeCache.txt
+CMakeFiles/
 
 *.o
 tessla_seq/bin
 vm/bin
+/compiler/target/
