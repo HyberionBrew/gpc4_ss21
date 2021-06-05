@@ -178,64 +178,54 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
     if (tid == 0) *valid=*valid+sdata[0];
 }
 
-//we should also hand this function the number of invalid input values! -> we have invalid values!
-//TODO! IMPORTANT CURRENTLY ONLY WORKING ON COMPLETE STREAMS think about it!
 __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned int tid = threadIdx.x;
     //shift accordingly to offset
-    unit_stream_timestamps += *offsUnit;
 
+
+    unit_stream_timestamps += *offsUnit;
     input_timestamp += *offsInt;
     input_values += *offsInt;
 
     size -= *offsUnit;
     intStreamSize -= *offsInt;
     output_timestamps[i] = INT_MIN;
-
     output_timestamps += *offsUnit;
     output_values += *offsUnit;
     int out =  INT_MIN;
-
     __syncthreads(); //should be irrelevant
     if (i<size) {
-
         int local_unit_timestamp = unit_stream_timestamps[i];
         __shared__ int sdata[1024];
-
-       //printf("data %d \n",*(sdata));
-        int L = 0; //TODO! = offsetIntStream;
-        int R = intStreamSize;
+        int L = 0;
+        int R = intStreamSize-1;
         int m;
-
-        //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
-
         while (L<=R) {
-            // is this needed? TODO! check and discuss
-            //maybe it helps? CHECK!
            __syncthreads();
             m = (int) (L+R)/2;
+
             if (input_timestamp[m]<local_unit_timestamp){
                 L = m + 1;
                 out = input_values[m];
+
                 output_timestamps[i] = unit_stream_timestamps[i];
-                //output_values[i] = input_values[m];
             }
             else if (input_timestamp[m]>=local_unit_timestamp){
                 R = m -1;
             }
             else{
-                // how to handle == ? look up!
                 out = input_values[m];
                 output_timestamps[i] = unit_stream_timestamps[i];
                 break;
             }
         }
+       //
+
         output_values[i] = out;
         block_red[blockIdx.x] = *offsUnit;
         count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
     }
-
 }
 
 // working
@@ -275,12 +265,14 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
  *
  * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
  */
+ /*
 void merge(int *s1_h, int *s2_h, int threads){
 
     /*for (size_t i = 0; i < threads; i++){
         a_diag[i] = a_len;
         b_diag[i] = b_len;
-    }*/
+    }*//*
+
     int block_size = 1;
     int blocks = 1;
 
@@ -357,7 +349,7 @@ __device__ merge_path(int *a, int *b, int diag, int a_len, int b_len) {
         }
     }
     return begin;
-}
+}*/
 
 // Device internal sequential merge of small partitions
 __device__ void merge_serial(int *a, int *b, int *c,
@@ -421,6 +413,7 @@ __device__ void merge_serial(int *a, int *b, int *c,
 
 // https://moderngpu.github.io/merge.html
 // https://github.com/moderngpu/moderngpu/blob/V1.1/include/device/ctamerge.cuh
+/*
 __global__ void merge_cuda(int *a, int *b, int *c, int threads){
     // Thread
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -435,7 +428,7 @@ __global__ void merge_cuda(int *a, int *b, int *c, int threads){
     int b_start = diag - intersect;
 
     merge_serial(a, b, c, a_start, b_start, vpt, i);
-}
+}*/
 
 
 
