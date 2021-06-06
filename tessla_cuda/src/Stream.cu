@@ -13,6 +13,7 @@ IntStream::IntStream(int *timestamp,int *value, size_t size, int offs) {
     //TODO! this is per object tf. problems
     this->host_offset = (int *) malloc(size* sizeof(int));
     *this->host_offset = offs;
+    onDevice =false;
 
 }
 IntStream::IntStream(int *timestamp,int *value, size_t size) {
@@ -22,21 +23,20 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
     //TODO! this is per object tf. problems
     this->host_offset = (int *) malloc(size* sizeof(int));
     memset( this->host_offset,0,sizeof(int));
+    onDevice =false;
 
 }
 //DEVICE ONLY dont use
 // THIS CAN BE DELETED!
-IntStream::IntStream(bool deviceOnly, size_t size) {
-    if (deviceOnly) {
-        int sizeAllocate = this->size * sizeof(int);
-        this->size = size;
-        CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
-        CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
-    }
-    else{
-        printf("U are using this function wrong, just creates uninitalized stream ONLY on device (i.e. can not be copied back)");
-        exit(1);
-    }
+IntStream::IntStream() {
+    this->host_offset = (int *) malloc(size* sizeof(int));
+    memset( this->host_offset,0,sizeof(int));
+    onDevice =false;
+}
+UnitStream::UnitStream() {
+    this->host_offset = (int *) malloc(size* sizeof(int));
+    memset( this->host_offset,0,sizeof(int));
+    onDevice =false;
 }
 
 void IntStream::print() {
@@ -54,12 +54,15 @@ void IntStream::free_device(){
     CHECK(cudaFree(this->device_values));
     CHECK(cudaFree(this->device_offset));
     free(this->host_offset);
+    //free(this->host_timestamp);
+    //free(this->host_values);
 }
 
 //TODO! implement Staged concurrent copy and execute
 //https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations
 // i.e. maybe have a function that doesnt just copy but also performs function?
 void IntStream::copy_to_device(){
+    onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
 
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -100,6 +103,7 @@ UnitStream::UnitStream(int*timestamp,size_t size, int offs) {
     this->size = size;
     this->host_offset = (int *) malloc(size* sizeof(int));
     *this->host_offset = offs;
+    onDevice =false;
 }
 
 UnitStream::UnitStream(int*timestamp,size_t size) {
@@ -107,16 +111,19 @@ UnitStream::UnitStream(int*timestamp,size_t size) {
     this->size = size;
     this->host_offset = (int *) malloc(size* sizeof(int));
     memset( this->host_offset,0,sizeof(int));
+    onDevice =false;
 }
 
 
 void UnitStream::free_device(){
     CHECK(cudaFree(this->device_timestamp));
     CHECK(cudaFree(this->device_offset));
+   // free(this->host_timestamp);
     free(this->host_offset);
 }
 
 void UnitStream::copy_to_device(){
+    onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));

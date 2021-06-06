@@ -6,7 +6,7 @@
 #include "../src/StreamFunctions.cuh"
 TEST_CASE("delay()"){
     SECTION("delay() tuwel example"){
-        
+
     }
 }
 
@@ -23,17 +23,11 @@ TEST_CASE("last()"){
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
-        int sizeAllocated = (size_t)  inputStreamR.size * sizeof(int);
-        int *host_timestampOut = (int *) malloc( inputStreamR.size * sizeof(int));
-        int *host_valueOut = (int*) malloc( inputStreamR.size * sizeof(int));
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-        IntStream outputStream(host_timestampOut, host_valueOut, inputStreamR.size);
+        IntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
-        outputStream.copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
@@ -53,8 +47,6 @@ TEST_CASE("last()"){
         inputStreamV.free_device();
         inputStreamR.free_device();
         outputStream.free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
     }
 
     SECTION("last() small random example") {
@@ -68,17 +60,12 @@ TEST_CASE("last()"){
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
         //printf("%d \n\n",  CORRECT_STREAM.size);
-        int sizeAllocated = (size_t)  inputStreamR.size * sizeof(int);
-        int *host_timestampOut = (int *) malloc( inputStreamR.size * sizeof(int));
-        int *host_valueOut = (int*) malloc( inputStreamR.size * sizeof(int));
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-        IntStream outputStream(host_timestampOut, host_valueOut, inputStreamR.size);
+
+        IntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
-        outputStream.copy_to_device();
         //inputStreamV.print();
         //inputStreamR.print();
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
@@ -99,8 +86,6 @@ TEST_CASE("last()"){
         inputStreamV.free_device();
         inputStreamR.free_device();
         outputStream.free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
     }
 
     SECTION("last() large random example") {
@@ -112,18 +97,11 @@ TEST_CASE("last()"){
         IntStream CORRECT_STREAM = outReader.getIntStream("y");
 
         // Prepare empty output stream to fill
-        int size = CORRECT_STREAM.size;
-        int sizeAllocated = (size_t)  inputStreamR.size * sizeof(int);
-        int *host_timestampOut = (int *) malloc( inputStreamR.size * sizeof(int));
-        int *host_valueOut = (int*) malloc( inputStreamR.size * sizeof(int));
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-        IntStream outputStream(host_timestampOut, host_valueOut, inputStreamR.size);
+        IntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
-        outputStream.copy_to_device();
         //inputStreamV.print();
         //inputStreamR.print();
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
@@ -147,8 +125,6 @@ TEST_CASE("last()"){
         inputStreamV.free_device();
         inputStreamR.free_device();
         outputStream.free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
     }
 
     SECTION("last() twice test with no invalids") {
@@ -163,25 +139,13 @@ TEST_CASE("last()"){
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
-        int sizeAllocated = (size_t)  inputStreamR.size * sizeof(int);
-        int *host_timestampOut = (int *) malloc( inputStreamR.size * sizeof(int));
-        int *host_valueOut = (int*) malloc( inputStreamR.size * sizeof(int));
 
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
 
-        int *host_timestampOut2 = (int *) malloc( inputStream2.size * sizeof(int));
-        int *host_valueOut2 = (int*) malloc( inputStream2.size * sizeof(int));
-
-        memset(host_timestampOut2, 0, inputStream2.size * sizeof(int));
-        memset(host_valueOut2, 0, inputStream2.size * sizeof(int));
-        IntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
-        IntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
+        IntStream intermediateStream;
+        IntStream outputStream;
         // Run kernel
-        intermediateStream.copy_to_device();
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
-        outputStream.copy_to_device();
         inputStream2.copy_to_device();
 
         last(&inputStreamV, &inputStreamR, &intermediateStream, 0);
@@ -207,10 +171,6 @@ TEST_CASE("last()"){
         intermediateStream.free_device();
         outputStream.free_device();
         inputStream2.free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
-        free(host_valueOut2);
-        free(host_timestampOut2);
     }
 
     SECTION("last() twice test with invalids in Unit Stream") {
@@ -362,16 +322,12 @@ TEST_CASE("Basic Stream Operations") {
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
-            int sizeAllocated = (size_t) size * sizeof(int);
-            int *host_timestampOut = (int *) malloc(size * sizeof(int));
-            int *host_valueOut = (int*) malloc(size * sizeof(int));
-            memset(host_timestampOut, 0, sizeAllocated);
-            memset(host_valueOut, 0, sizeAllocated);
-            IntStream outputStream(host_timestampOut, host_valueOut, size);
+
+            IntStream outputStream; //(host_timestampOut, host_valueOut, size);
 
             // Run kernel
             inputStream.copy_to_device();
-            outputStream.copy_to_device();
+            //outputStream.copy_to_device();
             time(&inputStream, &outputStream, 0);
             outputStream.copy_to_host();
 
@@ -386,8 +342,6 @@ TEST_CASE("Basic Stream Operations") {
             // Cleanup
             inputStream.free_device();
             outputStream.free_device();
-            free(host_valueOut);
-            free(host_timestampOut);
         }
         
         SECTION("time() with bigger dataset (~109k/250k events)") {
@@ -399,12 +353,8 @@ TEST_CASE("Basic Stream Operations") {
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
-            int sizeAllocated = (size_t) size * sizeof(int);
-            int *host_timestampOut = (int *) malloc(size * sizeof(int));
-            int *host_valueOut = (int*) malloc(size * sizeof(int));
-            memset(host_timestampOut, 0, sizeAllocated);
-            memset(host_valueOut, 0, sizeAllocated);
-            IntStream outputStream(host_timestampOut, host_valueOut, size);
+
+            IntStream outputStream;
 
             // Run kernel
             inputStream.copy_to_device();
@@ -423,8 +373,6 @@ TEST_CASE("Basic Stream Operations") {
             // Cleanup
             inputStream.free_device();
             outputStream.free_device();
-            free(host_valueOut);
-            free(host_timestampOut);
         }
     }
     

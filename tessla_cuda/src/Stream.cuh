@@ -30,7 +30,9 @@ public:
 
     int * host_offset;
     int * device_offset;
+    bool onDevice;
     IntStream(int *timestamp,int *value, size_t size);
+    IntStream();
     IntStream(int *timestamp,int *value, size_t size, int offs);
     //just allocate on host
 
@@ -45,11 +47,12 @@ public:
 class UnitStream  {
 public:
     size_t size;
-    bool OnDevice;
+    bool onDevice;
     int * host_timestamp;
     int * device_timestamp;
     int * host_offset;
     int * device_offset;
+    UnitStream();
     UnitStream(int *timestamp, size_t size);
     UnitStream(int *timestamp, size_t size,int offs);
     void copy_to_device();

@@ -19,59 +19,6 @@
 
 __device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
 
-// https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
-// ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
-// Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
-void time(IntStream *input, IntStream *result,cudaStream_t stream){
-    //already malloced on host at this time
-    //are both streams allocated on the device?
-
-    //TODO! asynchronous copying to the device could be done here!
-    // check if already on device! if not copy it to device asynchronously and
-    // launch kernels piecewise as in
-    // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices 10.5
-
-    //choose block sizes
-    // spawn threads in increments of 32
-    int threads = input->size;
-    //shift block size until 1024 than shift block size until maximal? Do we have to schedule twice
-    int block_size = 1;
-    int blocks = 1;
-
-    //cannot schedule all at once
-    // 10.3. Thread and Block Heuristics
-    // The number of threads per block should be a multiple of 32 threads
-    if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
-        printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
-        //return;
-    }
-
-    for (int bs = 32; bs <= MAX_THREADS_PER_BLOCK;bs +=32){
-        if (block_size > threads){
-            break;
-        }
-        block_size = bs;
-    }
-    //TODO! check how many MAX_BLOCKS and
-    for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
-        blocks = bl;
-        if (bl*block_size > threads){
-            break;
-        }
-    }
-
-    //create kernel memory
-
-    //the pointers are now surely on device
-    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
-
-
-    //kernel free
-    printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
-
-};
-
-
 void calcThreadsBlocks(int threads, int *block_size, int*blocks){
     *block_size = 1;
     *blocks = 1;
@@ -102,11 +49,49 @@ void calcThreadsBlocks(int threads, int *block_size, int*blocks){
     }
 }
 
+// https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
+// ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
+// Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
+void time(IntStream *input, IntStream *result,cudaStream_t stream){
+    int threads = input->size;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+    //set output stream to input stream size
+    if (!result->onDevice) {
+        int sizeAllocated = input->size * sizeof(int);
+        result->size = input->size;
+        result->host_timestamp = (int *) malloc(input->size * sizeof(int));
+        result->host_values = (int *) malloc(input->size * sizeof(int));
+        memset(result->host_timestamp, 0, sizeAllocated);
+        memset(result->host_values, 0, sizeAllocated);
+        result->copy_to_device();
+    }
+    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
+    printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
+};
+
+
+
+
 void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
     int threads = (int) inputUnit->size;
     int block_size =1;
     int blocks = 1;
     calcThreadsBlocks(threads,&block_size,&blocks);
+
+    //copy result vector to device
+    if (!result->onDevice) {
+        //TODO! where do we free this?
+        int sizeAllocated = inputUnit->size * sizeof(int);
+        result->size = inputUnit->size;
+        result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
+        result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
+        memset(result->host_timestamp, 0, sizeAllocated);
+        memset(result->host_values, 0, sizeAllocated);
+        result->copy_to_device();
+    }
+
     int* block_red;
     cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
