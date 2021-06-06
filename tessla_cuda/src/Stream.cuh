@@ -57,6 +57,7 @@ public:
     UnitStream(int *timestamp, size_t size);
     UnitStream(int *timestamp, size_t size,int offs);
     void copy_to_device();
+    void copy_to_device(bool valid);
     void copy_to_host();
     void free_device();
     void print();

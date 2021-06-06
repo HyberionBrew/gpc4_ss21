@@ -149,6 +149,18 @@ void UnitStream::copy_to_device(){
 
 }
 
+void UnitStream::copy_to_device(bool valid){
+    onDevice =true;
+    int sizeAllocate = this->size * sizeof(int);
+    CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
+    CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
+    if (valid == true) {
+        CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
+        CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
+    }
+}
+
+
 void UnitStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
