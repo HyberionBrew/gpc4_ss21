@@ -37,7 +37,7 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
         result->host_values = (int *) malloc(input->size * sizeof(int));
         memset(result->host_timestamp, 0, sizeAllocated);
         memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device();
+        result->copy_to_device(false);
     }
     time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
     printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
@@ -61,7 +61,7 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
         result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
         memset(result->host_timestamp, 0, sizeAllocated);
         memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device();
+        result->copy_to_device(false);
     }
 
     int* block_red;

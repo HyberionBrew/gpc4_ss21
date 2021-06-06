@@ -61,6 +61,22 @@ void IntStream::free_device(){
 //TODO! implement Staged concurrent copy and execute
 //https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations
 // i.e. maybe have a function that doesnt just copy but also performs function?
+void IntStream::copy_to_device(bool valid){
+    onDevice =true;
+    int sizeAllocate = this->size * sizeof(int);
+
+    CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
+    CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
+    CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
+    // Async copying - However excectution of the kernel waits for it to complete! (since default stream 0 is used!)
+    // However CPU continues
+    if (valid == true) {
+        CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
+        CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
+        CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));
+    }
+}
+
 void IntStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
@@ -75,6 +91,7 @@ void IntStream::copy_to_device(){
     CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));
 
 }
+
 
 void IntStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);

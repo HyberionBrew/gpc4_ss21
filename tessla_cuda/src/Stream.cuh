@@ -36,6 +36,7 @@ public:
     IntStream(int *timestamp,int *value, size_t size, int offs);
     //just allocate on host
 
+    void copy_to_device(bool valid);
     void copy_to_device();
     void copy_to_host();
     void free_device();

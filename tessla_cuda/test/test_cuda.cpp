@@ -8,6 +8,13 @@ TEST_CASE("delay()"){
     SECTION("delay() tuwel example"){
 
     }
+    SECTION("larger delay() test"){
+
+    }
+
+    SECTION("3 delays with multiple invalids"){
+
+    }
 }
 
 
