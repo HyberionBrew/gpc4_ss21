@@ -116,13 +116,8 @@ __global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *input
     inputIntValues += *offset;
     resetTimestamps += *resetOffset;
 
-    int m = 0;
-    int lastIntElement = size;
-    
-    while (resetTimestamps[m] <= inputIntTimestamps[i] && m <= resetSize) {
-        m++; // TODO: Use binary search
-    }
-    if (inputIntTimestamps[i] + inputIntValues[i] > resetTimestamps[m])
+    int m = lookUpNextElement(resetSize, inputIntTimestamps[i], resetTimestamps);
+    if (m > -1 && inputIntTimestamps[i] + inputIntValues[i] > resetTimestamps[m])
         inputIntValues[i] = -1;
 
 }
@@ -157,6 +152,30 @@ __device__ int lookUpElement(int size,int searchValue, int * input_timestamp){
     return out;
 }
 
+// Binary search looking for next highest timestamp instead of exact match
+__device__ int lookUpNextElement(int size, int searchValue, int *timestamps) {
+    int L = 0;
+    int R = size - 1;
+    int m = INT_MIN;
+    int out = INT_MIN;
+    //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
+
+    if (timestamps[size-1] > searchValue) {
+        while (L<=R) {
+            // is this needed? TODO! check and discuss
+            //maybe it helps? CHECK!
+            __syncthreads();
+            m = (int) (L+R)/2;
+            if (timestamps[m] <= searchValue) {
+                L = m + 1;
+            } else {
+                out = m;
+                R = m - 1;
+            }
+        }
+    }
+    return out;
+}
 
 
 __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset,cudaStream_t stream) {
