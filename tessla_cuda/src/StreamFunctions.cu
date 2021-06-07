@@ -172,12 +172,6 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
         results[i] = -1;
     }
 }
-    if (i == 0){
-        cudaFree(initalArray);
-    }
-
-
-}
 
 __device__ void delay_cuda_rec(){
 
@@ -414,18 +408,6 @@ __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* out
     if (i == 0) *resultOffset = *offset;
 }
 
-__global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size){
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    //search for timestamps[i] value in unitEvents. If found:
-    // counterTarget = input_values[i]
-    // counter = 0
-    // while (counter != counterTarget)
-    //  counter++;
-    //  if unitEvent at counter+
-    //      reset //i.e. return
-    //  if
-    //
-}
 
 // https://stackoverflow.com/questions/30729106/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
 /**
