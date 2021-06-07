@@ -20,6 +20,104 @@
 __device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
 
 void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
+    // Prune IntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
+    delay_preliminary_prune(s, r, stream);
+
+    // Allocate arrays for search and set reset-UnitStream as first input
+    // New output events in each iteration are bounded by size of r
+    int *prevResultsTimestamps = (int*) malloc(r->size * sizeof(int));
+    memcpy(prevResultsTimestamps, r->host_timestamp, r->size * sizeof(int));
+    UnitStream prevResults(prevResultsTimestamps, r->size);
+    prevResults.copy_to_device();
+    *prevResults.host_offset = (int) r->size;
+
+    int *tempResultsTimestamps = (int*) malloc(r->size * sizeof(int));
+    UnitStream tempResults(tempResultsTimestamps, r->size);
+    tempResults.copy_to_device();
+
+    int resultIndex = 0; // TODO: Change?
+    int prevResultsCount = r->size; // TODO: Change?
+    *result->host_offset = (int) result->size; // TODO: Change?
+
+    // Iteratively search for new output events
+    while (prevResultsCount > 0) {
+        int threads = prevResultsCount;
+        int block_size = 1;
+        int blocks = 1;
+        calcThreadsBlocks(threads, &block_size, &blocks);
+
+        printf("Scheduled delay() with <<<%d,%d>>>, %i threads \n",blocks,block_size, threads);
+        delay_cuda<<<blocks, block_size, 0, stream>>>(s->device_timestamp, s->device_values, prevResults.device_timestamp, tempResults.device_timestamp, threads, s->size, s->device_offset, prevResults.device_offset, tempResults.device_offset, stream);
+        tempResults.copy_to_host(); 
+
+        // Merge output events into existing output events
+        // Sort tempResults to find actual new events (> -1)
+        // TODO: Use parallel sort, parallel merge and count_valid
+        qsort(tempResults.host_timestamp, threads, sizeof(int), simp_compare); // TODO: Use parallel sort
+        int firstResult = -1;
+        for (int i = 0; i < threads; i++) {
+            //printf("tempResults.host_timestamp[%i] == %i\n", i, tempResults.host_timestamp[i]);
+            if (firstResult == -1 && tempResults.host_timestamp[i] > -1)
+                firstResult = i;
+            if (tempResults.host_timestamp[i] > 0) {
+                // Add tempResults to result. TODO: Change?
+                result->host_timestamp[resultIndex] = tempResults.host_timestamp[i];
+                *result->host_offset -= 1;
+                resultIndex++;
+            }
+        }
+
+        if (firstResult == -1) {
+            prevResultsCount = 0;
+            break; // TODO: ?
+        }
+
+        // Switch prevResults and tempResults to continue search with newly found timestamps
+        prevResultsCount = threads - firstResult;
+        UnitStream temp = prevResults;
+        prevResults = tempResults;
+        tempResults = temp;
+        *prevResults.host_offset = prevResults.size - prevResultsCount;
+        *tempResults.host_offset = 0;
+    }
+
+    // TODO: Sort & prune duplicate result
+    qsort(result->host_timestamp, result->size, sizeof(int), simp_compare); // TODO: Use parallel sort
+    result->copy_to_device();   // Test copies back from device, but result is only on host right now
+    printf("SEARCH DONE, %i Results\n", resultIndex);
+
+    // Cleanup
+    prevResults.free_device();
+    tempResults.free_device();
+    free(prevResultsTimestamps);
+    free(tempResultsTimestamps);
+}
+
+void delay_preliminary_prune(IntStream *s, UnitStream *r, cudaStream_t stream) {
+    int threads = (int) s->size;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+    
+    printf("Scheduled delay_preliminary_prune() with <<<%d,%d>>>, %i threads \n",blocks,block_size, threads);
+    delay_cuda_preliminary_prune<<<blocks, block_size, 0, stream>>>(s->device_timestamp, s->device_values, r->device_timestamp, threads, r->size, s->device_offset, r->device_offset, stream);
+}
+
+__global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int size, int resetSize, int *offset, int *resetOffset, cudaStream_t stream) {
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    unsigned int tid = threadIdx.x;
+    inputIntTimestamps += *offset;
+    inputIntValues += *offset;
+    resetTimestamps += *resetOffset;
+
+    int m = 0;
+    int lastIntElement = size;
+    
+    while (resetTimestamps[m] <= inputIntTimestamps[i] && m <= resetSize) {
+        m++; // TODO: Use binary search
+    }
+    if (inputIntTimestamps[i] + inputIntValues[i] > resetTimestamps[m])
+        inputIntValues[i] = -1;
 
 }
 
@@ -55,28 +153,21 @@ __device__ int lookUpElement(int size,int searchValue, int * input_timestamp){
 
 
 
-// call function recursively first one is different
-__global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* offsInt, int* offsUnit, int*offsResult,int size){
+__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset,cudaStream_t stream) {
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int tid = threadIdx.x;
-    //TODO! shift for non valid values!
-    //one thread per unit stream
-    // in the each iteration we at most! get UnitStream size out
-    // HAVE TO LINK WITH RUNTIME LIBRARY! important!!
-    int* initalArray;
-    //TODO! properly call cuda malloc
-    if (i ==0) {
-        cudaMalloc((int **) &initalArray, sizeof(int) * size); //size is the unitStream size
+    inputIntTimestamps += *inputOffset;
+    inputIntValues += *inputOffset;
+    resetTimestamps += *resetOffset;
+    results += *resultOffset;
+
+    // For each tempEvent, check if there's a matching (valid) event in IntStream s
+    int index = lookUpElement(inputSize, resetTimestamps[i], inputIntTimestamps);
+    if (index != INT_MIN && inputIntValues[index] != -1) {
+        results[i] = inputIntTimestamps[index] + inputIntValues[index];
+    } else {
+        results[i] = -1;
     }
-    if (i < size){
-        //look if exists equivalent timestamp
-        int value = unit_stream_timestamps[i] ;
-        int indexInt = lookUpElement(size, value, input_timestamp);
-        if (indexInt > 0){
-            // if there could be a valid corresponding value found
-            
-        }
-    }
+}
     if (i == 0){
         cudaFree(initalArray);
     }
