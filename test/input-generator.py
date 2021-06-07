@@ -19,6 +19,8 @@ def main():
                         help="weights associated with int streams")
     parser.add_argument("--intmax", dest="intmax", type=int, default=50,
                         help="maximum of range for outputs on int streams")
+    parser.add_argument("--intmin", dest="intmin", type=int, default=1,
+                        help="minimum of range for outputs on int streams")
     parser.add_argument("--output", dest="output", type=argparse.FileType("w"), nargs="?", default=sys.stdout,
                         help="output file name")
 
@@ -39,7 +41,7 @@ def main():
                 args.output.write("{}: {} = ()\n".format(i, name))
         for (name, weight) in intstreams:
             if weight <= random.random():
-                args.output.write("{}: {} = {}\n".format(i, name, random.randint(0, args.intmax)))
+                args.output.write("{}: {} = {}\n".format(i, name, random.randint(args.intmin, args.intmax)))
 
 
 if __name__ == "__main__":
