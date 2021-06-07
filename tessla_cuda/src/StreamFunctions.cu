@@ -244,6 +244,108 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
     //
 }
 
+__device__ int merge_path(int *a, int *b, int diag, int a_len, int b_len) {
+    // Just using UnitStreams for now
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int begin = max(0, diag - b_len);               // Start of search window
+    int end = min(diag, a_len);                     // End of search window
+    int mid;
+
+    // Binary search
+    while(begin < end){
+    
+        mid = (end + begin) / 2;
+        int a_val = a[mid];
+        int b_val = b[diag - 1 - mid];
+
+        if (a_val < b_val) {
+            begin = mid + 1;
+        }
+        else{
+            end = mid;
+        }
+    }
+    return begin;
+}
+
+// Device internal sequential merge of small partitions
+__device__ void merge_serial(int *a, int *b, int *c,
+                             int a_start, int b_start,
+                             int vpt, int tidx,
+                             int a_len, int b_len){
+
+    int a_i = a_start;
+    int b_i = b_start;
+    int a_val = a[a_i];
+    int b_val = b[b_i];
+    int size = vpt;
+
+    bool a_done = a_i >= a_len ? true : false;
+    bool b_done = b_i >= b_len ? true : false;
+
+    // Could possibly be optimized since only the last block needs range checks
+    // #pragma unroll is also an option according to https://moderngpu.github.io/merge.html
+    for(int i = 0; i < vpt; ++i) {
+
+        // Break if last block doesn't fit
+        if (a_done && b_done){
+            break;
+        }
+
+        if (a_done){
+            c[tidx*vpt + i] = b_val;
+            b_i++;
+        }
+        else if (b_done){
+            c[tidx*vpt + i] = a_val;
+            a_i++;
+        }
+        else if (a_val <= b_val){
+            c[tidx*vpt + i] = a_val;
+            a_i++;
+            if (a_val == b_val && (b_i > b_start || tidx == 0)){
+                b[b_i] = -1;
+            }
+           
+        }
+        else{
+            c[tidx*vpt + i] = b_val;
+            b_i++;
+        }
+
+        if (a_i >= a_len){
+            a_done = true;
+        }
+        else{
+            a_val = a[a_i];
+        }
+
+        if (b_i >= b_len){
+            b_done = true;
+        }
+        else{
+            b_val = b[b_i];
+        }
+    }
+
+    __syncthreads();
+
+    if (tidx == 0){
+        // Thread 0 does not have to check its starting values
+        return;
+    }
+
+    // Afterwards, threads have to check for overlapping timestamps in their c[] partition!
+    // VPT > 1 check not really necessary, we should guarantee that VPT > 1 beforehand, otherwise the mergepath is the full merge anyway
+    if (vpt > 1){
+        for (int i = 0; i < vpt; i++){
+            if (c[tidx*vpt + i - 1] == c[tidx*vpt + i]){
+                c[tidx*vpt + i] = -1;
+            }
+        }
+    }
+}
+
 // https://stackoverflow.com/questions/30729106/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
 /**
  * See the following paper for parallel merging of sorted arrays:
@@ -255,13 +357,7 @@ __global__ void delay_cuda(int* input_timestamp, int* input_values,int*unit_stre
  *
  * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
  */
- /*
-void merge(int *s1_h, int *s2_h, int threads){
-
-    /*for (size_t i = 0; i < threads; i++){
-        a_diag[i] = a_len;
-        b_diag[i] = b_len;
-    }*//*
+void merge(UnitStream *s1, UnitStream *s2, UnitStream *result, int threads){
 
     int block_size = 1;
     int blocks = 1;
@@ -278,7 +374,7 @@ void merge(int *s1_h, int *s2_h, int threads){
         }
         block_size = bs;
     }
-    //TODO! check how many MAX_BLOCKS
+
     for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
         blocks = bl;
         if (bl*block_size > threads){
@@ -286,80 +382,62 @@ void merge(int *s1_h, int *s2_h, int threads){
         }
     }
 
-    // Using the pseudo-code in the paper
-    int a_len = sizeof(s1_h) / sizeof(s1_h[0]);
-    int b_len = sizeof(s2_h) / sizeof(s2_h[0]);
-    int *a_diag;
-    int *b_diag;
-    int *s1_d, *s2_d, *out_d;
+    threads = blocks*block_size;
 
-    // Diag arrays for the algorithm
-    cudaMalloc((void**) &a_diag, threads*sizeof(int));
-    cudaMalloc((void**) &b_diag, threads*sizeof(int));
+    // Using the pseudo-code in the paper
+    int a_len = sizeof(s1->host_timestamp) / sizeof(s1->host_timestamp[0]);
+    int b_len = sizeof(s2->host_timestamp) / sizeof(s2->host_timestamp[0]);
+    memset(result->host_timestamp, -1, (a_len + b_len) * sizeof(int));
 
     // cudaMalloc Timestamp arrays
-    cudaMalloc((void**) &s1_d, a_len*sizeof(int));
-    cudaMalloc((void**) &s2_d, b_len*sizeof(int));
-    cudaMalloc((void**) &out_d, (a_len+b_len)*sizeof(int));
+    s1->copy_to_device();
+    s2->copy_to_device();
+    result->copy_to_device();
 
-    // Copy input arrays to device
-    cudaMemcpy(s1_d, s1_h, a_len*sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(s2_d, s2_h, a_len*sizeof(int), cudaMemcpyHostToDevice);
+    int sha_memsize = (a_len + b_len) * sizeof(int);
 
     // 3, 2, 1, go
-    merge_cuda<<<blocks, block_size>>>(s1_d, s2_d, out_d);
+    merge_cuda<<<blocks, block_size, sha_memsize>>>(s1->device_timestamp, s2->device_timestamp, result->device_timestamp, threads, s1->size, s2->size);
 
     // Copy back results
-    int out_size = (a_len + b_len) * sizeof(int);
-    int *out_h = (int*)malloc(out_size);
-    cudaMemcpy(out_h, out_d, out_size, cudaMemcpyDeviceToHost);
-
-    for (int i = 0; i < out_size; i++){
-        std::cout << out_h[i] << ", ";
+    result->copy_to_host();
+    
+    printf("After Merge\n");
+    printf("S1: -----------------------------------------\n");
+    for (int i = 0; i < s1->size; i++){
+        printf("%i, ", s1->host_timestamp[i]);
     }
-    std::cout << std::endl;
+    printf("\n-----------------------------------------------\n");
+
+    printf("S2: -----------------------------------------\n");
+    for (int i = 0; i < s2->size; i++){
+        printf("%i, ", s2->host_timestamp[i]);
+    }
+    printf("\n-----------------------------------------------\n");
+
+    printf("Result: -----------------------------------------\n");
+    for (int i = 0; i < result->size; i++){
+        printf("%i, ", result->host_timestamp[i]);
+    }
+    printf("\n-----------------------------------------------\n");
+    
 }
-
-__device__ merge_path(int *a, int *b, int diag, int a_len, int b_len) {
-    // Just using UnitStreams for now
-    int begin = max(0, diag - b_len);               // Start of search window
-    int end = min(diag, a_len);                     // End of search window
-
-    // Binary search
-    while(begin < end){
-        int mid = (end - begin) / 2;
-        int a_val = a[mid];
-        int b_val = b[diag - 1 - mid];
-
-        if (a_val < b_val) {
-            begin = mid + 1;
-        }
-        else{
-            end = mid;
-        }
-    }
-    return begin;
-}*/
-
 
 // https://moderngpu.github.io/merge.html
 // https://github.com/moderngpu/moderngpu/blob/V1.1/include/device/ctamerge.cuh
-/*
-__global__ void merge_cuda(int *a, int *b, int *c, int threads){
-    // Thread
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+__global__ void merge_cuda(int *a, int *b, int *c, int threads, int a_len, int b_len){
 
-    int a_len = sizeof(a) / sizeof(a[0]);           // Length of input a
-    int b_len = sizeof(b) / sizeof(b[0]);           // Length of input b
-    int vpt = (a_len + b_len) / threads;            // Values per thread
-    int diag = i * vpt;                             // Binary search constraint
+    const int i = threadIdx.x + blockIdx.x * blockDim.x;        // Thread ID
 
-    int intersect = merge_path(a, b, diag);
+    int vpt = ceil((double)(a_len + b_len) / (double)threads);  // Values per thread
+    int diag = i * vpt;                                         // Binary search constraint
+
+    int intersect = merge_path(a, b, diag, a_len, b_len);
     int a_start = intersect;
     int b_start = diag - intersect;
 
-    merge_serial(a, b, c, a_start, b_start, vpt, i);
-}*/
+    merge_serial(a, b, c, a_start, b_start, vpt, i, a_len, b_len);
+}
 
 
 
