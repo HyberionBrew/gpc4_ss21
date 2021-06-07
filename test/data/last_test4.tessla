@@ -1,0 +1,6 @@
+in a: Events[Unit]
+in x: Events[Unit]
+in z: Events[Int]
+def y := last(z,a)
+def o := last(y,x)
+out o
