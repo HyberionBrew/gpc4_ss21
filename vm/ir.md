@@ -1,5 +1,7 @@
 # Register VM Instruction Set
 
+The format operates on Big Endian.
+
 ## Instruction Format
 
 __Op-Types depending on first two bits__:
@@ -44,11 +46,9 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 0x0C    | Mod                   | Calculate Modulo of Integer Streams                   |
 | 0x0D    | Delay                 | Delay Operation (first operand int, second def)       |
 | 0x0E    | Last                  | Last Operation (first operand int, second def)        |
-| 0x0F    | TimeIn                | Time Operation on Integer Stream                      |
-| 0x10    | TimeUn                | Time Operation on Unit Stream                         |
-| 0x11    | MergeIn               | Merge Integer Streams                                 |
-| 0x12    | MergeUn               | Merge Unit Streams                                    |
-| 0x13    | Count                 | Count Operation                                       |
+| 0x0F    | Time                  | Time Operation                                        |
+| 0x10    | Merge                 | Merge Streams                                         |
+| 0x11    | Count                 | Count Operation                                       |
 
 ### I-Type (MSB 01)
 | opcode  | I-Instruction         |   Semantics                                           |
@@ -67,9 +67,9 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | opcode  | M-Instruction         |   Semantics                                           | 
 |---------|-----------------------|-------------------------------------------------------|
 | 0x88    | Load                  | Load virtual register to VRAM immediately             |
-| 0x89    | Load4                 | Load local Variable from ID (1 byte)                  |
-| 0x8A    | Load6                 | Load global Variable from ID (1 byte)                 |
-| 0x8B    | Load8                 | Store topmost stack value to local ID (1 byte)        |
+| 0x89    | Load4                 | Load local Variable from ID (1 byte) (unused)         |
+| 0x8A    | Load6                 | Load global Variable from ID (1 byte) (unused)        |
+| 0x8B    | Load8                 | Store topmost stack value to local ID (1 byte) (unused)|
 | 0x8C    | Store                 | Download virtual register from VRAM (=> output stream)|
 | 0x8D    | Free                  | Free pseudo register                                  |
 | 0x8E    | Unit                  | Create Stream with def event at time 0                |
@@ -79,3 +79,20 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 |---------|-----------------------|-------------------------------------------------------|
 | 0xFF    | Exit                  | Exit program (last instruction)                       |
 
+# Header
+* Signature: `58 52 41 59`
+* Fields are always delimited by `0xF0F0`
+* End of header marked by `0xFFFF`
+* Header fields must appear in order, not required fields may be omitted
+* For Input streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
+
+| Header (HEX)  |     Meaning                                   |      alternatives                                  |
+|---------------|-----------------------------------------------|----------------------------------------------------|
+| 53 50 45 43   | Specification version (required)              | Version of the language specification              |
+| 52 45 47 4C   | Register byte length                          | 0x00 -> 2 Bytes, 0x01 -> 4 Bytes                   |
+| 49 4E 53 54   | Input stream name (may appear more than once) | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
+| 4F 55 53 54   | Output stream name (may appear more than once)| 2/4 Bytes reg name, ASCII stream name              |
+
+# Example
+Example for version number 1.0, 2 byte register length, i1 as input stream in register 1234 and o2 as output in register 4321:
+`58 52 41 59 53 50 45 43 00 01 00 00 F0 F0 52 45 47 4C 00 F0 F0 49 4E 53 54 04 D2 00 69 31 00 F0 F0 4F 55 53 54 10 E1 6f 32 00 F0 F0 FF FF FF`
