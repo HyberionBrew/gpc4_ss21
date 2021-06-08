@@ -283,65 +283,6 @@ __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int s
     //result to array
     if (tid == 0) *valid=*valid+sdata[0];
 }
-// Device internal sequential merge of small partitions
-__device__ void merge_serial(int *a, int *b, int *c,
-                             int a_start, int b_start,
-                             int vpt, int tidx,
-                             int a_len, int b_len){
-    int a_i = a_start;
-    int b_i = b_start;
-    int a_val = a[a_i];
-    int b_val = b[b_i];
-
-    bool a_done = false;
-    bool b_done = false;
-
-    // Could possibly be optimized since only the last block needs range checks
-    // #pragma unroll is also an option according to https://moderngpu.github.io/merge.html
-    for(int i = 0; i < vpt; ++i) {
-        // Break if last block doesn't fit
-        if (a_done && b_done){
-            break;
-        }
-
-        if (a_done){
-            c[tidx*vpt + i] = b_val;
-            b_i++;
-        }
-        else if (b_done){
-            c[tidx*vpt + i] = a_val;
-            a_i++;
-        }
-        else if (a_val <= b_val){
-            c[tidx*vpt + i] = a_val;
-            a_i++;
-            if (a_val == b_val){
-                // Invalidate b values with overlapping timestamps
-                b_val = -1;
-                b[b_i] = -1;
-            }
-        }
-        else{
-            c[tidx*vpt + i] = b_val;
-            b_i++;
-        }
-
-        if (a_i >= a_len){
-            a_done = true;
-        }
-        else{
-            a_val = a[a_i];
-        }
-
-        if (b_i >= b_len){
-            b_done = true;
-        }
-        else{
-            b_val = b[b_i];
-        }
-    }
-    __syncthreads();
-}
 
 
 __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){

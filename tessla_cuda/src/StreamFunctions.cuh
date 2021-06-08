@@ -21,4 +21,5 @@ __global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *input
 __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset, cudaStream_t stream);
 __device__ int lookUpElement(int size,int searchValue, int * input_timestamp);
 __device__ int lookUpNextElement(int size,int searchValue, int * timestamps);
+__global__ void merge_cuda(int *a, int *b, int *c, int threads, int a_len, int b_len);
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH
