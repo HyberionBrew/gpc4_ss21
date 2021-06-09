@@ -46,7 +46,6 @@ __global__ void final_reduce(int* block_red,int size,int* offset) {
     unsigned int tid = threadIdx.x;
     if (i < size) {
         sdata[tid] = block_red[i];
-        __syncthreads();
         for (unsigned int s = (int)1024 / 2; s > 0; s >>= 1) {
             if (s < size){
                 if (tid < s) {
@@ -62,7 +61,6 @@ __global__ void final_reduce(int* block_red,int size,int* offset) {
         }
 
         if (i == 0){
-            *offset = sdata[0];
             printf("The offset: %d \n",*offset);
         }
     }

@@ -24,6 +24,7 @@ TEST_CASE("last()"){
        // inputStreamV.print();
       //  inputStreamR.print();
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
+        //inputStreamR.print();
         outputStream.copy_to_host();
 
         //outputStream.print();
@@ -64,7 +65,7 @@ TEST_CASE("last()"){
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
         outputStream.copy_to_host();
         //printf("xx");
-        //outputStream.print();
+       // outputStream.print();
         //outputStream.print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
@@ -88,7 +89,6 @@ TEST_CASE("last()"){
         UnitStream inputStreamR = inReader.getUnitStream("a");
         Reader outReader = Reader("../test/data/last_test2.out");
         IntStream CORRECT_STREAM = outReader.getIntStream("y");
-
         // Prepare empty output stream to fill
         IntStream outputStream;
 
@@ -97,6 +97,7 @@ TEST_CASE("last()"){
         inputStreamR.copy_to_device();
         //inputStreamV.print();
         //inputStreamR.print();
+
         last(&inputStreamV, &inputStreamR, &outputStream, 0);
         outputStream.copy_to_host();
 
@@ -107,7 +108,6 @@ TEST_CASE("last()"){
         std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
         std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
         std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
-
         for (int i = 0; i< CORRECT_STREAM.size; i++){
             REQUIRE(kernelTimestamps[i] == correctTimestamps[i]);
         }
@@ -121,7 +121,6 @@ TEST_CASE("last()"){
     }
 
     SECTION("last() twice test with no invalids") {
-        printf("-------------------------\n");
         // Read input and correct output data
         Reader inReader = Reader("../test/data/last_test3.in");
         IntStream inputStreamV = inReader.getIntStream("z");
@@ -133,31 +132,29 @@ TEST_CASE("last()"){
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
 
-
         IntStream intermediateStream;
         IntStream outputStream;
+          
         // Run kernel
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
         inputStream2.copy_to_device();
-
         last(&inputStreamV, &inputStreamR, &intermediateStream, 0);
+        intermediateStream.copy_to_host();
         last(&intermediateStream, &inputStream2, &outputStream, 0);
 
         outputStream.copy_to_host();
-        //outputStream.print();
+//        outputStream.print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
         std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
         std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
         std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
 
 
         REQUIRE(kernelValues == correctValues);
-        //outputStream.print();
         // Cleanup
         inputStreamV.free_device();
         inputStreamR.free_device();
@@ -167,7 +164,7 @@ TEST_CASE("last()"){
     }
 
     SECTION("last() twice test with invalids in Unit Stream") {
-        printf("-------------------------\n");
+        //printf("-------------------------\n");
         // Read input and correct output data
         Reader inReader = Reader("../test/data/last_test4.in");
         IntStream inputStreamV = inReader.getIntStream("z");

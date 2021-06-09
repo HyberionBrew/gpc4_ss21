@@ -11,7 +11,7 @@ IntStream::IntStream(int *timestamp,int *value, size_t size, int offs) {
     this->host_values = value;
     this->size = size;
     //TODO! this is per object tf. problems
-    this->host_offset = (int *) malloc(size* sizeof(int));
+    this->host_offset = (int *) malloc(sizeof(int));
     *this->host_offset = offs;
     onDevice =false;
 
@@ -21,7 +21,7 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
     this->host_values = value;
     this->size = size;
     //TODO! this is per object tf. problems
-    this->host_offset = (int *) malloc(size* sizeof(int));
+    this->host_offset = (int *) malloc(sizeof(int));
     memset( this->host_offset,0,sizeof(int));
     onDevice =false;
 
@@ -29,12 +29,12 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
 //DEVICE ONLY dont use
 // THIS CAN BE DELETED!
 IntStream::IntStream() {
-    this->host_offset = (int *) malloc(size* sizeof(int));
+    this->host_offset = (int *) malloc(sizeof(int));
     memset( this->host_offset,0,sizeof(int));
     onDevice =false;
 }
 UnitStream::UnitStream() {
-    this->host_offset = (int *) malloc(size* sizeof(int));
+    this->host_offset = (int *) malloc(sizeof(int));
     memset( this->host_offset,0,sizeof(int));
     onDevice =false;
 }
@@ -54,8 +54,7 @@ void IntStream::free_device(){
     CHECK(cudaFree(this->device_values));
     CHECK(cudaFree(this->device_offset));
     free(this->host_offset);
-    //free(this->host_timestamp);
-    //free(this->host_values);
+
 }
 
 //TODO! implement Staged concurrent copy and execute
@@ -70,8 +69,8 @@ void IntStream::copy_to_device(bool valid){
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
     // Async copying - However excectution of the kernel waits for it to complete! (since default stream 0 is used!)
     // However CPU continues
+    CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
     if (valid == true) {
-        CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(this->device_values, this->host_values, sizeAllocate, cudaMemcpyHostToDevice));
     }
@@ -80,7 +79,6 @@ void IntStream::copy_to_device(bool valid){
 void IntStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
-
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
@@ -156,8 +154,8 @@ void UnitStream::copy_to_device(bool valid){
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
     if (valid == true) {
         CHECK(cudaMemcpy(this->device_timestamp, this->host_timestamp, sizeAllocate, cudaMemcpyHostToDevice));
-        CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
     }
+    CHECK(cudaMemcpy(this->device_offset, this->host_offset, sizeof(int), cudaMemcpyHostToDevice));
 }
 
 

@@ -162,9 +162,6 @@ __device__ int lookUpNextElement(int size, int searchValue, int *timestamps) {
 
     if (timestamps[size-1] > searchValue) {
         while (L<=R) {
-            // is this needed? TODO! check and discuss
-            //maybe it helps? CHECK!
-            __syncthreads();
             m = (int) (L+R)/2;
             if (timestamps[m] <= searchValue) {
                 L = m + 1;
@@ -239,58 +236,51 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
         memset(result->host_values, 0, sizeAllocated);
         result->copy_to_device(false);
     }
-
-    int* block_red;
-    cudaMalloc((void**)&block_red, sizeof(int)*blocks);
     //TODO! check that no expection is thrown at launch!
-    last_cuda<<<blocks,block_size,0,stream>>>(block_red, inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
-    int leftBlocks = blocks;
-    //TODO! implement and check below functions! for schedulings > 1024 blocks
-    /* while(leftBlocks>1024)
-        calcThreadsBlocks(leftBlocks,&block_size,&blocks);
-        reduce_blocks<<<blocks, block_size, 0, stream>>>(block_red, leftBlocks);
-        leftBlocks = blocks;
-    };*/
-    final_reduce<<<1, block_size, 0, stream>>>(block_red, leftBlocks, result->device_offset);
-
-    cudaFree(block_red);
+    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
+    calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp,result->device_offset, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
 
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
-__device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, int MaxSize, unsigned int tid, const int i){
-    //each thread loads one Element from global to shared memory
+//calculates the number of non valid timestamps
+__global__ void calculate_offset(int* timestamps, int* offset, int size){
+    __shared__ int sdata[1024];// each thread loadsone element from global to shared memunsigned 
+
+    int tid = threadIdx.x;
+    unsigned int i= blockIdx.x*blockDim.x+ threadIdx.x;
+    int block_offset = 0;
     sdata[tid] = 0;
 
-    if (output_timestamp[i] < 0) {
-        sdata[tid] = 1;
-        //    printf("%d ? %d\n",i,output_timestamp[i]);
+    if (i < size){
+         //printf(" timestamp %d \n",*(timestamps+i));
+         if (*(timestamps+i) < 0){
+            sdata[tid] = 1;
+         }
     }
     __syncthreads();
-    for (unsigned int s = (int)size / 2; s > 0; s >>= 1) {
-        if (s < size){
-            if (tid < s) {
-                if ((i+s+1) > MaxSize){
-                    sdata[tid] += 0;
-                }
-                else {
-                    sdata[tid] += sdata[tid + s];
-                }
-            }
+
+
+    for(unsigned int s=1; s < blockDim.x; s *= 2) {
+        int index = 2 * s * tid;
+        if (index < blockDim.x) {
+            sdata[index] += sdata[index + s];
         }
         __syncthreads();
     }
-    //result to array
-    if (tid == 0) *valid=*valid+sdata[0];
+    __syncthreads();
+    if(tid == 0){ 
+        block_offset = sdata[0];
+        atomicAdd(offset, block_offset);
+    }
+    
+
 }
-
-
-__global__ void last_cuda(int* block_red, int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
+__global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
+    
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int tid = threadIdx.x;
+
     //shift accordingly to offset
-
-
     unit_stream_timestamps += *offsUnit;
     input_timestamp += *offsInt;
     input_values += *offsInt;
@@ -300,16 +290,18 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
     output_timestamps[i] = INT_MIN;
     output_timestamps += *offsUnit;
     output_values += *offsUnit;
-    int out =  INT_MIN;
-    __syncthreads(); //should be irrelevant
+    int out =  -1;
+
+
+    //Search for the timestamp per thread
+    int local_unit_timestamp = unit_stream_timestamps[i];
+    int L = 0;
+    int R = intStreamSize-1;
+    int m;
     if (i<size) {
-        int local_unit_timestamp = unit_stream_timestamps[i];
-        __shared__ int sdata[1024];
-        int L = 0;
-        int R = intStreamSize-1;
-        int m;
+
         while (L<=R) {
-           __syncthreads();
+           //__syncthreads();
             m = (int) (L+R)/2;
 
             if (input_timestamp[m]<local_unit_timestamp){
@@ -327,11 +319,12 @@ __global__ void last_cuda(int* block_red, int* input_timestamp, int* input_value
                 break;
             }
         }
-       //
-
+    }
+    //all have their respective out values
+    //the output_values array has been successfully filled
+    //now the threads perform an and reduction starting at 0 going to size
+    if (i < size){
         output_values[i] = out;
-        block_red[blockIdx.x] = *offsUnit;
-        count_valid(sdata,output_timestamps,&block_red[blockIdx.x], 1024,size,tid,i);
     }
 }
 
