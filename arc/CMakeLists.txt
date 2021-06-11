@@ -32,16 +32,6 @@ add_subdirectory(tessla_seq)
 add_subdirectory(external/lfqueue)
 add_subdirectory(vm)
 
-#add_executable(${PROJECT_NAME}
-#        src/main.cpp
-#        src/DebugScheduler.cpp
-#        src/Decode.cpp
-#        src/GPUScheduler.cpp
-#        src/InstrInterface.cpp src/InstrInterface.h
-#        src/lfqueue.c src/lfqueue.h
-#        src/Scheduler.cpp src/Scheduler.h
-#        )
-
 # Add the sequential execution library
 #add_subdirectory(../tessla_seq ./tessla_seq)
 #target_include_directories(${PROJECT_NAME} PUBLIC ../tessla_seq)
