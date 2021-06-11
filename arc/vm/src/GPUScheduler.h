@@ -13,7 +13,8 @@ private:
     std::vector<Register> registers;
 public:
     GPUScheduler(InstrInterface & interface);
-    bool next () override;
+    bool next() override;
+    bool parse_input() override;
 };
 
 

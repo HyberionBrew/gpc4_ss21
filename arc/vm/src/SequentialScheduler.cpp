@@ -1,16 +1,16 @@
 //
-// Created by fabian on 31/05/2021.
+// Created by fabian on 11/06/2021.
 //
 
-#include "DebugScheduler.h"
+#include "SequentialScheduler.h"
 #include <iostream>
 #include <assert.h>
 
-DebugScheduler::DebugScheduler(InstrInterface & interface) : Scheduler(interface) {
+SequentialScheduler::SequentialScheduler(InstrInterface & interface) : Scheduler(interface) {
     line = 0;
 }
 
-bool DebugScheduler::next() {
+bool SequentialScheduler::next() {
     line++;
     Instruction inst = instrInterface.pop();
     switch (inst.type) {
@@ -102,6 +102,6 @@ bool DebugScheduler::next() {
     return true;
 }
 
-bool DebugScheduler::parse_input() {
+bool SequentialScheduler::parse_input() {
     return true;
 }

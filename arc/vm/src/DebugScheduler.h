@@ -13,6 +13,7 @@ private:
 public:
     DebugScheduler(InstrInterface & interface);
     bool next() override;
+    bool parse_input() override;
 };
 
 #endif //GPC4_SS21_DEBUGSCHEDULER_H

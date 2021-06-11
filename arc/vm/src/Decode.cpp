@@ -53,6 +53,7 @@ Decode::Decode(std::string coil_file, InstrInterface & interface) : instrInterfa
     }
     bytes.clear();
     parse_header();
+    instrInterface.ioReady = true;
 };
 
 
@@ -102,9 +103,13 @@ void Decode::parse_header() {
                 current.name = bytes;
                 if (instreamState == inst_r5) {
                     // Add the stream to the input streams
+                    current.direction = io_in;
                     in_streams.push_back(current);
+                    instrInterface.push_iostream(current);
                 } else if (outstreamState == outst_r4) {
+                    current.direction = io_out;
                     out_streams.push_back(current);
+                    instrInterface.push_iostream(current);
                 } else {
                     throw std::runtime_error("Bad state machine configuration while parsing header. String parsed when no string needed.");
                 }

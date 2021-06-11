@@ -6,6 +6,7 @@
 #include "Decode.h"
 #include "DebugScheduler.h"
 #include "GPUScheduler.h"
+#include "SequentialScheduler.h"
 #include <iostream>
 #include <unistd.h>
 #include <thread>
@@ -59,6 +60,10 @@ void schedule (InstrInterface & interface, scheduler type, bool verbose) {
         case gpu:
             scheduler = new GPUScheduler(interface);
             if (verbose) str << "GPU";
+            break;
+        case sequential:
+            scheduler = new SequentialScheduler(interface);
+            if (verbose) str << "Sequential";
             break;
         default:
             std::cout << "Required scheduler not yet implemented." << std::endl;

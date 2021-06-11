@@ -9,10 +9,11 @@
 #include <vector>
 #include <cstddef>
 #include <atomic>
+#include <string>
 
 struct Register {
     void* location;
-    std::atomic<bool> available;
+    std::atomic_flag available = ATOMIC_FLAG_INIT;
     int update;
 };
 
@@ -23,6 +24,7 @@ public:
     Scheduler() = delete;
     Scheduler(InstrInterface & interface);
     virtual bool next() = 0;
+    virtual bool parse_input () = 0;
 };
 
 #endif //GPC4_SS21_SCHEDULER_H

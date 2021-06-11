@@ -12,3 +12,7 @@ GPUScheduler::GPUScheduler(InstrInterface & interface) : Scheduler(interface) {
 bool GPUScheduler::next() {
     return false;
 }
+
+bool GPUScheduler::parse_input() {
+    return true;
+}
