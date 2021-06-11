@@ -27,13 +27,10 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/external/lfqueue/CMakeLists.txt")
     message(FATAL_ERROR "The lfqueue submodule was not downloaded! GIT SUBMODULE was turned off or failed. Please update submodules and try again.")
 endif ()
 
+# Set output directory
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+
 # Add VM and lib subdirectories
 add_subdirectory(tessla_seq)
 add_subdirectory(external/lfqueue)
 add_subdirectory(vm)
-
-# Add the sequential execution library
-#add_subdirectory(../tessla_seq ./tessla_seq)
-#target_include_directories(${PROJECT_NAME} PUBLIC ../tessla_seq)
-#target_link_directories(${PROJECT_NAME} PRIVATE ../tessla_seq)
-#target_link_libraries(${PROJECT_NAME} tessla_seq)
