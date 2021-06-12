@@ -21,6 +21,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
                                 int x_start, int y_start,
                                 int vpt, int tidx,
                                 int x_len, int y_len,
-                                lift_func fct, lift_op op);
+                                lift_func fct, lift_op op, 
+                                int *valid, int *invalid);
                                 
 #endif //TESSLA_CUDA_STREAMFUNCTIONHELPER_CUH

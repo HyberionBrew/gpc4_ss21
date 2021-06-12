@@ -470,12 +470,11 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
                                 int x_start, int y_start,
                                 int vpt, int tidx,
                                 int x_len, int y_len,
-                                lift_func fct, lift_op op){
+                                lift_func fct, lift_op op, 
+                                int* valid, int *invalid){
 
     int x_i = x_start;
     int y_i = y_start;
-    int a_ts = x_ts[x_i];
-    int b_ts = y_ts[y_i];
     int size = vpt;
 
     bool x_done = x_i >= x_len ? true : false;
@@ -497,7 +496,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
             out_ts+offset, out_v+offset,
             x_done, y_done, op);
 
-        if (x_i >= y_len){
+        if (x_i >= x_len){
             x_done = true;
         }
         if (y_i >= y_len){
@@ -508,18 +507,33 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
             y_done = true;
         }
     }
+
+    // Count valid/invalid timestamps per partition
+    for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+        if (out_ts[tidx*vpt+i] == -1){
+            invalid[tidx]++;
+        }
+        else{
+            valid[tidx]++;
+        }
+    }
+
     __syncthreads();
 
     // Afterwards, threads have to check for overlapping timestamps in their c[] partition in case of merge
     // VPT > 1 check not really necessary, we should guarantee that VPT > 1 beforehand, otherwise the mergepath is the full merge anyway
     if (vpt > 1 && fct == lift_merge){
-        for (int i = 0; i < vpt; i++){
+        for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
             int l = max(tidx*vpt + i - 1, 0);
             int r = max(tidx*vpt + i, 1);
             if (out_ts[l] == out_ts[r]){
                 out_ts[r] = -1;
+                invalid[tidx]++;
+                // Decrement valid, since it is at maximum due to incrementations before
+                valid[tidx]--;
             }
         }
+        __syncthreads();
     }
 }
 
@@ -547,9 +561,6 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
 
     threads = (blocks) * (block_size);
 
-    // Using the pseudo-code in the paper
-    int x_len = sizeof(x->host_timestamp) / sizeof(x->host_timestamp[0]);
-    int y_len = sizeof(y->host_timestamp) / sizeof(y->host_timestamp[0]);
     memset(result->host_timestamp, -1, result->size * sizeof(int));
 
     // cudaMalloc Timestamp arrays
@@ -557,14 +568,34 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
     y->copy_to_device();
     result->copy_to_device();
 
-    //int sha_memsize = (x_len + y_len) * sizeof(int);
+    // Array to count valid timestamps
+    int *valid_h = (int*)malloc(threads*sizeof(int));
+    int *valid_d;
+    memset(valid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&valid_d, threads*sizeof(int));
+    cudaMemcpy(valid_d, valid_h, threads*sizeof(int), cudaMemcpyHostToDevice);
+
+    // Array to count invalid timestamps
+    int *invalid_h = (int*)malloc(threads*sizeof(int));
+    int *invalid_d;
+    memset(invalid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&invalid_d, threads*sizeof(int));
+    cudaMemcpy(invalid_d, invalid_h, threads*sizeof(int), cudaMemcpyHostToDevice);
+
+    // Array to copy the result to ... needed for offset calculations
+    int *out_ts_cpy;
+    int *out_v_cpy;
+    cudaMalloc((int**)&out_ts_cpy, result->size*sizeof(int));
+    cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
 
     // 3, 2, 1, go
     lift_cuda<<<blocks, block_size>>>(   x->device_timestamp, y->device_timestamp, 
                                             result->device_timestamp, 
                                             x->device_values, y->device_values,
                                             result->device_values,
-                                            threads, x->size, y->size, op);
+                                            threads, x->size, y->size, 
+                                            op, valid_d, invalid_d, 
+                                            out_ts_cpy, out_v_cpy, result->device_offset);
 
     // Copy back results
     result->copy_to_host();
@@ -572,27 +603,57 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
 
 __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
                             int *x_v, int *y_v, int *out_v,
-                            int threads, int x_len, int y_len, int op){
+                            int threads, int x_len, int y_len, 
+                            int op, int *valid, int *invalid,
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset){
 
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;        // Thread ID
+    const int tidx = threadIdx.x + blockIdx.x * blockDim.x;        // Thread ID
 
     int vpt = ceil((double)(x_len + y_len) / (double)threads);  // Values per thread
-    int diag = i * vpt;                                         // Binary search constraint
+    int diag = tidx * vpt;                                         // Binary search constraint
 
     int intersect = merge_path(x_ts, y_ts, diag, x_len, y_len);
     int x_start = intersect;
     int y_start = diag - intersect;
 
-    // split op into merge vs. value function
-    // and specific operation
+    // Split op into merge vs. value function and specific value operation
     int fct = 0;
     if (op == MRG){
         op = 0;
         fct = 1;
     }
+
+    memset(out_ts_cpy, -1, (x_len+y_len)*sizeof(int));
     
-    lift_partition( x_ts, y_ts, out_ts,
-                    x_v, y_v, out_v,
-                    x_start, y_start, vpt, i, 
-                    x_len, y_len, lift_funcs[fct], lift_ops[op]);
+    lift_partition( x_ts, y_ts, out_ts_cpy,
+                    x_v, y_v, out_v_cpy,
+                    x_start, y_start, vpt, tidx, 
+                    x_len, y_len, lift_funcs[fct], lift_ops[op], 
+                    valid, invalid);
+
+    // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
+    int cuml_invalid = 0;
+    for (int i = 0; i < threads; i++){
+        cuml_invalid += invalid[i];
+    }
+
+    int cuml_valid_before = 0;
+    for (int i = 0; i < tidx; i++){
+        cuml_valid_before += valid[i];
+    }
+
+    int vals_before = cuml_invalid + cuml_valid_before;
+    int valid_cnt = 0;
+
+    for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+        if (out_ts_cpy[tidx*vpt+i] != -1){
+            out_ts[vals_before+valid_cnt] = out_ts_cpy[tidx*vpt+i];
+            out_v[vals_before+valid_cnt] = out_v_cpy[tidx*vpt+i];
+            valid_cnt++;
+        }
+    }
+    if (tidx == 0) {
+        *invalid_offset = cuml_invalid;
+    }
+    __syncthreads();
 }

@@ -40,7 +40,7 @@ void test_lift(){
     IntStream y(y_ts, y_v, sy);
     IntStream res(res_ts, res_v, sx+sy);
 
-    lift(&x,&y,&res,31, 0);
+    lift(&x,&y,&res,31, 5);
     res.print();
 
 }

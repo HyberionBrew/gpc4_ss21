@@ -25,5 +25,7 @@ __device__ int lookUpNextElement(int size,int searchValue, int * timestamps);
 __global__ void calculate_offset(int* timestamps, int* offset, int size);
 __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
                             int *x_v, int *y_v, int *out_v,
-                            int threads, int x_len, int y_len, int op);
+                            int threads, int x_len, int y_len, 
+                            int op, int *valid, int *invalid,
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset);
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH
