@@ -4,6 +4,15 @@
 
 #ifndef TESSLA_CUDA_STREAMFUNCTIONHELPER_CUH
 #define TESSLA_CUDA_STREAMFUNCTIONHELPER_CUH
+
+typedef void (*lift_op) (int*, int*, int*);
+
+typedef void (*lift_func) ( int*, int*, 
+                            int*, int*, 
+                            int*, int*,
+                            int*, int*,
+                            bool, bool, lift_op);
+
 void calcThreadsBlocks(int threads, int *block_size, int*blocks);
 __global__ void final_reduce(int* block_red,int size,int* offset);
 __device__ void count_valid(int * sdata,int * output_timestamp,int* valid, int size, int MaxSize, unsigned int tid, const int i);
