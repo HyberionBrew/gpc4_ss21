@@ -10,14 +10,6 @@
 #include "device_information.cuh"
 #include "StreamFunctionHelper.cuh"
 
-// Lift operations
-#define ADD 0
-#define SUB 1
-#define MUL 2
-#define DIV 3
-#define MOD 4
-#define MRG 5
-
 #define MAX_STREAMS 10
 //Memory pointer for the streams
 //TODO! not used

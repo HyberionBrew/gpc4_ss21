@@ -4,6 +4,15 @@
 
 #ifndef TESSLA_CUDA_STREAMFUNCTIONS_CUH
 #define TESSLA_CUDA_STREAMFUNCTIONS_CUH
+
+// Lift operations
+#define ADD 0
+#define SUB 1
+#define MUL 2
+#define DIV 3
+#define MOD 4
+#define MRG 5
+
 #include <cuda_runtime.h>
 #include "Stream.cuh"
 // time operation for unit stream
