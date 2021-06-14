@@ -46,13 +46,14 @@ bool InstrInterface::is_nonempty() {
 }
 
 void InstrInterface::push_iostream(IOStream stream) {
-    IOStream* stream_data = (IOStream*) malloc(sizeof(IOStream));
-    if (stream_data == NULL) {
+    void* stream_raw = (IOStream*) malloc(sizeof(IOStream));
+    if (stream_raw == NULL) {
         throw std::runtime_error("Could not enqueue IO stream. Out of memory?");
     }
+    IOStream* stream_data = new(stream_raw) IOStream;
     *stream_data = stream;
     // Wait for the instruction to be enqueued
-    while (lfqueue_enq(&queue, stream_data) == -1) {
+    while (lfqueue_enq(&ioStreams, stream_data) == -1) {
     }
 }
 

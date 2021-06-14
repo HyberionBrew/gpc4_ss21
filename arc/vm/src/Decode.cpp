@@ -113,6 +113,7 @@ void Decode::parse_header() {
                 } else {
                     throw std::runtime_error("Bad state machine configuration while parsing header. String parsed when no string needed.");
                 }
+
                 // Free the current read stream representation
                 bytes.clear();
                 // Require head field delimiter
