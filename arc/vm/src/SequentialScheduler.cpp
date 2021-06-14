@@ -16,7 +16,6 @@ SequentialScheduler::SequentialScheduler(InstrInterface & interface) : Scheduler
 bool SequentialScheduler::next() {
     line++;
     Instruction inst = instrInterface.pop();
-    Stream* res;
     switch (inst.type) {
         case inst_add: {
             // Add two int streams together
