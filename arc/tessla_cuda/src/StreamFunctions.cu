@@ -568,29 +568,26 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
 
     threads = (blocks) * (block_size);
 
-    result->host_timestamp = (int*)malloc((x->size+y->size)*sizeof(int));
-    result->host_values = (int*)malloc((x->size+y->size)*sizeof(int));
-    result->size = x->size+y->size;
-    memset(result->host_timestamp, -1, result->size * sizeof(int));
-
-    // cudaMalloc Timestamp arrays
-    x->copy_to_device();
-    y->copy_to_device();
-    result->copy_to_device();
+    if (!result->onDevice) {
+        result->size = x->size + y->size;
+        result->host_timestamp = (int*)malloc(result->size * sizeof(int));
+        result->host_values = (int*)malloc(result->size * sizeof(int));
+        memset(result->host_timestamp, -1, result->size);
+        memset(result->host_values, 0, result->size);
+        result->copy_to_device(false);
+    }
 
     // Array to count valid timestamps
     int *valid_h = (int*)malloc(threads*sizeof(int));
     int *valid_d;
     memset(valid_h, 0, threads*sizeof(int));
     cudaMalloc((int**)&valid_d, threads*sizeof(int));
-    cudaMemcpy(valid_d, valid_h, threads*sizeof(int), cudaMemcpyHostToDevice);
 
     // Array to count invalid timestamps
     int *invalid_h = (int*)malloc(threads*sizeof(int));
     int *invalid_d;
     memset(invalid_h, 0, threads*sizeof(int));
     cudaMalloc((int**)&invalid_d, threads*sizeof(int));
-    cudaMemcpy(invalid_d, invalid_h, threads*sizeof(int), cudaMemcpyHostToDevice);
 
     // Array to copy the result to ... needed for offset calculations
     int *out_ts_cpy;
@@ -599,16 +596,13 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
     cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
 
     // 3, 2, 1, go
-    lift_cuda<<<blocks, block_size>>>(   x->device_timestamp, y->device_timestamp, 
-                                            result->device_timestamp, 
-                                            x->device_values, y->device_values,
-                                            result->device_values,
-                                            threads, x->size, y->size, 
-                                            op, valid_d, invalid_d, 
-                                            out_ts_cpy, out_v_cpy, result->device_offset);
-
-    // Copy back results
-    result->copy_to_host();
+    lift_cuda<<<blocks, block_size>>>(  x->device_timestamp, y->device_timestamp, 
+                                        result->device_timestamp, 
+                                        x->device_values, y->device_values,
+                                        result->device_values,
+                                        threads, x->size, y->size, 
+                                        op, valid_d, invalid_d, 
+                                        out_ts_cpy, out_v_cpy, result->device_offset);
 }
 
 __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
@@ -617,10 +611,10 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int op, int *valid, int *invalid,
                             int *out_ts_cpy, int *out_v_cpy, int *invalid_offset){
 
-    const int tidx = threadIdx.x + blockIdx.x * blockDim.x;        // Thread ID
+    const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
 
-    int vpt = ceil((double)(x_len + y_len) / (double)threads);  // Values per thread
-    int diag = tidx * vpt;                                         // Binary search constraint
+    int vpt = ceil((double)(x_len + y_len) / (double)threads);      // Values per thread
+    int diag = tidx * vpt;                                          // Binary search constraint
 
     int intersect = merge_path(x_ts, y_ts, diag, x_len, y_len);
     int x_start = intersect;
@@ -633,7 +627,14 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
         fct = 1;
     }
 
-    memset(out_ts_cpy, -1, (x_len+y_len)*sizeof(int));
+    // Set thread local valid/invalid counters to 0
+    invalid[tidx] = 0;
+    valid[tidx] = 0;
+    
+    if (tidx*vpt < x_len+y_len) {
+        int mems = min(vpt, (x_len+y_len)-tidx*vpt);
+        memset(out_ts_cpy+tidx*vpt, -1, mems*sizeof(int));
+    }
     
     lift_partition( x_ts, y_ts, out_ts_cpy,
                     x_v, y_v, out_v_cpy,
@@ -662,6 +663,7 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
             valid_cnt++;
         }
     }
+    // Only one thread does this
     if (tidx == 0) {
         *invalid_offset = cuml_invalid;
     }

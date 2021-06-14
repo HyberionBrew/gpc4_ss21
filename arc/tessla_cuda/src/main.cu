@@ -20,8 +20,8 @@ void test_lift(){
     int *x_ts = (int*)malloc(sx*sizeof(int));
     int *y_ts = (int*)malloc(sy*sizeof(int));
 
-    int *res_ts = (int*)malloc((sx+sy)*sizeof(int));
-    int *res_v = (int*)malloc((sx+sy)*sizeof(int));
+    //int *res_ts = (int*)malloc((sx+sy)*sizeof(int));
+    //int *res_v = (int*)malloc((sx+sy)*sizeof(int));
 
     for (int i=0; i<sx; i++){
         x_ts[i] = i;
@@ -33,16 +33,19 @@ void test_lift(){
         y_v[i] = i;
     }
 
-    memset(res_ts, -1, (sx+sy)*sizeof(int));
-    memset(res_v, 0, (sx+sy)*sizeof(int));
-
     IntStream x(x_ts, x_v, sx);
     IntStream y(y_ts, y_v, sy);
-    IntStream res(res_ts, res_v, sx+sy);
+    IntStream res;
 
-    lift(&x,&y,&res,31, 5);
+    x.copy_to_device();
+    y.copy_to_device();
+
+    lift(&x,&y,&res,31, 0);
+    res.copy_to_host();
+
+    x.print();
+    y.print();
     res.print();
-
 }
 
 
