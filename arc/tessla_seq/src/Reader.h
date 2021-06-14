@@ -7,11 +7,15 @@
 
 #include "Stream.h"
 #include <string>
+#include <map>
 
 void readStreams();
 
 class Reader {
     std::string FILENAME;
+    std::map<std::string, UnitStream> unitStreams;
+    std::map<std::string, IntStream> intStreams;
+    void readStreams();
 public:
     Reader(std::string inputFile);
     UnitStream getUnitStream(std::string name);
