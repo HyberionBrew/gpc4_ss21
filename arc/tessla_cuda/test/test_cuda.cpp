@@ -238,7 +238,7 @@ TEST_CASE("last()"){
     
 
 }*/
-#define BENCHMARKING_CASES 8
+#define BENCHMARKING_CASES 1
 #define BENCHMARKING_LOOPS 1
 
 TEST_CASE("BENCHMARKING"){
@@ -381,8 +381,6 @@ TEST_CASE("BENCHMARKING"){
             }
     }
     }
-    
-
 
 
     SECTION("delay() benchmarking example"){
@@ -409,6 +407,74 @@ TEST_CASE("BENCHMARKING"){
                 IntStream inputStreamD = inReader.getIntStream("z");
                 UnitStream inputStreamR = inReader.getUnitStream("a");
                 Reader outReader = Reader(path+std::to_string(i)+"_delay.out");
+                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+
+                // Prepare empty output stream to fill
+                int size = inputStreamR.size;
+                int sizeAllocated = (size_t) size * sizeof(int);
+                int *host_timestampOut = (int *) malloc(size * sizeof(int));
+                memset(host_timestampOut, -1, sizeAllocated);
+                UnitStream outputStream(host_timestampOut, size);
+                auto start = std::chrono::high_resolution_clock::now();
+                // Run kernel
+                inputStreamD.copy_to_device();
+                inputStreamR.copy_to_device();
+                outputStream.copy_to_device();
+                delay(&inputStreamD, &inputStreamR, &outputStream, 0);
+                outputStream.copy_to_host();
+                cudaDeviceSynchronize();
+
+                auto stop = std::chrono::high_resolution_clock::now();
+
+                // Compare kernel result to correct data
+                int* resultStart = outputStream.host_timestamp + *outputStream.host_offset;
+                std::vector<int> kernelTimestamps(resultStart, resultStart + sizeof(resultStart) / sizeof(int));
+                std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + sizeof(CORRECT_STREAM.host_timestamp) / sizeof(int));
+                
+                REQUIRE(kernelTimestamps == correctTimestamps);
+
+                // Cleanup
+                inputStreamD.free_device();
+                inputStreamR.free_device();
+                outputStream.free_device();
+                free(host_timestampOut);
+
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                
+                output_delay.open ("benchmarking_delay.data",std::ios::app);
+                output_delay <<"Benchmark "<< i <<": "<<duration.count() <<  " us" << " with reader: " <<duration2.count() <<" us size: "<<size <<"\n";
+                output_delay.close();
+            }
+    }
+    }
+
+
+
+    SECTION("lift() benchmarking"){
+        std::ofstream output_delay;
+        //delete previous
+        output_delay.open("benchmarking_lift.data");
+        output_delay << "";
+        output_delay.close();
+        int dev = 0;
+        cudaDeviceProp deviceProp;
+        cudaGetDeviceProperties(&deviceProp, dev);
+        //might wanna derive MAX_THREADS and so on from here! TODO!
+
+        for (int j=1;j <=BENCHMARKING_LOOPS;j++){
+            //cudaDeviceSynchronize();
+            cudaDeviceSynchronize();
+            for (int i = 3;i<=BENCHMARKING_CASES; i++){
+                auto start2 = std::chrono::high_resolution_clock::now();
+                std::string path = "../test/data/benchmarking";
+
+                // Prepare empty output stream to fill
+
+                Reader inReader = Reader(path+std::to_string(i)+".in");
+                IntStream inputStreamD = inReader.getIntStream("z");
+                UnitStream inputStreamR = inReader.getUnitStream("a");
+                Reader outReader = Reader(path+std::to_string(i)+"_lift.out");
                 UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
 
                 // Prepare empty output stream to fill
