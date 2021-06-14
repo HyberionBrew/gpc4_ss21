@@ -317,8 +317,7 @@ TEST_CASE("BENCHMARKING"){
         }
     }
 
-    SECTION("delay() benchmarking example"){
-        int BENCHMARKING_CASES = 6;
+    /*SECTION("delay() benchmarking example"){
         std::ofstream output_last;
         //delete previous
         output_last.open("benchmarking_delay.data");
@@ -385,7 +384,7 @@ TEST_CASE("BENCHMARKING"){
             output_last << duration.count() <<  " us" << " with reader: " <<duration2.count() <<"us size: "<<size <<"\n";
             output_last.close();
         }
-    }
+    }*/
 }
 
 
