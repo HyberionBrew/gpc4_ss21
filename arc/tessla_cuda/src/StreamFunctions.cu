@@ -553,6 +553,9 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
 
     threads = (blocks) * (block_size);
 
+    result->host_timestamp = (int*)malloc((x->size+y->size)*sizeof(int));
+    result->host_values = (int*)malloc((x->size+y->size)*sizeof(int));
+    result->size = x->size+y->size;
     memset(result->host_timestamp, -1, result->size * sizeof(int));
 
     // cudaMalloc Timestamp arrays
