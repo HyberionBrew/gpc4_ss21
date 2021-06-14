@@ -5,9 +5,8 @@
 #include "../src/Writer.h"
 #include "../src/StreamFunctions.h"
 #include "../src/Debug.h"
-
-// Usage:
-// make test TEST_SRC=test/test_test.cpp
+#include <chrono>
+#include <fstream>
 
 TEST_CASE("Basic Stream Operations") {
 
@@ -197,5 +196,110 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
 
         IntStream result = mod(inStream1, inStream2);
         REQUIRE(result == intendedResult);
+    }
+}
+
+#define BENCHMARKING_CASES 8
+#define BENCHMARKING_LOOPS 1
+
+TEST_CASE("Benchmarks") {
+    SECTION("last() benchmarking example"){
+        std::ofstream output_last;
+        //delete previous
+        printf("---last---- benchmark\n");
+        output_last.open("benchmarking_last.data");
+        output_last << "";
+        output_last.close();
+
+        for (int j=1;j <=BENCHMARKING_LOOPS;j++){
+            for (int i = 1; i<BENCHMARKING_CASES; i++) {
+                auto start2 = std::chrono::high_resolution_clock::now();
+                std::string path = "../test/data/benchmarking";
+                Reader inReader = Reader(path+std::to_string(i)+".in");
+                IntStream inputStreamV = inReader.getIntStream("z");
+                UnitStream inputStreamR = inReader.getUnitStream("a");
+                Reader outReader = Reader(path+std::to_string(i)+"_last.out");
+                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                
+                auto start = std::chrono::high_resolution_clock::now();
+                IntStream result = last(inputStreamV, inputStreamR);
+                auto stop = std::chrono::high_resolution_clock::now();
+                
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                printf("%li us\n",duration.count());
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                output_last.open ("benchmarking_last.data",std::ios::app);
+                output_last << duration.count() <<  " us" << " with reader: " <<duration2.count() <<"us \n";
+                output_last.close();
+            }
+        }
+    }
+
+    SECTION("time() benchmarking example"){
+        std::ofstream output_time;
+        //delete previous
+        printf("---time---- benchmark\n");
+        output_time.open("benchmarking_time.data");
+        output_time << "";
+        output_time.close();
+        for (int j=1;j <=BENCHMARKING_LOOPS;j++){
+            for (int i = 1;i<=BENCHMARKING_CASES; i++){
+                auto start2 = std::chrono::high_resolution_clock::now();
+                std::string path = "../test/data/benchmarking";
+
+                // Prepare empty output stream to fill
+                Reader inReader = Reader(path+std::to_string(i)+".in");
+                IntStream inputStream = inReader.getIntStream("z");
+                Reader outReader = Reader(path+std::to_string(i)+"_time.out");
+                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+
+                auto start = std::chrono::high_resolution_clock::now();
+                IntStream result = time(inputStream);
+                auto stop = std::chrono::high_resolution_clock::now();
+
+                REQUIRE(result == CORRECT_STREAM);
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                
+                output_time.open ("benchmarking_time.data",std::ios::app);
+                output_time <<"Benchmark "<< i <<": "<<duration.count() <<  " us" << " with reader: " <<duration2.count() <<" us\n";
+                output_time.close();
+            }
+        }
+    }
+
+    SECTION("delay() benchmarking example"){
+        std::ofstream output_delay;
+        //delete previous
+        printf("---delay---- benchmark\n");
+        output_delay.open("benchmarking_delay.data");
+        output_delay << "";
+        output_delay.close();
+        for (int j=1;j <=BENCHMARKING_LOOPS;j++){
+            // TODO: Check benchmarking case 3
+            for (int i = 4;i<=BENCHMARKING_CASES; i++){
+                auto start2 = std::chrono::high_resolution_clock::now();
+                std::string path = "../test/data/benchmarking";
+
+                Reader inReader = Reader(path+std::to_string(i)+".in");
+                IntStream inputStreamD = inReader.getIntStream("z");
+                UnitStream inputStreamR = inReader.getUnitStream("a");
+                Reader outReader = Reader(path+std::to_string(i)+"_delay.out");
+                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+
+                auto start = std::chrono::high_resolution_clock::now();
+                UnitStream result = delay(inputStreamD, inputStreamR);
+                auto stop = std::chrono::high_resolution_clock::now();
+                
+                //REQUIRE(result == CORRECT_STREAM);
+
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                
+                output_delay.open ("benchmarking_delay.data",std::ios::app);
+                output_delay <<"Benchmark "<< i <<": "<<duration.count() <<  " us" << " with reader: " <<duration2.count() <<" us\n";
+                output_delay.close();
+            }
+        }
     }
 }

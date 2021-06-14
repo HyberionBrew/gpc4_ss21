@@ -7,3 +7,14 @@ add_library(tessla_seq
         StreamFunctions.cpp
         Writer.cpp
 )
+
+add_executable(tessla_seq_test
+        Debug.cpp
+        Event.cpp
+        Reader.cpp
+        Stream.cpp
+        StreamFunctions.cpp
+        Writer.cpp
+        ../test/test_main.cpp
+        ../test/test_test.cpp
+)
