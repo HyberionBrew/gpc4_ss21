@@ -56,14 +56,15 @@ UnitStream delay(IntStream d, Stream& r){
     std::vector<Event*>::iterator currEventR = rstream.begin();
     std::vector<UnitStream>::size_type currEventOutIndex = 0;
     for (std::vector<IntEvent>::iterator currEventD = d.stream.begin(); currEventD != d.stream.end(); ++currEventD) {
-        while ((*currEventR)->get_timestamp() < currEventD->timestamp && currEventR != rstream.end()) {
+        while (currEventR != rstream.end() && (*currEventR)->get_timestamp() < currEventD->timestamp) {
             currEventR++;
         }
         while (currEventOutIndex < outstream.size() && outstream[currEventOutIndex].timestamp < outstream[currEventOutIndex].timestamp) {
             currEventOutIndex++;
         }
-        if ((currEventD->timestamp == (*currEventR)->get_timestamp()) ||
-            (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp))) {
+        if ((currEventR != rstream.end()) &&
+            ((currEventD->timestamp == (*currEventR)->get_timestamp()) ||
+            (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp)))) {
 
             size_t target = currEventD->timestamp + currEventD->value;
             currEventR++;
