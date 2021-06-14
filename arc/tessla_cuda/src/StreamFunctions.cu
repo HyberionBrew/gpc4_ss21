@@ -235,8 +235,10 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
         memset(result->host_values, 0, sizeAllocated);
         result->copy_to_device(false);
     }
+    cudaDeviceSynchronize();
     //TODO! check that no expection is thrown at launch!
     last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
+    cudaDeviceSynchronize();
     calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp,result->device_offset, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
@@ -278,25 +280,30 @@ __global__ void calculate_offset(int* timestamps, int* offset, int size){
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-
+    
     //shift accordingly to offset
     unit_stream_timestamps += *offsUnit;
     input_timestamp += *offsInt;
     input_values += *offsInt;
-
+        int local_unit_timestamp;
+    if (i < size){
+        output_timestamps[i] = -1;
+        local_unit_timestamp = unit_stream_timestamps[i];
+    }
     size -= *offsUnit;
     intStreamSize -= *offsInt;
-    output_timestamps[i] = INT_MIN;
+
     output_timestamps += *offsUnit;
     output_values += *offsUnit;
-    int out =  -1;
+    int out =  -2;
 
 
     //Search for the timestamp per thread
-    int local_unit_timestamp = unit_stream_timestamps[i];
+
     int L = 0;
     int R = intStreamSize-1;
     int m;
+    __syncthreads();
     if (i<size) {
 
         while (L<=R) {
@@ -322,8 +329,16 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     //all have their respective out values
     //the output_values array has been successfully filled
     //now the threads perform an and reduction starting at 0 going to size
+    __syncthreads();
     if (i < size){
+        if (out <0){
+            //printf("out %d \n",out);
+        }
         output_values[i] = out;
+        if (i < 40){
+            //printf("thread: %d \n",i);
+            //printf("out value %d\n", out);
+        }
     }
 }
 
