@@ -70,7 +70,7 @@ shared_ptr<UnitStream> delay(IntStream& d, Stream& r){
 
             size_t target = currEventD->timestamp + currEventD->value;
             currEventR++;
-            if ((*currEventR)->get_timestamp() >= target) {
+            if (currEventR->get_timestamp() >= target) {
                 UnitEvent node{target};
                 outstream.push_back(node);
             }
@@ -250,7 +250,7 @@ int int_mul(int x, int y) { return x * y; }
 int int_div(int x, int y) { return x / y; }
 int int_mod(int x, int y) { return x % y; }
 
-shared_ptr<IntStream> merge(IntStream s1, IntStream s2) {
+shared_ptr<IntStream> merge(IntStream& s1, IntStream& s2) {
     return lift(s1,s2,int_merge);
 }
 
@@ -294,26 +294,26 @@ shared_ptr<IntStream> mod2(IntStream& x, int value){
 }
 
 // x + y
-shared_ptr<IntStream> add(IntStream& x, IntStream y){
+shared_ptr<IntStream> add(IntStream& x, IntStream& y){
     return slift(x,y,int_add);
 }
 
 // x - y
-shared_ptr<IntStream> sub(IntStream& x, IntStream y){
+shared_ptr<IntStream> sub(IntStream& x, IntStream& y){
     return slift(x,y,int_sub);
 }
 
 // x * y
-shared_ptr<IntStream> mul(IntStream& x, IntStream y){
+shared_ptr<IntStream> mul(IntStream& x, IntStream& y){
     return slift(x,y,int_mul);
 }
 
 // x / y
-shared_ptr<IntStream> div(IntStream& x, IntStream y){
+shared_ptr<IntStream> div(IntStream& x, IntStream& y){
     return slift(x,y,int_div);
 }
 
 // x % y
-shared_ptr<IntStream> mod(IntStream& x, IntStream y){
+shared_ptr<IntStream> mod(IntStream& x, IntStream& y){
     return slift(x,y,int_mod);
 }

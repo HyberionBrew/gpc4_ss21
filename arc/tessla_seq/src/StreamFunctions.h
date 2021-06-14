@@ -86,6 +86,6 @@ std::shared_ptr<IntStream> mul(IntStream& x, IntStream& y);
 std::shared_ptr<IntStream> div(IntStream& x, IntStream& y);
 
 // x % y
-std::shared_ptr<IntStream> mod(IntStream x, IntStream& y);
+std::shared_ptr<IntStream> mod(IntStream& x, IntStream& y);
 
 #endif //GPU_TESSLA_STREAM_FUNCTIONS_H

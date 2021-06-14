@@ -15,10 +15,10 @@ Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
 }
 
-UnitStream Reader::getUnitStream(string name) {
+shared_ptr<UnitStream> Reader::getUnitStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
-    UnitStream readStream;
+    shared_ptr<UnitStream> readStream = std::make_shared<UnitStream>();
 
     if (file.is_open()) {
         string buf;
@@ -30,23 +30,23 @@ UnitStream Reader::getUnitStream(string name) {
                 int timestamp = stoi(matches[1]);
                 if (name.compare(matches[2]) == 0) {
                     UnitEvent ue{static_cast<size_t>(timestamp)};
-                    readStream.stream.push_back(ue);
+                    readStream->stream.push_back(ue);
                 }
             }
         }
         file.close();
     }
-    if (readStream.stream.size() == 0) {
+    if (readStream->stream.size() == 0) {
         cerr << "Unit-Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
     return readStream;
 }
 
-IntStream Reader::getIntStream(string name) {
+shared_ptr<IntStream> Reader::getIntStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
-    IntStream readStream;
+    shared_ptr<IntStream> readStream = make_shared<IntStream>();
 
     if (file.is_open()) {
         string buf;
@@ -60,13 +60,13 @@ IntStream Reader::getIntStream(string name) {
                 int value = stoi(matches[3]);
                 if (name.compare(matches[2]) == 0) {
                     IntEvent ie{static_cast<size_t>(timestamp), value};
-                    readStream.stream.push_back(ie);
+                    readStream->stream.push_back(ie);
                 }
             }
         }
         file.close();
     }
-    if (readStream.stream.size() == 0) {
+    if (readStream->stream.size() == 0) {
         cerr << "Integer-Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }

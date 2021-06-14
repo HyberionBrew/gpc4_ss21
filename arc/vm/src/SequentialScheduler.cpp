@@ -20,7 +20,6 @@ bool SequentialScheduler::next() {
     switch (inst.type) {
         case inst_add: {
             // Add two int streams together
-            printIntStream(*(get_intst(inst.r2)));
             set_reg(inst.rd, add(*(get_intst(inst.r1)), *(get_intst(inst.r2))));
             break;
         }
@@ -64,11 +63,11 @@ bool SequentialScheduler::next() {
             shared_ptr<IntStream> in1 = get_intst(inst.r1);
             shared_ptr<IntStream> in2 = get_intst(inst.r2);
             shared_ptr<UnitStream> un1 = get_ust(inst.r1);
-            shared_ptr<UnitStream> un1 = get_ust(inst.r2);
+            shared_ptr<UnitStream> un2 = get_ust(inst.r2);
 
             if (in1 != nullptr && in2 != nullptr) {
                 set_reg(inst.rd, merge(*in1, *in2));
-            } else if {
+            } else if (un1 != nullptr && un2 != nullptr) {
                 set_reg(inst.rd, merge(*un1, *un2));
             } else {
                 assert(false);
@@ -147,12 +146,10 @@ bool SequentialScheduler::next() {
             bool done = false;
             if (is != nullptr) {
                 intRegisters.erase(inst.r1);
-                delete is;
                 done = !done;
             }
             if (us != nullptr) {
                 unitRegisters.erase(inst.r1);
-                delete us;
                 done = !done;
             }
             assert(done);
@@ -177,7 +174,7 @@ void SequentialScheduler::set_reg(size_t pos, shared_ptr<IntStream> stream) {
     intRegisters[pos] = stream;
 }
 
-void SequentialScheduler::set_reg(size_t pos, shared_ptr<UnitStream> & stream) {
+void SequentialScheduler::set_reg(size_t pos, shared_ptr<UnitStream> stream) {
     unitRegisters[pos] = stream;
 }
 
@@ -208,7 +205,7 @@ shared_ptr<Stream> SequentialScheduler::get_st(size_t reg) {
     } else {
         stream = static_pointer_cast<Stream>(intRegisters[reg]);
     }
-    return st;
+    return stream;
 }
 
 void SequentialScheduler::warmup(std::string in_file) {
