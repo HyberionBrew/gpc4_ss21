@@ -1,0 +1,8 @@
+Benchmark 1: 282 us with reader: 3387 us size: 3
+Benchmark 2: 189 us with reader: 3005 us size: 6
+Benchmark 3: 205 us with reader: 4894 us size: 99
+Benchmark 4: 233 us with reader: 23511 us size: 1024
+Benchmark 5: 341 us with reader: 213083 us size: 9957
+Benchmark 6: 1284 us with reader: 2203164 us size: 100017
+Benchmark 7: 7519 us with reader: 22679653 us size: 999389
+Benchmark 8: 125986 us with reader: 235901143 us size: 10004669
