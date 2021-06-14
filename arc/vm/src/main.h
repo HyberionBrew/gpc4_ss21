@@ -13,6 +13,6 @@ enum scheduler{debug, sequential, gpu, thrust};
 
 int main(int argc, char **argv);
 void decode (InstrInterface & interface, std::string coil_file, bool verbose);
-void schedule (InstrInterface & interface, scheduler type, bool verbose);
+void schedule (InstrInterface & interface, scheduler type, std::string in_file, bool verbose);
 
 #endif //GPC4_SS21_MAIN_H

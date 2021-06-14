@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <atomic>
-#include "IOStrem.h"
+#include "IOStream.h"
 
 // Careful! This is a single reader multiple writer construction!!!
 

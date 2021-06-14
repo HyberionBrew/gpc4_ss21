@@ -14,6 +14,7 @@ class Reader {
     std::string FILENAME;
 public:
     Reader(std::string inputFile);
+    Reader() = delete;
     UnitStream getUnitStream(std::string name);
     IntStream getIntStream(std::string name);
 };

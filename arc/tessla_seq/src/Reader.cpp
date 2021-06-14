@@ -37,7 +37,7 @@ UnitStream Reader::getUnitStream(string name) {
         file.close();
     }
     if (readStream.stream.size() == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
+        cerr << "Unit-Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
     return readStream;
@@ -67,7 +67,7 @@ IntStream Reader::getIntStream(string name) {
         file.close();
     }
     if (readStream.stream.size() == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
+        cerr << "Integer-Stream " << name << " is not present in the input file" << "\n";
         exit(1);
     }
     return readStream;

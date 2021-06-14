@@ -96,7 +96,6 @@ void Decode::parse_header() {
 
         // Check for reading string
         if (readState == head_read_string) {
-            bytes.push_back(byte);
             // In case of finished string, save everything
             if (byte == 0x00) {
                 // Save the current stream
@@ -118,6 +117,9 @@ void Decode::parse_header() {
                 bytes.clear();
                 // Require head field delimiter
                 readState = head_delim_needed;
+            } else {
+                // If not terminated, add the character to the string.
+                bytes.push_back(byte);
             }
             continue;
         }
@@ -284,10 +286,10 @@ void Decode::parse_header() {
         if (instreamState == inst_r4) {
             if (byte == 0x00) {
                 // Unit stream
-                current.type = unit;
+                current.type = io_unit;
             } else if (byte == 0x01) {
                 // Integer stream
-                current.type = integer;
+                current.type = io_integer;
             } else {
                 // Unsupported stream type
                 throw std::runtime_error("Unsupported input stream type.");
@@ -658,25 +660,27 @@ int32_t Decode::read_imm(unsigned char opcode) {
 }
 
 void Decode::print_header() {
-    std::cout << "Header for current coil file:" << std::endl;
-    std::cout << "Operating on specification version " << majorV << "." << minorV << std::endl;
+    std::stringstream str;
+    str << "Header for current coil file:" << std::endl;
+    str << "Operating on specification version " << majorV << "." << minorV << std::endl;
     if (wideAddresses) {
-        std::cout << "4 Byte register addresses." << std::endl;
+        str << "4 Byte register addresses." << std::endl;
     } else {
-        std::cout << "2 Byte register addresses." << std::endl;
+        str << "2 Byte register addresses." << std::endl;
     }
-    std::cout << "Input streams:" << std::endl;
+    str << "Input streams:" << std::endl;
     for (std::vector<IOStream>::iterator current = in_streams.begin(); current != in_streams.end(); current++) {
-        std::cout << current->name << " in pseudo register " << current->regname << " of type ";
-        if (current->type == unit) {
-            std::cout << "UNIT";
+        str << current->name << " in pseudo register " << current->regname << " of type ";
+        if (current->type == io_unit) {
+            str << "UNIT";
         } else {
-            std::cout << "INTEGER";
+            str << "INTEGER";
         }
-        std::cout << std::endl;
+        str << std::endl;
     }
-    std::cout << "Output streams:" << std::endl;
+    str << "Output streams:" << std::endl;
     for (std::vector<IOStream>::iterator current = out_streams.begin(); current != out_streams.end(); current++) {
-        std::cout << current->name << " in pseudo register " << current->regname << std::endl;
+        str << current->name << " in pseudo register " << current->regname << std::endl;
     }
+    std::cout << str.str();
 }

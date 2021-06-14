@@ -14,7 +14,7 @@ private:
 public:
     GPUScheduler(InstrInterface & interface);
     bool next() override;
-    bool parse_input() override;
+    void warmup(std::string in_file) override;
 };
 
 

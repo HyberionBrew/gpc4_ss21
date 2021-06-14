@@ -5,7 +5,7 @@
 #ifndef GPU_TESSLA_DECODE_H
 #define GPU_TESSLA_DECODE_H
 
-#include "IOStrem.h"
+#include "IOStream.h"
 #include "InstrInterface.h"
 #include <string>
 #include <fstream>

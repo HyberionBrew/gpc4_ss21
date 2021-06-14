@@ -102,6 +102,5 @@ bool DebugScheduler::next() {
     return true;
 }
 
-bool DebugScheduler::parse_input() {
-    return true;
+void DebugScheduler::warmup(std::string in_file) {
 }

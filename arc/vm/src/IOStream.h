@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string>
 
-enum ioStreamType{unit, integer};
+enum ioStreamType{io_unit, io_integer};
 enum ioDirection{io_in, io_out};
 
 struct IOStream {

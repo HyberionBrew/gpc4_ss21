@@ -24,7 +24,7 @@ public:
     Scheduler() = delete;
     Scheduler(InstrInterface & interface);
     virtual bool next() = 0;
-    virtual bool parse_input () = 0;
+    virtual void warmup (std::string in_file) = 0;
 };
 
 #endif //GPC4_SS21_SCHEDULER_H

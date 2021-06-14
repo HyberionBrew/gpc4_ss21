@@ -13,6 +13,5 @@ bool GPUScheduler::next() {
     return false;
 }
 
-bool GPUScheduler::parse_input() {
-    return true;
+void GPUScheduler::warmup(std::string in_file) {
 }

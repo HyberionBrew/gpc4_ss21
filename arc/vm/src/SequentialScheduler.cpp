@@ -5,6 +5,8 @@
 #include "SequentialScheduler.h"
 #include <iostream>
 #include <assert.h>
+#include <Reader.h>
+#include <StreamFunctions.h>
 
 SequentialScheduler::SequentialScheduler(InstrInterface & interface) : Scheduler(interface) {
     line = 0;
@@ -13,87 +15,186 @@ SequentialScheduler::SequentialScheduler(InstrInterface & interface) : Scheduler
 bool SequentialScheduler::next() {
     line++;
     Instruction inst = instrInterface.pop();
+    Stream* res;
     switch (inst.type) {
-        case inst_add:
-            std::cout << line << ": Add, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        case inst_add: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = add(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_mul:
-            std::cout << line << ": Mul, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
-            break;;
-        case inst_sub:
-            std::cout << line << ": Sub, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_mul: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = mul(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_div:
-            std::cout << line << ": Div, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_sub: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = sub(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_mod:
-            std::cout << line << ": Mod, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_div: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = div(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_delay:
-            std::cout << line << ": Delay, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_mod: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = mod(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_last:
-            std::cout << line << ": Last, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_delay: {
+            // Add two int streams together
+            res = new UnitStream;
+            *res = delay(*(get_intst(inst.r1)),
+                       *(get_st(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_time:
-            std::cout << line << ": Time, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_last: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = last(*(get_intst(inst.r1)),
+                         *(get_st(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_merge:
-            std::cout << line << ": Merge, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_time: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = time(*(get_st(inst.r1)));
+            set_reg(inst.rd, res);
             break;
-        case inst_count:
-            std::cout << line << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
+        }
+        case inst_merge: {
+            // Add two int streams together
+            // TODO fix this!!!
+            res = new IntStream;
+            *res = merge(*(get_intst(inst.r1)),
+                       *(get_intst(inst.r2)));
+            set_reg(inst.rd, res);
             break;
-        case inst_addi:
-            std::cout << line << ": AddI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_count: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = count(*(get_ust(inst.r1)));
+            set_reg(inst.rd, res);
             break;
-        case inst_muli:
-            std::cout << line << ": MulI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_addi: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = add(*(get_intst(inst.r1)),
+                        inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_subi:
-            std::cout << line << ": SubI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_muli: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = mul(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_subii:
-            std::cout << line << ": SubII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_subi: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = sub1(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_divi:
-            std::cout << line << ": DivI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_subii: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = sub2(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_divii:
-            std::cout << line << ": DivII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_divi: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = div1(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_modi:
-            std::cout << line << ": ModI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_divii: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = div2(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_modii:
-            std::cout << line << ": ModII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_modi: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = mod1(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
-        case inst_default:
-            std::cout << line << ": Default, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+        }
+        case inst_modii: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = mod2(*(get_intst(inst.r1)),
+                       inst.imm);
+            set_reg(inst.rd, res);
             break;
+        }
+        case inst_default: {
+            // Add two int streams together
+            res = new IntStream;
+            *res = def(inst.imm);
+            set_reg(inst.rd, res);
+            break;
+        }
         case inst_load:
-            std::cout << line << ": Load, R1: " << inst.r1 << std::endl;
+            // No device to load to. Ignore.
             break;
         case inst_load4:
-            std::cout << line << ": Load4, R1: " << inst.r1 << std::endl;
+            // No device to load to. Ignore.
             break;
         case inst_load6:
-            std::cout << line << ": Load6, R1: " << inst.r1 << std::endl;
+            // No device to load to. Ignore.
             break;
         case inst_load8:
-            std::cout << line << ": Load8, R1: " << inst.r1 << std::endl;
+            // No device to load to. Ignore.
             break;
         case inst_store:
-            std::cout << line << ": Store, R1: " << inst.r1 << std::endl;
+            // No device to store from. Ignore.
             break;
-        case inst_free:
-            std::cout << line << ": Free, R1: " << inst.r1 << std::endl;
+        case inst_free: {
+            // Don't touch free. It's eeeevil
             break;
-        case inst_unit:
-            std::cout << line << ": Unit, R1: " << inst.r1 << std::endl;
+        }
+        case inst_unit: {
+            // Add two int streams together
+            res = new UnitStream;
+            *res = unit();
+            set_reg(inst.rd, res);
             break;
+        }
         case inst_exit:
-            std::cout << line << ": Exit" << std::endl;
+            // Terminate the program
             return false;
         default:
             // Unreachable code
@@ -102,6 +203,55 @@ bool SequentialScheduler::next() {
     return true;
 }
 
-bool SequentialScheduler::parse_input() {
-    return true;
+void SequentialScheduler::set_reg(size_t pos, Stream* stream) {
+    registers[pos] = stream;
+}
+
+IntStream* SequentialScheduler::get_intst(size_t reg) {
+    assert(registers.find(reg) != registers.end());
+    IntStream* intst = static_cast<IntStream *>(registers[reg]);
+    return intst;
+}
+
+UnitStream* SequentialScheduler::get_ust(size_t reg) {
+    assert(registers.find(reg) != registers.end());
+    UnitStream* ust = static_cast<UnitStream *>(registers[reg]);
+    return ust;
+}
+
+Stream* SequentialScheduler::get_st(size_t reg) {
+    assert(registers.find(reg) != registers.end());
+    Stream* st = registers[reg];
+    return st;
+}
+
+void SequentialScheduler::warmup(std::string in_file) {
+    Reader reader(in_file);
+    // Implement something smarter than busy waiting
+    while (!instrInterface.ioReady);
+    IOStream current;
+    while (instrInterface.iostream_pending()) {
+        current = instrInterface.pop_iostream();
+        if (current.direction == io_in) {
+            // If current IO stream is an input stream, read the data
+            if (current.type == io_integer) {
+                IntStream* stream = new IntStream;
+                *stream = reader.getIntStream(current.name);
+                set_reg(current.regname, stream);
+            } else if (current.type == io_unit) {
+                UnitStream* stream = new UnitStream;
+                *stream = reader.getUnitStream(current.name);
+                set_reg(current.regname, stream);
+            } else {
+                // Unreachable code
+                assert(false);
+            }
+        } else if (current.direction == io_out) {
+            // If it is an output stream, save it for later
+            out_strems.push_back(current);
+        } else {
+            // Unreachable code
+            assert(false);
+        }
+    }
 }
