@@ -7,17 +7,19 @@
 
 #include "Stream.h"
 #include <string>
-#include <memory>
+#include <map>
 
 void readStreams();
 
 class Reader {
     std::string FILENAME;
+    std::map<std::string, UnitStream> unitStreams;
+    std::map<std::string, IntStream> intStreams;
+    void readStreams();
 public:
     Reader(std::string inputFile);
-    Reader() = delete;
-    std::shared_ptr<UnitStream> getUnitStream(std::string name);
-    std::shared_ptr<IntStream> getIntStream(std::string name);
+    UnitStream getUnitStream(std::string name);
+    IntStream getIntStream(std::string name);
 };
 
 #endif //GPU_TESSLA_READER_H

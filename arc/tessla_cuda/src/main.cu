@@ -12,6 +12,42 @@ void experimental_time(){
 
 }
 
+void test_lift(){
+    int sx = 50;
+    int sy = 100;
+    int *x_v = (int*)malloc(sx*sizeof(int));
+    int *y_v = (int*)malloc(sy*sizeof(int));
+    int *x_ts = (int*)malloc(sx*sizeof(int));
+    int *y_ts = (int*)malloc(sy*sizeof(int));
+
+    //int *res_ts = (int*)malloc((sx+sy)*sizeof(int));
+    //int *res_v = (int*)malloc((sx+sy)*sizeof(int));
+
+    for (int i=0; i<sx; i++){
+        x_ts[i] = i;
+        x_v[i] = 2*i;
+    }
+    
+    for (int i=0; i<sy; i++){
+        y_ts[i] = i;
+        y_v[i] = i;
+    }
+
+    IntStream x(x_ts, x_v, sx);
+    IntStream y(y_ts, y_v, sy);
+    IntStream res;
+
+    x.copy_to_device();
+    y.copy_to_device();
+
+    lift(&x,&y,&res,31, 0);
+    res.copy_to_host();
+
+    x.print();
+    y.print();
+    res.print();
+}
+
 
 void experimental_last(){
     printf("--------- experimental last start -----------\n");
@@ -87,6 +123,9 @@ int main(int argc, char **argv) {
     //might wanna derive MAX_THREADS and so on from here! TODO!
     printf("Using Device %d: %s\n", dev, deviceProp.name);
 
+    test_lift();
+
+    /*
     //create & allocate experimental streams
     //still working for size = 1024*1024*10
     int size = 5;
@@ -113,7 +152,7 @@ int main(int argc, char **argv) {
     *(host_value+1) = 3;
     *(host_value+2) = 6;*/
 
-
+   /*
     *(host_unit_timestamp) = 0;
     *(host_unit_timestamp+1) = 2;
     *(host_unit_timestamp+2) = 4;
@@ -199,6 +238,6 @@ int main(int argc, char **argv) {
     CHECK(cudaProfilerStop());
     CHECK(cudaDeviceReset());
 
-
+    */
     return(0);
 }

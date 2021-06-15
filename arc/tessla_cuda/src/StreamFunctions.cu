@@ -10,7 +10,6 @@
 #include "device_information.cuh"
 #include "StreamFunctionHelper.cuh"
 
-
 #define MAX_STREAMS 10
 //Memory pointer for the streams
 //TODO! not used
@@ -236,8 +235,10 @@ void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStr
         memset(result->host_values, 0, sizeAllocated);
         result->copy_to_device(false);
     }
+    cudaDeviceSynchronize();
     //TODO! check that no expection is thrown at launch!
     last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
+    cudaDeviceSynchronize();
     calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp,result->device_offset, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
 }
@@ -279,25 +280,30 @@ __global__ void calculate_offset(int* timestamps, int* offset, int size){
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-
+    
     //shift accordingly to offset
     unit_stream_timestamps += *offsUnit;
     input_timestamp += *offsInt;
     input_values += *offsInt;
-
+        int local_unit_timestamp;
+    if (i < size){
+        output_timestamps[i] = -1;
+        local_unit_timestamp = unit_stream_timestamps[i];
+    }
     size -= *offsUnit;
     intStreamSize -= *offsInt;
-    output_timestamps[i] = INT_MIN;
+
     output_timestamps += *offsUnit;
     output_values += *offsUnit;
-    int out =  -1;
+    int out =  -2;
 
 
     //Search for the timestamp per thread
-    int local_unit_timestamp = unit_stream_timestamps[i];
+
     int L = 0;
     int R = intStreamSize-1;
     int m;
+    __syncthreads();
     if (i<size) {
 
         while (L<=R) {
@@ -323,8 +329,16 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     //all have their respective out values
     //the output_values array has been successfully filled
     //now the threads perform an and reduction starting at 0 going to size
+    __syncthreads();
     if (i < size){
+        if (out <0){
+            //printf("out %d \n",out);
+        }
         output_values[i] = out;
+        if (i < 40){
+            //printf("thread: %d \n",i);
+            //printf("out value %d\n", out);
+        }
     }
 }
 
@@ -341,22 +355,24 @@ __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* out
     if (i == 0) *resultOffset = *offset;
 }
 
-
-__device__ int merge_path(int *a, int *b, int diag, int a_len, int b_len) {
+/**
+ * MergePath, also used for lift
+ */
+__device__ int merge_path(int *x, int *y, int diag, int x_len, int y_len) {
     // Just using UnitStreams for now
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int begin = max(0, diag - b_len);               // Start of search window
-    int end = min(diag, a_len);                     // End of search window
+    int begin = max(0, diag - y_len);               // Start of search window
+    int end = min(diag, x_len);                     // End of search window
     int mid;
 
     // Binary search
     while(begin < end){
     
         mid = (end + begin) / 2;
-        int a_val = a[mid];
-        int b_val = b[diag - 1 - mid];
+        int x_ts = x[mid];
+        int y_ts = y[diag - 1 - mid];
 
-        if (a_val < b_val) {
+        if (x_ts < y_ts) {
             begin = mid + 1;
         }
         else{
@@ -366,84 +382,169 @@ __device__ int merge_path(int *a, int *b, int diag, int a_len, int b_len) {
     return begin;
 }
 
-// Device internal sequential merge of small partitions
-__device__ void merge_serial(int *a, int *b, int *c,
-                             int a_start, int b_start,
-                             int vpt, int tidx,
-                             int a_len, int b_len){
+typedef void (*lift_op) (int*, int*, int*);
 
-    int a_i = a_start;
-    int b_i = b_start;
-    int a_val = a[a_i];
-    int b_val = b[b_i];
+typedef void (*lift_func) ( int*, int*, 
+                            int*, int*, 
+                            int*, int*,
+                            int*, int*,
+                            bool, bool, lift_op);
+
+__device__ void lift_add(int *a, int *b, int *result){
+    *result = *a + *b;
+}
+__device__ void lift_sub(int *a, int *b, int *result){
+    *result = *a - *b;
+}
+__device__ void lift_mul(int *a, int *b, int *result){
+    *result = *a * *b;
+}
+__device__ void lift_div(int *a, int *b, int *result){
+    if (*b != 0){
+        *result = *a / *b;
+    }
+    else{
+        // For now, dividing by 0 results in 0
+        *result = 0;
+    }
+}
+__device__ void lift_mod(int *a, int *b, int *result){
+    if (*b != 0){
+        *result = *a % *b;
+    }
+    else{
+        // For now, dividing by 0 results in 0
+        *result = 0;
+    }
+}
+
+__device__ void lift_value( int *x_ts, int *y_ts,
+                            int *x_v, int *y_v,
+                            int *x_i, int *y_i, 
+                            int *out_ts, int *out_v,
+                            bool x_done, bool y_done, lift_op op){
+
+    if (x_ts[*x_i] != y_ts[*y_i]){
+        // If timestamps don't match, result timestamp is invalid (-1)
+        *out_ts = -1;
+
+        if (*x_i < *y_i || y_done){
+            (*x_i)++;
+        }
+        else{
+            (*y_i)++;
+        }
+    }
+    else{
+        // If they match, result timestamp is x/y timestamp and result value is the result of the lift function
+        *out_ts = x_ts[*x_i];
+        // Specific value based lift operation
+        op(&x_v[*x_i], &y_v[*y_i], out_v);
+
+        if (!x_done){
+            (*x_i)++;
+        }
+        if (!y_done){
+            (*y_i)++;
+        }
+    }
+}
+
+__device__ void lift_merge( int *x_ts, int *y_ts,
+                            int *x_v, int *y_v,
+                            int *x_i, int *y_i, 
+                            int *out_ts, int *out_v,
+                            bool x_done, bool y_done, lift_op op){
+
+    if (x_ts[*x_i] <= y_ts[*y_i] && !x_done){
+        *out_ts = x_ts[*x_i];
+        *out_v = x_v[*x_i];
+        (*x_i)++;
+    }
+    else{
+        *out_ts = y_ts[*y_i];
+        *out_v = y_v[*y_i];
+        (*y_i)++;
+    }
+}
+
+__device__ lift_func lift_funcs[] = { lift_value, lift_merge };
+__device__ lift_op lift_ops[] = { lift_add, lift_sub, lift_mul, lift_div, lift_mod };
+
+// Device internal sequential processing of small partitions
+__device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
+                                int *x_v, int *y_v, int *out_v,
+                                int x_start, int y_start,
+                                int vpt, int tidx,
+                                int x_len, int y_len,
+                                lift_func fct, lift_op op, 
+                                int* valid, int *invalid){
+
+    int x_i = x_start;
+    int y_i = y_start;
     int size = vpt;
 
-    bool a_done = a_i >= a_len ? true : false;
-    bool b_done = b_i >= b_len ? true : false;
+    bool x_done = x_i >= x_len ? true : false;
+    bool y_done = y_i >= y_len ? true : false;
 
     // Could possibly be optimized since only the last block needs range checks
     // #pragma unroll is also an option according to https://moderngpu.github.io/merge.html
-    for(int i = 0; i < vpt; ++i) {
-
+    for(int i = 0; i < vpt; i++) {
         // Break if last block doesn't fit
-        if (a_done && b_done){
+        if (x_done && y_done){
             break;
         }
 
-        if (a_done){
-            c[tidx*vpt + i] = b_val;
-            b_i++;
-        }
-        else if (b_done){
-            c[tidx*vpt + i] = a_val;
-            a_i++;
-        }
-        else if (a_val <= b_val){
-            c[tidx*vpt + i] = a_val;
-            a_i++;
-            if (a_val == b_val && (b_i > b_start || tidx == 0)){
-                b[b_i] = -1;
-            }
-           
-        }
-        else{
-            c[tidx*vpt + i] = b_val;
-            b_i++;
-        }
+        int offset = (tidx*vpt) + i;
 
-        if (a_i >= a_len){
-            a_done = true;
-        }
-        else{
-            a_val = a[a_i];
-        }
+        fct(x_ts, y_ts, 
+            x_v, y_v,
+            &x_i, &y_i, 
+            out_ts+offset, out_v+offset,
+            x_done, y_done, op);
 
-        if (b_i >= b_len){
-            b_done = true;
+        if (x_i >= x_len){
+            x_done = true;
+        }
+        if (y_i >= y_len){
+            y_done = true;
+        }
+        if ((x_i + y_i) - (x_start + y_start) >= vpt){
+            x_done = true;
+            y_done = true;
+        }
+    }
+
+    // Count valid/invalid timestamps per partition
+    for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+        if (out_ts[tidx*vpt+i] == -1){
+            invalid[tidx]++;
         }
         else{
-            b_val = b[b_i];
+            valid[tidx]++;
         }
     }
 
     __syncthreads();
 
-    if (tidx == 0){
-        // Thread 0 does not have to check its starting values
-        return;
-    }
-
-    // Afterwards, threads have to check for overlapping timestamps in their c[] partition!
+    // Afterwards, threads have to check for overlapping timestamps in their c[] partition in case of merge
     // VPT > 1 check not really necessary, we should guarantee that VPT > 1 beforehand, otherwise the mergepath is the full merge anyway
-    if (vpt > 1){
-        for (int i = 0; i < vpt; i++){
-            if (c[tidx*vpt + i - 1] == c[tidx*vpt + i]){
-                c[tidx*vpt + i] = -1;
+    if (vpt > 1 && fct == lift_merge){
+        for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+            int l = max(tidx*vpt + i - 1, 0);
+            int r = max(tidx*vpt + i, 1);
+            if (out_ts[l] == out_ts[r]){
+                out_ts[r] = -1;
+                invalid[tidx]++;
+                // Decrement valid, since it is at maximum due to incrementations before
+                valid[tidx]--;
             }
         }
+        __syncthreads();
     }
 }
 
+// Information about MergePath
 // https://stackoverflow.com/questions/30729106/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
 /**
  * See the following paper for parallel merging of sorted arrays:
@@ -455,88 +556,116 @@ __device__ void merge_serial(int *a, int *b, int *c,
  *
  * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
  */
-void merge(UnitStream *s1, UnitStream *s2, UnitStream *result, int threads){
 
-    int block_size = 1;
-    int blocks = 1;
 
-    // Export to function maybe -> reusable (e.g. with a config struct)
-    if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
-        printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
-        //return;
+/**
+ * Lift
+ */
+void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
+    int block_size = 0;
+    int blocks = 0;
+    calcThreadsBlocks(threads, &block_size, &blocks);
+
+    threads = (blocks) * (block_size);
+
+    if (!result->onDevice) {
+        result->size = x->size + y->size;
+        result->host_timestamp = (int*)malloc(result->size * sizeof(int));
+        result->host_values = (int*)malloc(result->size * sizeof(int));
+        memset(result->host_timestamp, -1, result->size);
+        memset(result->host_values, 0, result->size);
+        result->copy_to_device(false);
     }
 
-    for (int bs = 32; bs <= MAX_THREADS_PER_BLOCK;bs +=32){
-        if (block_size > threads){
-            break;
-        }
-        block_size = bs;
-    }
+    // Array to count valid timestamps
+    int *valid_h = (int*)malloc(threads*sizeof(int));
+    int *valid_d;
+    memset(valid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&valid_d, threads*sizeof(int));
 
-    for (int bl=1; bl <= MAX_BLOCKS*1000; bl++){
-        blocks = bl;
-        if (bl*block_size > threads){
-            break;
-        }
-    }
+    // Array to count invalid timestamps
+    int *invalid_h = (int*)malloc(threads*sizeof(int));
+    int *invalid_d;
+    memset(invalid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&invalid_d, threads*sizeof(int));
 
-    threads = blocks*block_size;
-
-    // Using the pseudo-code in the paper
-    int a_len = sizeof(s1->host_timestamp) / sizeof(s1->host_timestamp[0]);
-    int b_len = sizeof(s2->host_timestamp) / sizeof(s2->host_timestamp[0]);
-    memset(result->host_timestamp, -1, (a_len + b_len) * sizeof(int));
-
-    // cudaMalloc Timestamp arrays
-    s1->copy_to_device();
-    s2->copy_to_device();
-    result->copy_to_device();
-
-    int sha_memsize = (a_len + b_len) * sizeof(int);
+    // Array to copy the result to ... needed for offset calculations
+    int *out_ts_cpy;
+    int *out_v_cpy;
+    cudaMalloc((int**)&out_ts_cpy, result->size*sizeof(int));
+    cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
 
     // 3, 2, 1, go
-    merge_cuda<<<blocks, block_size, sha_memsize>>>(s1->device_timestamp, s2->device_timestamp, result->device_timestamp, threads, s1->size, s2->size);
-
-    // Copy back results
-    result->copy_to_host();
-    
-    printf("After Merge\n");
-    printf("S1: -----------------------------------------\n");
-    for (int i = 0; i < s1->size; i++){
-        printf("%i, ", s1->host_timestamp[i]);
-    }
-    printf("\n-----------------------------------------------\n");
-
-    printf("S2: -----------------------------------------\n");
-    for (int i = 0; i < s2->size; i++){
-        printf("%i, ", s2->host_timestamp[i]);
-    }
-    printf("\n-----------------------------------------------\n");
-
-    printf("Result: -----------------------------------------\n");
-    for (int i = 0; i < result->size; i++){
-        printf("%i, ", result->host_timestamp[i]);
-    }
-    printf("\n-----------------------------------------------\n");
-    
+    lift_cuda<<<blocks, block_size>>>(  x->device_timestamp, y->device_timestamp, 
+                                        result->device_timestamp, 
+                                        x->device_values, y->device_values,
+                                        result->device_values,
+                                        threads, x->size, y->size, 
+                                        op, valid_d, invalid_d, 
+                                        out_ts_cpy, out_v_cpy, result->device_offset);
 }
 
-// https://moderngpu.github.io/merge.html
-// https://github.com/moderngpu/moderngpu/blob/V1.1/include/device/ctamerge.cuh
-__global__ void merge_cuda(int *a, int *b, int *c, int threads, int a_len, int b_len){
+__global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
+                            int *x_v, int *y_v, int *out_v,
+                            int threads, int x_len, int y_len, 
+                            int op, int *valid, int *invalid,
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset){
 
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;        // Thread ID
+    const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
 
-    int vpt = ceil((double)(a_len + b_len) / (double)threads);  // Values per thread
-    int diag = i * vpt;                                         // Binary search constraint
+    int vpt = ceil((double)(x_len + y_len) / (double)threads);      // Values per thread
+    int diag = tidx * vpt;                                          // Binary search constraint
 
-    int intersect = merge_path(a, b, diag, a_len, b_len);
-    int a_start = intersect;
-    int b_start = diag - intersect;
+    int intersect = merge_path(x_ts, y_ts, diag, x_len, y_len);
+    int x_start = intersect;
+    int y_start = diag - intersect;
 
-    merge_serial(a, b, c, a_start, b_start, vpt, i, a_len, b_len);
+    // Split op into merge vs. value function and specific value operation
+    int fct = 0;
+    if (op == MRG){
+        op = 0;
+        fct = 1;
+    }
+
+    // Set thread local valid/invalid counters to 0
+    invalid[tidx] = 0;
+    valid[tidx] = 0;
+    
+    if (tidx*vpt < x_len+y_len) {
+        int mems = min(vpt, (x_len+y_len)-tidx*vpt);
+        memset(out_ts_cpy+tidx*vpt, -1, mems*sizeof(int));
+    }
+    
+    lift_partition( x_ts, y_ts, out_ts_cpy,
+                    x_v, y_v, out_v_cpy,
+                    x_start, y_start, vpt, tidx, 
+                    x_len, y_len, lift_funcs[fct], lift_ops[op], 
+                    valid, invalid);
+
+    // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
+    int cuml_invalid = 0;
+    for (int i = 0; i < threads; i++){
+        cuml_invalid += invalid[i];
+    }
+
+    int cuml_valid_before = 0;
+    for (int i = 0; i < tidx; i++){
+        cuml_valid_before += valid[i];
+    }
+
+    int vals_before = cuml_invalid + cuml_valid_before;
+    int valid_cnt = 0;
+
+    for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+        if (out_ts_cpy[tidx*vpt+i] != -1){
+            out_ts[vals_before+valid_cnt] = out_ts_cpy[tidx*vpt+i];
+            out_v[vals_before+valid_cnt] = out_v_cpy[tidx*vpt+i];
+            valid_cnt++;
+        }
+    }
+    // Only one thread does this
+    if (tidx == 0) {
+        *invalid_offset = cuml_invalid;
+    }
+    __syncthreads();
 }
-
-
-
-

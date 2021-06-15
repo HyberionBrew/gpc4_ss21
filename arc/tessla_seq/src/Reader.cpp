@@ -13,62 +13,76 @@ using namespace std;
 
 Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
+    readStreams();
 }
 
-shared_ptr<UnitStream> Reader::getUnitStream(string name) {
+void Reader::readStreams() {
     fstream file;
     file.open(this->FILENAME, ios::in);
-    shared_ptr<UnitStream> readStream = std::make_shared<UnitStream>();
-
-    if (file.is_open()) {
+    if (file.is_open())  {
         string buf;
-        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*\\(\\)\\s*");
         while (getline(file, buf)) {
-            // match each line to regex
-            smatch matches;
-            if (regex_match(buf, matches, pattern)) {
-                int timestamp = stoi(matches[1]);
-                if (name.compare(matches[2]) == 0) {
-                    UnitEvent ue{static_cast<size_t>(timestamp)};
-                    readStream->stream.push_back(ue);
+            buf.erase(std::remove_if(buf.begin(), buf.end(),::isspace));
+            size_t colPos = buf.find(':');
+            size_t eqPos = buf.find('=');
+            if (colPos == std::string::npos || eqPos == std::string::npos) {
+                //TODO throw exception
+                std::cerr << "Invalid line";
+            }
+            int timestamp = stoi(buf, 0);
+            string name = buf.substr(colPos+1, eqPos-colPos-1);
+
+            try {
+                size_t post_eq = eqPos + 1;
+                int value = stoi(buf, &post_eq);
+                // create int event
+                IntEvent ev = IntEvent(timestamp, value);
+
+                // check if exists in map
+                if (this->intStreams.find(name) == this->intStreams.end()) {
+                    IntStream s;
+                    this->intStreams.insert(std::pair<string,IntStream>(name, s));
                 }
+
+                if (this->intStreams.find(name) != this->intStreams.end()) {
+                    this->intStreams.find(name)->second.stream.push_back(ev);
+                } else {
+                    std::cout << "SHOULD NOT BE REACHED";
+                }
+
+            } catch (invalid_argument) {
+                // create unit event
+                UnitEvent ev = UnitEvent(timestamp);
+
+                // check if exists in map
+                if (this->unitStreams.find(name) == this->unitStreams.end()) {
+                    UnitStream s;
+                    this->unitStreams.insert(std::pair<string, UnitStream>(name, s));
+                }
+
+                if (this->unitStreams.find(name) != this->unitStreams.end()) {
+                    this->unitStreams.find(name)->second.stream.push_back(ev);
+                } else {
+                    std::cout << "SHOULD NOT BE REACHED";
+                }
+                // try to create unit event
             }
         }
-        file.close();
     }
-    if (readStream->stream.size() == 0) {
-        cerr << "Unit-Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
-    }
-    return readStream;
 }
 
-shared_ptr<IntStream> Reader::getIntStream(string name) {
-    fstream file;
-    file.open(this->FILENAME, ios::in);
-    shared_ptr<IntStream> readStream = make_shared<IntStream>();
+UnitStream Reader::getUnitStream(string name) {
+    if (this->unitStreams.find(name) != this->unitStreams.end()) {
+        return this->unitStreams.find(name)->second;
+    } else {
+        // TODO throw exception
+    }
+}
 
-    if (file.is_open()) {
-        string buf;
-        // match each line to regex
-        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*(-?[0-9]+)\\s*");
-        while (getline(file, buf)) {
-            // match each line to regex
-            smatch matches;
-            if (regex_match(buf, matches, pattern)) {
-                int timestamp = stoi(matches[1]);
-                int value = stoi(matches[3]);
-                if (name.compare(matches[2]) == 0) {
-                    IntEvent ie{static_cast<size_t>(timestamp), value};
-                    readStream->stream.push_back(ie);
-                }
-            }
-        }
-        file.close();
+IntStream Reader::getIntStream(string name) {
+    if (this->intStreams.find(name) != this->intStreams.end()) {
+        return this->intStreams.find(name)->second;
+    } else {
+        // TODO throw exception
     }
-    if (readStream->stream.size() == 0) {
-        cerr << "Integer-Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
-    }
-    return readStream;
 }

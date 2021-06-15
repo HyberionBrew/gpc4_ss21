@@ -17,7 +17,7 @@ add_executable(tessla_cuda_test
         src/Stream.cuh src/Stream.cu 
         src/helper.cuh src/device_information.cuh)
 
-add_library(tessla_cuda
+add_library(tessla_cuda_lib
         src/StreamFunctions.cuh
         src/Reader.cuh src/Reader.cu
         src/Stream.cuh src/Stream.cu
