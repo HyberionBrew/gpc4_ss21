@@ -35,8 +35,8 @@ void Reader::readStreams() {
             int timestamp = stoi(buf, nullptr);
             string name = buf.substr(colPos+1, eqPos-colPos-1);
 
+            size_t post_eq = eqPos + 1;
             try {
-                size_t post_eq = eqPos + 1;
                 int value = stoi(buf.substr(post_eq));
                 // create int event
                 IntEvent ev = IntEvent(timestamp, value);
@@ -54,6 +54,12 @@ void Reader::readStreams() {
                 }
 
             } catch (std::invalid_argument &ia) {
+                // check unit event validity
+                if (buf.substr(post_eq) != "()") {
+                    throw std::runtime_error("Invalid string \"" + buf.substr(post_eq) +
+                        "\" at RHS of non-int stream");
+                }
+
                 // create unit event
                 UnitEvent ev = UnitEvent(timestamp);
 
