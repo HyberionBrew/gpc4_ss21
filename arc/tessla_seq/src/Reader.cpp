@@ -21,13 +21,16 @@ void Reader::readStreams() {
     file.open(this->FILENAME, ios::in);
     if (file.is_open())  {
         string buf;
+        int i = 0;
         while (getline(file, buf)) {
+            i++;
             buf.erase(std::remove_if(buf.begin(), buf.end(),::isspace), buf.end());
             size_t colPos = buf.find(':');
             size_t eqPos = buf.find('=');
             if (colPos == std::string::npos || eqPos == std::string::npos) {
-                //TODO throw exception
-                std::cerr << "Invalid line";
+                char buff[50];
+                std::snprintf(buff, sizeof(buff), "Line %d: invalid pattern", i);
+                throw std::runtime_error(buff);
             }
             int timestamp = stoi(buf, nullptr);
             string name = buf.substr(colPos+1, eqPos-colPos-1);
