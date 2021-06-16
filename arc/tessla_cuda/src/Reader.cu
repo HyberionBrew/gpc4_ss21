@@ -11,6 +11,72 @@ Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
 }
 
+IntInStream::IntInStream() {
+}
+
+UnitInStream::UnitInStream() {
+}
+
+void Reader::readStreams() {
+    fstream file;
+    file.open(this->FILENAME, ios::in);
+    if (file.is_open())  {
+        string buf;
+        int i = 0;
+        while (getline(file, buf)) {
+            i++;
+            buf.erase(std::remove_if(buf.begin(), buf.end(),::isspace), buf.end());
+            size_t colPos = buf.find(':');
+            size_t eqPos = buf.find('=');
+            if (colPos == std::string::npos || eqPos == std::string::npos) {
+                char buff[50];
+                std::snprintf(buff, sizeof(buff), "Line %d: invalid pattern", i);
+                throw std::runtime_error(buff);
+            }
+            int timestamp = stoi(buf, nullptr);
+            string name = buf.substr(colPos+1, eqPos-colPos-1);
+
+            size_t post_eq = eqPos + 1;
+            try {
+                int value = stoi(buf.substr(post_eq));
+
+                // check if exists in map
+                if (this->intStreams.find(name) == this->intStreams.end()) {
+                    shared_ptr<IntInStream> s = make_shared<IntInStream>();
+                    this->intStreams.insert(std::pair<string,shared_ptr<IntInStream>>(name, s));
+                }
+
+                if (this->intStreams.find(name) != this->intStreams.end()) {
+                    this->intStreams.find(name)->second->timestamps.push_back(timestamp);
+                    this->intStreams.find(name)->second->values.push_back(value);
+                } else {
+                    throw std::runtime_error("Error in IntStream map insertion for Stream \"" + name + "\"");
+                }
+
+            } catch (std::invalid_argument &ia) {
+                // check unit event validity
+                if (buf.substr(post_eq) != "()") {
+                    throw std::runtime_error("Invalid string \"" + buf.substr(post_eq) +
+                                             "\" at RHS of non-int stream");
+                }
+
+                // check if exists in map
+                if (this->unitStreams.find(name) == this->unitStreams.end()) {
+                    shared_ptr<UnitInStream> s = make_shared<UnitInStream>();
+                    this->unitStreams.insert(std::pair<string,shared_ptr<UnitInStream>>(name, s));
+                }
+
+                if (this->unitStreams.find(name) != this->unitStreams.end()) {
+                    this->intStreams.find(name)->second->timestamps.push_back(timestamp);
+                } else {
+                    throw std::runtime_error("Error in UnitStream map insertion for Stream \"" + name + "\"");
+                }
+            }
+        }
+    }
+}
+
+/*
 UnitStream Reader::getUnitStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
@@ -88,4 +154,30 @@ IntStream Reader::getIntStream(string name) {
 
     IntStream readStream = IntStream(timestampsA, valuesA, timestampsCnt);
     return readStream;
+}
+*/
+
+UnitStream Reader::getUnitStream(string name) {
+    if (this->unitStreams.find(name) != this->unitStreams.end()) {
+        vector<int> timestamps = this->unitStreams.find(name)->second->timestamps;
+        timestamps.shrink_to_fit();
+        return UnitStream(&timestamps.front(), timestamps.size());
+    } else {
+        throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
+    }
+}
+
+IntStream Reader::getIntStream(string name) {
+    if (this->intStreams.find(name) != this->intStreams.end()) {
+        vector<int> tsv = this->intStreams.find(name)->second->timestamps;
+        vector<int> vsv = this->intStreams.find(name)->second->values;
+        tsv.shrink_to_fit();
+        vsv.shrink_to_fit();
+        int* ts = &tsv.front();
+        int* vs = &vsv.front();
+        size_t s = tsv.size();
+        return IntStream(ts, vs, s);
+    } else {
+        throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
+    }
 }
