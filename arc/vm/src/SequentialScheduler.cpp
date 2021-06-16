@@ -207,7 +207,7 @@ shared_ptr<Stream> SequentialScheduler::get_st(size_t reg) {
     return stream;
 }
 
-void SequentialScheduler::warmup(std::string in_file) {
+void SequentialScheduler::warmup(const char *in_file) {
     Reader reader(in_file);
     // Implement something smarter than busy waiting
     while (!instrInterface.ioReady);

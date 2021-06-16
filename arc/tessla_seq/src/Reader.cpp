@@ -8,10 +8,10 @@
 #include <fstream>
 #include <regex>
 #include <string>
+
 using namespace std;
 
-
-Reader::Reader(string& inputFile) {
+Reader::Reader(const char *inputFile) {
     this->FILENAME = inputFile;
     readStreams();
 }
@@ -50,14 +50,14 @@ void Reader::readStreams() {
                 if (this->intStreams.find(name) != this->intStreams.end()) {
                     this->intStreams.find(name)->second->stream.push_back(ev);
                 } else {
-                    std::cout << "SHOULD NOT BE REACHED";
+                    throw std::runtime_error("Error in IntStream map insertion for Stream \"" + name + "\"");
                 }
 
             } catch (std::invalid_argument &ia) {
                 // check unit event validity
                 if (buf.substr(post_eq) != "()") {
                     throw std::runtime_error("Invalid string \"" + buf.substr(post_eq) +
-                        "\" at RHS of non-int stream");
+                                             "\" at RHS of non-int stream");
                 }
 
                 // create unit event
@@ -72,25 +72,25 @@ void Reader::readStreams() {
                 if (this->unitStreams.find(name) != this->unitStreams.end()) {
                     this->unitStreams.find(name)->second->stream.push_back(ev);
                 } else {
-                    std::cout << "SHOULD NOT BE REACHED";
+                    throw std::runtime_error("Error in UnitStream map insertion for Stream \"" + name + "\"");
                 }
             }
         }
     }
 }
 
-shared_ptr<UnitStream> Reader::getUnitStream(string& name) {
+shared_ptr<UnitStream> Reader::getUnitStream(const char *name) {
     if (this->unitStreams.find(name) != this->unitStreams.end()) {
         return this->unitStreams.find(name)->second;
     } else {
-        throw std::runtime_error("could not find unit stream \"" + name + "\"");
+        throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
     }
 }
 
-shared_ptr<IntStream> Reader::getIntStream(string& name) {
+shared_ptr<IntStream> Reader::getIntStream(const char *name) {
     if (this->intStreams.find(name) != this->intStreams.end()) {
         return this->intStreams.find(name)->second;
     } else {
-        throw std::runtime_error("could not find int stream \"" + name + "\"");
+        throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
     }
 }

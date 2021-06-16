@@ -25,7 +25,7 @@ private:
 public:
     SequentialScheduler(InstrInterface & interface);
     bool next() override;
-    void warmup(std::string in_file) override;
+    void warmup(const char *in_file) override;
 };
 
 #endif //GPC4_SS21_SEQUENTIALSCHEDULER_H

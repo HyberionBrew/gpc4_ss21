@@ -12,7 +12,7 @@ enum ioStreamType{io_unit, io_integer};
 enum ioDirection{io_in, io_out};
 
 struct IOStream {
-    std::string name;
+    const char *name;
     size_t regname;
     ioStreamType type;
     ioDirection direction;
