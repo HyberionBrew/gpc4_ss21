@@ -54,7 +54,11 @@ void IntStream::free_device(){
     CHECK(cudaFree(this->device_values));
     CHECK(cudaFree(this->device_offset));
     free(this->host_offset);
+}
 
+void IntStream::free_host(){
+    free(this->host_timestamp);
+    free(this->host_values);
 }
 
 //TODO! implement Staged concurrent copy and execute

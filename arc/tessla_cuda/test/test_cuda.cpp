@@ -13,7 +13,7 @@
 #include <cuda_runtime.h>
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
-/*
+
 TEST_CASE("last()"){
 
     SECTION("last() tuwel example") {
@@ -237,8 +237,8 @@ TEST_CASE("last()"){
     
     
 
-}*/
-#define BENCHMARKING_CASES 1
+}
+#define BENCHMARKING_CASES 5
 #define BENCHMARKING_LOOPS 1
 
 TEST_CASE("BENCHMARKING"){
@@ -371,7 +371,7 @@ TEST_CASE("BENCHMARKING"){
                 // Cleanup
                 inputStream.free_device();
                 outputStream.free_device();
-
+                inputStream.free_host();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
                 
@@ -450,7 +450,7 @@ TEST_CASE("BENCHMARKING"){
     }
 
 
-
+/*
     SECTION("lift() benchmarking"){
         std::ofstream output_delay;
         //delete previous
@@ -515,9 +515,138 @@ TEST_CASE("BENCHMARKING"){
                 output_delay.close();
             }
     }
-    }
+    }*/
 }
 
+TEST_CASE("extensive stream ops"){
+    SECTION("last|time"){
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/extensive_benchmark.in");
+        IntStream inputStreamZ = inReader.getIntStream("z");
+        UnitStream inputStreamA = inReader.getUnitStream("a");
+        UnitStream inputStreamB = inReader.getUnitStream("b");
+        Reader outReader = Reader("../test/data/extensive_benchmark.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y5");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
+        IntStream y1,y2,y3,y4,y5;
+
+        // Run kernel
+        inputStreamZ.copy_to_device();
+        inputStreamA.copy_to_device();
+        inputStreamB.copy_to_device();
+       // inputStreamV.print();
+      //  inputStreamR.print();
+        last(&inputStreamZ, &inputStreamA, &y1, 0);
+        time(&y1,&y2,0);
+        last(&y2, &inputStreamB, &y3, 0);
+        time(&y3,&y4,0);
+        last(&y4, &inputStreamB, &y5, 0);
+        //inputStreamR.print();
+        y5.copy_to_host();
+
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(y5.host_timestamp+*(y5.host_offset), y5.host_timestamp+y5.size);
+        std::vector<int> kernelValues(y5.host_values+*(y5.host_offset), y5.host_values+y5.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+        // Cleanup
+        inputStreamZ.free_device();
+        inputStreamA.free_device();
+        inputStreamB.free_device();
+        inputStreamZ.free_host();
+        y1.free_device();
+        y2.free_device();
+        y3.free_device();
+        y4.free_device();
+        y5.free_device();
+    }
+
+    SECTION("last|time|delay"){
+        // Read input and correct output data
+        printf("-------------");
+        Reader inReader = Reader("../test/data/extensive_benchmark.in");
+        IntStream inputStreamZ = inReader.getIntStream("z");
+        UnitStream inputStreamA = inReader.getUnitStream("a");
+        UnitStream inputStreamB = inReader.getUnitStream("b");
+        Reader outReader = Reader("../test/data/extensive_benchmark2.out");
+        IntStream CORRECT_STREAM1 = outReader.getIntStream("y1");
+        IntStream CORRECT_STREAM2 = outReader.getIntStream("y2");
+        //TODO! crate nil streams in output file!
+        //otherwise comment out the below
+        UnitStream CORRECT_STREAM3 = outReader.getUnitStream("y3");
+        UnitStream CORRECT_STREAM4 = outReader.getUnitStream("y4");
+        IntStream CORRECT_STREAM5 = outReader.getIntStream("y5");
+        UnitStream CORRECT_STREAM6 = outReader.getUnitStream("y6");
+        // Prepare empty output stream to fill
+        //int size = CORRECT_STREAM.size;
+        IntStream y1,y2,y5;
+        UnitStream y3,y4,y6;
+        // Run kernel
+        inputStreamZ.copy_to_device();
+        inputStreamA.copy_to_device();
+        inputStreamB.copy_to_device();
+       // inputStreamV.print();
+      //  inputStreamR.print();
+        //printf("before delay \n");
+        last(&inputStreamZ, &inputStreamA, &y1, 0);
+        time(&y1,&y2,0);
+        //printf("before delay \n");
+        delay(&y2,&inputStreamA,&y3,0);
+        delay(&inputStreamZ,&y3,&y4,0);
+        last(&y2, &y4, &y5, 0);
+        delay(&y5,&y4,&y6,0);
+        //inputStreamR.print();
+        y1.copy_to_host();
+        y2.copy_to_host();
+        y6.copy_to_host();
+        //y2.print();
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(y1.host_timestamp+*(y1.host_offset), y1.host_timestamp+y1.size);
+        std::vector<int> kernelValues(y1.host_values+*(y1.host_offset), y1.host_values+y1.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM1.host_timestamp, CORRECT_STREAM1.host_timestamp + CORRECT_STREAM1.size);
+        std::vector<int> correctValues(CORRECT_STREAM1.host_values, CORRECT_STREAM1.host_values + CORRECT_STREAM1.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+
+        std::vector<int> kernelTimestamps1(y2.host_timestamp+*(y2.host_offset), y2.host_timestamp+y2.size);
+        std::vector<int> kernelValues1(y2.host_values+*(y2.host_offset), y2.host_values+y2.size);
+        std::vector<int> correctTimestamps1(CORRECT_STREAM2.host_timestamp, CORRECT_STREAM2.host_timestamp + CORRECT_STREAM2.size);
+        std::vector<int> correctValues1(CORRECT_STREAM2.host_values, CORRECT_STREAM2.host_values + CORRECT_STREAM2.size);
+
+        REQUIRE(kernelTimestamps1 == correctTimestamps1);
+        REQUIRE(kernelValues1 == correctValues1);
+        /*
+        std::vector<int> kernelTimestamps2(y6.host_timestamp+*(y6.host_offset), y6.host_timestamp+y6.size);
+        //std::vector<int> kernelValues(y6.host_values+*(y6.host_offset), y6.host_values+y6.size);
+        std::vector<int> correctTimestamps2(CORRECT_STREAM6.host_timestamp, CORRECT_STREAM6.host_timestamp + CORRECT_STREAM6.size);
+        //std::vector<int> correctValues(CORRECT_STREAM6.host_values, CORRECT_STREAM6.host_values + CORRECT_STREAM6.size);
+
+        REQUIRE(kernelTimestamps2 == correctTimestamps2);
+        //REQUIRE(kernelValues == correctValues);
+        */
+        // Cleanup
+        inputStreamZ.free_device();
+        inputStreamA.free_device();
+        inputStreamB.free_device();
+        y1.free_device();
+        y2.free_device();
+        y3.free_device();
+        y4.free_device();
+        y5.free_device();
+        y6.free_device();
+        
+
+    }
+
+}
 
 TEST_CASE("Basic Stream Operations") {
     SECTION("delay()") {

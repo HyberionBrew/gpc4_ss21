@@ -348,7 +348,7 @@ __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* out
     input_timestamp += *offset;
     output_timestamps += *offset;
     output_values += *offset;
-    if ( i<size-*offset){
+    if (i<size-*offset){
         output_timestamps[i] = input_timestamp[i];
         output_values[i] = input_timestamp[i];
     }
