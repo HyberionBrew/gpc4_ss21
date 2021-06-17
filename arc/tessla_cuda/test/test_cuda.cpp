@@ -14,6 +14,52 @@
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
 
+#include "../src/StreamFunctionsThrust.cuh"
+
+TEST_CASE("last_thrust()"){
+
+    SECTION("last() tuwel example") {
+        // Read input and correct output data
+        
+        Reader inReader = Reader("../test/data/bt_last.in");
+        IntStream inputStreamV = inReader.getIntStream("v");
+        UnitStream inputStreamR = inReader.getUnitStream("r");
+        Reader outReader = Reader("../test/data/bt_last.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
+        IntStream outputStream;
+
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+       // inputStreamV.print();
+      //  inputStreamR.print();
+        last_thrust(&inputStreamV, &inputStreamR, &outputStream, 0);
+        //inputStreamR.print();
+        outputStream.copy_to_host();
+
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+        //outputStream.print();
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        outputStream.free_device();
+    }
+
+}
+
+
+
 TEST_CASE("last()"){
 
     SECTION("last() tuwel example") {

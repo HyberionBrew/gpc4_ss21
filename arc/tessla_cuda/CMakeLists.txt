@@ -15,7 +15,9 @@ add_executable(tessla_cuda_test
         src/StreamFunctions.cuh src/StreamFunctions.cu 
         src/StreamFunctionHelper.cuh src/StreamFunctionHelper.cu
         src/Stream.cuh src/Stream.cu 
-        src/helper.cuh src/device_information.cuh)
+        src/helper.cuh src/device_information.cuh
+	src/StreamFunctionsThrust.cuh src/StreamFunctionsThrust.cu
+	)
 
 add_library(tessla_cuda_lib
         src/StreamFunctions.cuh
@@ -25,6 +27,7 @@ add_library(tessla_cuda_lib
         src/StreamFunctionHelper.cuh src/StreamFunctionHelper.cu
         src/helper.cuh
         src/device_information.cuh
+	src/StreamFunctionsThrust.cuh src/StreamFunctionsThrust.cu
 )
 
 set_target_properties(tessla_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

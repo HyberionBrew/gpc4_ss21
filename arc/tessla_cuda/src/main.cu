@@ -7,7 +7,7 @@
 #include "helper.cuh"
 #include "Stream.cuh"
 #include "StreamFunctions.cuh"
-
+#include "StreamFunctionsThrust.cuh"
 void experimental_time(){
 
 }
@@ -112,7 +112,6 @@ void experimental_last(){
     printf("--------- experimental last end -----------\n");
 }
 
-
 int main(int argc, char **argv) {
 
     printf("%s Starting...\n", argv[0]);
@@ -123,7 +122,7 @@ int main(int argc, char **argv) {
     //might wanna derive MAX_THREADS and so on from here! TODO!
     printf("Using Device %d: %s\n", dev, deviceProp.name);
 
-    test_lift();
+    //test_lift();
 
     /*
     //create & allocate experimental streams
