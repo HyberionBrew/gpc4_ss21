@@ -5,10 +5,16 @@
 #include <regex>
 #include <string>
 #include <vector>
+#include <time.h>
 using namespace std;
+
+#define NEW_READER
 
 Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
+#ifdef NEW_READER
+    readStreams();
+#endif
 }
 
 IntInStream::IntInStream() {
@@ -17,13 +23,24 @@ IntInStream::IntInStream() {
 UnitInStream::UnitInStream() {
 }
 
+void printArray(int* array, size_t len, string name) {
+    printf("%s : [", name.c_str());
+    for (int i=0; i < len - 1; i++) {
+        printf("%d, ", array[i]);
+    }
+    printf("%d]\n", array[len-1]);
+}
+
 void Reader::readStreams() {
     fstream file;
+    clock_t start = clock();
     file.open(this->FILENAME, ios::in);
+    printf("read file %s\n", this->FILENAME.c_str());
     if (file.is_open())  {
         string buf;
         int i = 0;
         while (getline(file, buf)) {
+            //printf("LINE %d\n", i);
             i++;
             buf.erase(std::remove_if(buf.begin(), buf.end(),::isspace), buf.end());
             size_t colPos = buf.find(':');
@@ -42,11 +59,13 @@ void Reader::readStreams() {
 
                 // check if exists in map
                 if (this->intStreams.find(name) == this->intStreams.end()) {
+                    //printf("Create int stream %s\n", name.c_str());
                     shared_ptr<IntInStream> s = make_shared<IntInStream>();
                     this->intStreams.insert(std::pair<string,shared_ptr<IntInStream>>(name, s));
                 }
 
                 if (this->intStreams.find(name) != this->intStreams.end()) {
+                    //printf("Insert (%d, %d) int stream %s\n", timestamp, value, name.c_str());
                     this->intStreams.find(name)->second->timestamps.push_back(timestamp);
                     this->intStreams.find(name)->second->values.push_back(value);
                 } else {
@@ -62,21 +81,27 @@ void Reader::readStreams() {
 
                 // check if exists in map
                 if (this->unitStreams.find(name) == this->unitStreams.end()) {
+                    //printf("Create unit stream %s\n", name.c_str());
                     shared_ptr<UnitInStream> s = make_shared<UnitInStream>();
                     this->unitStreams.insert(std::pair<string,shared_ptr<UnitInStream>>(name, s));
                 }
 
                 if (this->unitStreams.find(name) != this->unitStreams.end()) {
-                    this->intStreams.find(name)->second->timestamps.push_back(timestamp);
+                    //printf("Insert %d in unit stream %s\n", timestamp, name.c_str());
+                    this->unitStreams.find(name)->second->timestamps.push_back(timestamp);
+                    //printf("last elem in %s: %d\n", name.c_str(), this->unitStreams.find(name)->second->timestamps.back());
+                    //printf("Post insert unit stream %s\n", name.c_str());
                 } else {
                     throw std::runtime_error("Error in UnitStream map insertion for Stream \"" + name + "\"");
                 }
             }
         }
     }
+    clock_t dur = clock() - start;
+    printf("READING TOOK %ld us\n", dur*1000000/CLOCKS_PER_SEC);
 }
 
-/*
+#ifndef NEW_READER
 UnitStream Reader::getUnitStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
@@ -108,6 +133,13 @@ UnitStream Reader::getUnitStream(string name) {
     memset(timestampsA, 0, timestampsCnt * sizeof(int));
     copy(timestamps.begin(), timestamps.end(), timestampsA);
 
+    /*
+    printf("%s: size=%d\n", name.c_str(), timestampsCnt);
+    if (timestampsCnt < 10000) {
+        printArray(timestampsA, timestampsCnt, "ts (" + name + ")");
+    }
+     */
+
     UnitStream readStream = UnitStream(timestampsA, timestampsCnt);
     return readStream;
 }
@@ -118,6 +150,7 @@ IntStream Reader::getIntStream(string name) {
     vector<int> timestamps;
     vector<int> values;
 
+    printf("read file %s\n", this->FILENAME.c_str());
     if (file.is_open()) {
         string buf;
         // match each line to regex
@@ -152,16 +185,34 @@ IntStream Reader::getIntStream(string name) {
     copy(timestamps.begin(), timestamps.end(), timestampsA);
     copy(values.begin(), values.end(), valuesA);
 
+    /*
+    printf("%s: size=%d\n", name.c_str(), timestampsCnt);
+    if (timestampsCnt < 10000) {
+        printArray(timestampsA, timestampsCnt, "ts (" + name + ")");
+        printArray(valuesA, timestampsCnt, "vs (" + name + ")");
+    }
+    */
+
     IntStream readStream = IntStream(timestampsA, valuesA, timestampsCnt);
     return readStream;
 }
-*/
+#endif
 
+#ifdef NEW_READER
 UnitStream Reader::getUnitStream(string name) {
     if (this->unitStreams.find(name) != this->unitStreams.end()) {
-        vector<int> timestamps = this->unitStreams.find(name)->second->timestamps;
-        timestamps.shrink_to_fit();
-        return UnitStream(&timestamps.front(), timestamps.size());
+        vector<int> *timestamps = &this->unitStreams.find(name)->second->timestamps;
+        size_t mallocSize = timestamps->size() * sizeof(int);
+        size_t size = timestamps->size();
+        int *timestampsA = (int*) malloc(mallocSize);
+        copy(timestamps->begin(), timestamps->end(), timestampsA);
+        /*
+        printf("%s: size=%zu\n", name.c_str(), timestamps->size());
+        if (timestamps->size() < 10000) {
+            printArray(&(*timestamps)[0], timestamps->size(), "ts (" + name + ")");
+        }
+         */
+        return {timestampsA, size};
     } else {
         throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
     }
@@ -169,15 +220,27 @@ UnitStream Reader::getUnitStream(string name) {
 
 IntStream Reader::getIntStream(string name) {
     if (this->intStreams.find(name) != this->intStreams.end()) {
-        vector<int> tsv = this->intStreams.find(name)->second->timestamps;
-        vector<int> vsv = this->intStreams.find(name)->second->values;
-        tsv.shrink_to_fit();
-        vsv.shrink_to_fit();
-        int* ts = &tsv.front();
-        int* vs = &vsv.front();
-        size_t s = tsv.size();
-        return IntStream(ts, vs, s);
+        vector<int> *timestamps = &this->intStreams.find(name)->second->timestamps;
+        vector<int> *values = &this->intStreams.find(name)->second->values;
+        size_t mallocSize = timestamps->size() * sizeof(int);
+        size_t size = timestamps->size();
+        int *timestampsA = (int*) malloc(mallocSize);
+        int *valuesA = (int*) malloc(mallocSize);
+        clock_t start = clock();
+        copy(timestamps->begin(), timestamps->end(), timestampsA);
+        copy(values->begin(), values->end(), valuesA);
+        clock_t time = clock() - start;
+        printf("MEMCPY TIME USED:: %ld\n", time*1000000/CLOCKS_PER_SEC);
+        /*
+        printf("%s: size=%zu\n", name.c_str(), size);
+        if (size < 10000) {
+            printArray(&(*timestamps)[0], timestamps->size(), "ts (" + name + ")");
+            printArray(&(*values)[0], values->size(), "vs (" + name + ")");
+        }
+         */
+        return {timestampsA, valuesA, size};
     } else {
         throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
     }
 }
+#endif

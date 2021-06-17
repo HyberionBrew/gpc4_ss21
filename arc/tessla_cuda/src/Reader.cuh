@@ -31,4 +31,6 @@ public:
     IntStream getIntStream(std::string name);
 };
 
+void printArray(int* array, size_t len, std::string name);
+
 #endif //TESSLA_CUDA_READER_CUH
