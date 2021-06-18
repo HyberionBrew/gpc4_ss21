@@ -68,7 +68,7 @@ void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, 
                     inputInt_values,
                     result_values);
 
-    //USE COPY_N ! otherwise unsave
+    //USE COPY_N ! otherwise unsafe
     thrust::copy_n(inputUnit_timestamps+ *result_offs, result->size-*result_offs-*offsetUnit, 
                     result_timestamps+*result_offs);
     

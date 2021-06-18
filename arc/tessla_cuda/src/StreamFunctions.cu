@@ -48,8 +48,8 @@ void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
     // Iteratively search for new output events
     while (prevResultsCount > 0) {
         int threads = prevResultsCount;
-        int block_size = 1;
-        int blocks = 1;
+        int block_size = 0;
+        int blocks = 0;
         calcThreadsBlocks(threads, &block_size, &blocks);
 
         printf("Scheduled delay() with <<<%d,%d>>>, %i threads \n",blocks,block_size, threads);

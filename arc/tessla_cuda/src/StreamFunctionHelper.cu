@@ -11,8 +11,8 @@
 #include "StreamFunctionHelper.cuh"
 
 void calcThreadsBlocks(int threads, int *block_size, int*blocks){
-    *block_size = 1;
-    *blocks = 1;
+    *block_size = 0;
+    *blocks = 0;
     if (MAX_BLOCKS*MAX_THREADS_PER_BLOCK<threads){
         printf("Cannot schedule the whole stream! TODO! implement iterative scheduling \n");
         //return;

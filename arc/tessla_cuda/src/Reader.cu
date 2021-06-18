@@ -34,8 +34,8 @@ UnitStream Reader::getUnitStream(string name) {
 
     size_t timestampsCnt = timestamps.size();
     if (timestampsCnt == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
+        cout << "Warning: Stream " << name << " is not present in the input file but was read!" << "\n";
+        //exit(1);
     }
 
     int *timestampsA = (int*) malloc(timestampsCnt * sizeof(int));
@@ -74,8 +74,8 @@ IntStream Reader::getIntStream(string name) {
     assert(timestamps.size() == values.size());
     size_t timestampsCnt = timestamps.size();
     if (timestampsCnt == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
+        cout << "Warning: Stream " << name << " is not present in the input file but was read!" << "\n";
+        //exit(1);
     }
 
     size_t mallocSize = timestampsCnt * sizeof(int);

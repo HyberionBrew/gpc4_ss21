@@ -245,7 +245,40 @@ SECTION("last() small random example") {
         free(host_valueOut2);
         free(host_timestampOut2);
     }
+    SECTION("last empty"){
+        //reading only invalid streams (they are empty)
+        Reader inReader = Reader("../test/data/bt_last.in");
+        IntStream inputStreamV = inReader.getIntStream("v2");
+        UnitStream inputStreamR = inReader.getUnitStream("r2");
+        Reader outReader = Reader("../test/data/bt_last.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y2");
+        int size = CORRECT_STREAM.size;
+        IntStream outputStream;
 
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+       // inputStreamV.print();
+      //  inputStreamR.print();
+        last_thrust(&inputStreamV, &inputStreamR, &outputStream, 0);
+        //inputStreamR.print();
+        outputStream.copy_to_host();
+
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+        //outputStream.print();
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        outputStream.free_device();
+    }
 
 
 
@@ -254,6 +287,41 @@ SECTION("last() small random example") {
 
 
 TEST_CASE("last()"){
+    
+    SECTION("last empty"){
+        //reading only invalid streams (they are empty)
+        Reader inReader = Reader("../test/data/bt_last.in");
+        IntStream inputStreamV = inReader.getIntStream("v2");
+        UnitStream inputStreamR = inReader.getUnitStream("r2");
+        Reader outReader = Reader("../test/data/bt_last.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y2");
+        int size = CORRECT_STREAM.size;
+        IntStream outputStream;
+
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+       // inputStreamV.print();
+      //  inputStreamR.print();
+        last(&inputStreamV, &inputStreamR, &outputStream, 0);
+        //inputStreamR.print();
+        outputStream.copy_to_host();
+
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+        //outputStream.print();
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        outputStream.free_device();
+    }
 
     SECTION("last() tuwel example") {
         // Read input and correct output data
@@ -546,7 +614,9 @@ TEST_CASE("BENCHMARKING"){
                 inputStreamV.free_device();
                 inputStreamR.free_device();
                 outputStream.free_device();
-
+                inputStreamV.free_host();
+                inputStreamR.free_host();
+                outputStream.free_host();
                 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 printf("%li us\n",duration.count());
@@ -611,6 +681,7 @@ TEST_CASE("BENCHMARKING"){
                 inputStream.free_device();
                 outputStream.free_device();
                 inputStream.free_host();
+                outputStream.free_host();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
                 
@@ -808,7 +879,7 @@ TEST_CASE("extensive stream ops"){
 
     SECTION("last|time|delay"){
         // Read input and correct output data
-        printf("-------------");
+        printf("------------- \n");
         Reader inReader = Reader("../test/data/extensive_benchmark.in");
         IntStream inputStreamZ = inReader.getIntStream("z");
         UnitStream inputStreamA = inReader.getUnitStream("a");
@@ -835,15 +906,20 @@ TEST_CASE("extensive stream ops"){
         //printf("before delay \n");
         last(&inputStreamZ, &inputStreamA, &y1, 0);
         time(&y1,&y2,0);
-        //printf("before delay \n");
+        printf("before delay \n");
         delay(&y2,&inputStreamA,&y3,0);
         delay(&inputStreamZ,&y3,&y4,0);
         last(&y2, &y4, &y5, 0);
+        printf("hi!\n");
         delay(&y5,&y4,&y6,0);
+        printf("hi!\n");
         //inputStreamR.print();
         y1.copy_to_host();
+        printf("hi!\n");
         y2.copy_to_host();
+        printf("hi!\n");
         y6.copy_to_host();
+        printf("hi!\n");
         //y2.print();
         //outputStream.print();
         // Compare kernel result to correct data
