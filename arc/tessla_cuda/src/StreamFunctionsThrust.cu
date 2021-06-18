@@ -36,12 +36,15 @@ void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, 
         memset(result->host_values, 0, sizeAllocated);
         result->copy_to_device(false);
     }
+
     auto result_values = thrust::device_pointer_cast(result->device_values);
     auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
     auto result_offs = thrust::device_pointer_cast(result->device_offset);
+    
     //fill those that are not part of the current calc (since they are invalid) with -1
     thrust::fill(result_values,result_values+*offsetUnit,-1);
     thrust::fill(result_timestamps,result_timestamps+*offsetUnit,-1);
+    
     //now only look at valid region
     result_values = thrust::device_pointer_cast(result->device_values+*offsetUnit);
     result_timestamps = thrust::device_pointer_cast(result->device_timestamp+*offsetUnit);
@@ -65,6 +68,7 @@ void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, 
                     inputInt_values,
                     result_values);
 
+    //USE COPY_N ! otherwise unsave
     thrust::copy_n(inputUnit_timestamps+ *result_offs, result->size-*result_offs-*offsetUnit, 
                     result_timestamps+*result_offs);
     
