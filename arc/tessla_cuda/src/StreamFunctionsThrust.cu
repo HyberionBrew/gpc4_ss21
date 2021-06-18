@@ -5,25 +5,29 @@
 #include <thrust/device_ptr.h>
 #include <iostream>
 #include <thrust/functional.h>
+#include <thrust/gather.h>
+
+struct is_larger_zero
+{
+  __host__ __device__
+  bool operator()(const int x)
+  {
+    return x > -1;
+  }
+};
 
 void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
+    
     //first cast device pointers to thrust pointers
-    thrust::device_ptr<int> inputInt_timestamps(inputInt->device_timestamp);
-    thrust::device_ptr<int> inputInt_values(inputInt->device_values);
-    thrust::device_ptr<int> inputUnit_timestamps(inputUnit->device_timestamp);
-  
-  
-    thrust::device_ptr<int> offsetInt(inputInt->device_offset);
-    thrust::device_ptr<int> offsetUnit(inputUnit->device_offset);
-  
-  
-    thrust::device_vector<double> inputInt_timestamps_vec(inputInt_timestamps, inputInt_timestamps + inputInt->size); 
-    thrust::device_vector<double> inputUnit_timestamps_vec(inputUnit_timestamps, inputUnit_timestamps + inputUnit->size); 
-    thrust::device_vector<double> inputInt_timestamps_vec(inputInt_timestamps, inputInt_timestamps + inputInt->size); 
-    thrust::device_vector<double> inputUnit_timestamps_vec(inputUnit_timestamps, inputUnit_timestamps + inputUnit->size); 
-  
+    auto offsetInt = thrust::device_pointer_cast(inputInt->device_offset);
+    auto offsetUnit = thrust::device_pointer_cast(inputUnit->device_offset);
+    //shift for offset
+    auto inputInt_timestamps = thrust::device_pointer_cast(inputInt->device_timestamp+*offsetInt);
+    auto inputInt_values = thrust::device_pointer_cast(inputInt->device_values+*offsetInt);
+    auto inputUnit_timestamps = thrust::device_pointer_cast(inputUnit->device_timestamp+*offsetUnit);
+    
+    //Standard guard
     if (!result->onDevice) {
-        //TODO! where do we free this?
         int sizeAllocated = inputUnit->size * sizeof(int);
         result->size = inputUnit->size;
         result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
@@ -32,30 +36,39 @@ void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, 
         memset(result->host_values, 0, sizeAllocated);
         result->copy_to_device(false);
     }
-    thrust::device_ptr<int> result_values(result->device_values);
-    thrust::device_ptr<int> result_timestamps(result->device_timestamp);
-    thrust::device_vector<double> result_timestamps_vec(result_timestamps, result_timestamps + result->size); 
+    auto result_values = thrust::device_pointer_cast(result->device_values);
+    auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
+    auto result_offs = thrust::device_pointer_cast(result->device_offset);
+    //fill those that are not part of the current calc (since they are invalid) with -1
+    thrust::fill(result_values,result_values+*offsetUnit,-1);
+    thrust::fill(result_timestamps,result_timestamps+*offsetUnit,-1);
+    //now only look at valid region
+    result_values = thrust::device_pointer_cast(result->device_values+*offsetUnit);
+    result_timestamps = thrust::device_pointer_cast(result->device_timestamp+*offsetUnit);
     
-    
-    //actuall algo
-    //calculate where before where the ints could be inserted
-    thrust::lower_bound(inputInt_timestamps_vec.begin()+*offsetInt, inputInt_timestamps_vec.end(),
-                    inputUnit_timestamps_vec.begin()+*offsetUnit, inputUnit_timestamps_vec.end(), 
-                    result_timestamps_vec.begin(),
+    //Actual algorithm starts here!
+    thrust::lower_bound(inputInt_timestamps, inputInt_timestamps+inputInt->size-*offsetInt,
+                    inputUnit_timestamps, inputUnit_timestamps+inputUnit->size-*offsetUnit, 
+                    result_timestamps,
                     thrust::less<int>());
-    for(int i = 0; i < result_timestamps_vec.size(); i++)
-        std::cout << "D[" << i << "] = " << result_timestamps_vec[i] << std::endl;
     //decrement by -1
-    //thrust::for_each(thrust::device, vec.begin(), vec.end(), _1 -= val);
-    //Thrust permutation iterator to set each to index as currently in timestamps (timestamps-1)
-    typedef thrust::device_vector<float>::iterator ElementIterator;
-    typedef thrust::device_vector<int>::iterator   IndexIterator;
-    //https://thrust.github.io/doc/classthrust_1_1permutation__iterator.html
-    //thrust::permutation_iterator<ElementIterator,IndexIterator> iter(values.begin(), indices.begin());
+    thrust::transform(result_timestamps,
+                  result_timestamps+result->size-*offsetUnit,
+                  thrust::make_constant_iterator((1)),
+                  result_timestamps,
+                  thrust::minus<int>());
+    
+    //calculate new additional offset
+    *result_offs = thrust::count(result_timestamps, result_timestamps+result->size-*offsetUnit, -1);
+    
+    thrust::gather(result_timestamps,result_timestamps+result->size-*offsetUnit,
+                    inputInt_values,
+                    result_values);
 
-
-    //cast back
-    result->device_timestamp = thrust::raw_pointer_cast(result_timestamps);
-    result->device_values = thrust::raw_pointer_cast(result_values);
+    thrust::copy_n(inputUnit_timestamps+ *result_offs, result->size-*result_offs-*offsetUnit, 
+                    result_timestamps+*result_offs);
+    
+    //final offset calculation
+    *result_offs = *result_offs+*offsetUnit;
 
 }

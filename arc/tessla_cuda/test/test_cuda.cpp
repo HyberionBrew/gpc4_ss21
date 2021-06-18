@@ -30,16 +30,19 @@ TEST_CASE("last_thrust()"){
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
         IntStream outputStream;
-
+        printf("??!\n");
         // Run kernel
         inputStreamV.copy_to_device();
         inputStreamR.copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
+        printf("??!\n");
         last_thrust(&inputStreamV, &inputStreamR, &outputStream, 0);
         //inputStreamR.print();
+        for (int i = 0; i<5; i++){
+            printf("%d \n",*(outputStream.host_timestamp+i));
+        }
         outputStream.copy_to_host();
-
         //outputStream.print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
@@ -52,9 +55,199 @@ TEST_CASE("last_thrust()"){
         //outputStream.print();
         // Cleanup
         inputStreamV.free_device();
+
+        inputStreamR.free_device();
+        outputStream.free_device();
+        
+        inputStreamV.free_host();
+        outputStream.free_host();
+        inputStreamR.free_host();
+    }
+
+
+SECTION("last() small random example") {
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/last_test1.in");
+        IntStream inputStreamV = inReader.getIntStream("z");
+        UnitStream inputStreamR = inReader.getUnitStream("a");
+        Reader outReader = Reader("../test/data/last_test1.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
+        //printf("%d \n\n",  CORRECT_STREAM.size);
+
+        IntStream outputStream;
+
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+        //inputStreamV.print();
+        //inputStreamR.print();
+        last_thrust(&inputStreamV, &inputStreamR, &outputStream, 0);
+        outputStream.copy_to_host();
+        //printf("xx");
+       // outputStream.print();
+        //outputStream.print();
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+        REQUIRE(kernelValues == correctValues);
+
+        // Cleanup
+        inputStreamV.free_device();
         inputStreamR.free_device();
         outputStream.free_device();
     }
+
+    SECTION("last() large random example") {
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/last_test2.in");
+        IntStream inputStreamV = inReader.getIntStream("z");
+        UnitStream inputStreamR = inReader.getUnitStream("a");
+        Reader outReader = Reader("../test/data/last_test2.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        // Prepare empty output stream to fill
+        IntStream outputStream;
+
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+        //inputStreamV.print();
+        //inputStreamR.print();
+
+        last_thrust(&inputStreamV, &inputStreamR, &outputStream, 0);
+        outputStream.copy_to_host();
+
+        //outputStream.print();
+
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+        for (int i = 0; i< CORRECT_STREAM.size; i++){
+            REQUIRE(kernelTimestamps[i] == correctTimestamps[i]);
+        }
+
+        REQUIRE(kernelValues == correctValues);
+        //outputStream.print();
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        outputStream.free_device();
+    }
+
+    SECTION("last() twice test with no invalids") {
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/last_test3.in");
+        IntStream inputStreamV = inReader.getIntStream("z");
+        UnitStream inputStream2 = inReader.getUnitStream("a");
+        UnitStream inputStreamR = inReader.getUnitStream("x");
+        Reader outReader = Reader("../test/data/last_test3.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
+
+        IntStream intermediateStream;
+        IntStream outputStream;
+          
+        // Run kernel
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+        inputStream2.copy_to_device();
+        last_thrust(&inputStreamV, &inputStreamR, &intermediateStream, 0);
+        intermediateStream.copy_to_host();
+        last_thrust(&intermediateStream, &inputStream2, &outputStream, 0);
+
+        outputStream.copy_to_host();
+//        outputStream.print();
+
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+        REQUIRE(kernelTimestamps == correctTimestamps);
+
+
+        REQUIRE(kernelValues == correctValues);
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        intermediateStream.free_device();
+        outputStream.free_device();
+        inputStream2.free_device();
+    }
+
+    SECTION("last() twice test with invalids in Unit Stream") {
+        //printf("-------------------------\n");
+        // Read input and correct output data
+        Reader inReader = Reader("../test/data/last_test4.in");
+        IntStream inputStreamV = inReader.getIntStream("z");
+        UnitStream inputStream2 = inReader.getUnitStream("x");
+        UnitStream inputStreamR = inReader.getUnitStream("a");
+        Reader outReader = Reader("../test/data/last_test4.out");
+        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+
+        // Prepare empty output stream to fill
+        int size = CORRECT_STREAM.size;
+        int sizeAllocated = (size_t)  inputStreamR.size * sizeof(int);
+        int *host_timestampOut = (int *) malloc( inputStreamR.size * sizeof(int));
+        int *host_valueOut = (int*) malloc( inputStreamR.size * sizeof(int));
+
+        memset(host_timestampOut, 0, sizeAllocated);
+        memset(host_valueOut, 0, sizeAllocated);
+
+        int *host_timestampOut2 = (int *) malloc( inputStream2.size * sizeof(int));
+        int *host_valueOut2 = (int*) malloc( inputStream2.size * sizeof(int));
+
+        memset(host_timestampOut2, 0, inputStream2.size * sizeof(int));
+        memset(host_valueOut2, 0, inputStream2.size * sizeof(int));
+        IntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
+        IntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
+        // Run kernel
+        intermediateStream.copy_to_device();
+        inputStreamV.copy_to_device();
+        inputStreamR.copy_to_device();
+        outputStream.copy_to_device();
+        inputStream2.copy_to_device();
+
+        last_thrust(&inputStreamV, &inputStreamR, &intermediateStream, 0);
+        last_thrust(&intermediateStream, &inputStream2, &outputStream, 0);
+
+        outputStream.copy_to_host();
+        outputStream.print();
+
+        // Compare kernel result to correct data
+        std::vector<int> kernelTimestamps(outputStream.host_timestamp+*(outputStream.host_offset), outputStream.host_timestamp+outputStream.size);
+        std::vector<int> kernelValues(outputStream.host_values+*(outputStream.host_offset), outputStream.host_values+outputStream.size);
+        std::vector<int> correctTimestamps(CORRECT_STREAM.host_timestamp, CORRECT_STREAM.host_timestamp + CORRECT_STREAM.size);
+        std::vector<int> correctValues(CORRECT_STREAM.host_values, CORRECT_STREAM.host_values + CORRECT_STREAM.size);
+
+        REQUIRE(kernelTimestamps == correctTimestamps);
+
+        REQUIRE(kernelValues == correctValues);
+        //outputStream.print();
+        // Cleanup
+        inputStreamV.free_device();
+        inputStreamR.free_device();
+        intermediateStream.free_device();
+        outputStream.free_device();
+        inputStream2.free_device();
+        free(host_valueOut);
+        free(host_timestampOut);
+        free(host_valueOut2);
+        free(host_timestampOut2);
+    }
+
+
+
 
 }
 

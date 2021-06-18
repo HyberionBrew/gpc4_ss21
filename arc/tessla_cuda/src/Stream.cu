@@ -61,6 +61,10 @@ void IntStream::free_host(){
     free(this->host_values);
 }
 
+void UnitStream::free_host(){
+    free(this->host_timestamp);
+}
+
 //TODO! implement Staged concurrent copy and execute
 //https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations
 // i.e. maybe have a function that doesnt just copy but also performs function?

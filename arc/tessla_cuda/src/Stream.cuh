@@ -59,6 +59,7 @@ public:
     void copy_to_device();
     void copy_to_device(bool valid);
     void copy_to_host();
+    void free_host();
     void free_device();
     void print();
 };

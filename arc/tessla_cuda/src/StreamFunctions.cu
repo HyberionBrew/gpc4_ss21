@@ -24,6 +24,7 @@ int simp_compare(const void *a, const void *b) { // TODO: Delete when no longer 
     return ( *(int*)a - *(int*)b );
 }
 
+
 void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
     // Prune IntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
     delay_preliminary_prune(s, r, stream);
