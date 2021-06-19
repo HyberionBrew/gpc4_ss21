@@ -3,6 +3,7 @@
 //
 #include <cuda_runtime.h>
 #include <sys/time.h>
+#include <assert.h>
 #include "main.cuh"
 #include "helper.cuh"
 #include "Stream.cuh"
@@ -220,11 +221,13 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
 
 
 void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
+    printf("beginlast\n");
     int threads = (int) inputUnit->size;
     int block_size =1;
     int blocks = 1;
+    printf("beforecalc\n");
     calcThreadsBlocks(threads,&block_size,&blocks);
-
+    printf("aftercalc\n");
     //copy result vector to device
     if (!result->onDevice) {
         //TODO! where do we free this?
@@ -281,7 +284,7 @@ __global__ void calculate_offset(int* timestamps, int* offset, int size){
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     //shift accordingly to offset
     unit_stream_timestamps += *offsUnit;
     input_timestamp += *offsInt;
@@ -401,22 +404,12 @@ __device__ void lift_mul(int *a, int *b, int *result){
     *result = *a * *b;
 }
 __device__ void lift_div(int *a, int *b, int *result){
-    if (*b != 0){
-        *result = *a / *b;
-    }
-    else{
-        // For now, dividing by 0 results in 0
-        *result = 0;
-    }
+    assert(*b != 0 && "Divide by zero error in lift_div");
+    *result = *a / *b;
 }
 __device__ void lift_mod(int *a, int *b, int *result){
-    if (*b != 0){
-        *result = *a % *b;
-    }
-    else{
-        // For now, dividing by 0 results in 0
-        *result = 0;
-    }
+    assert(*b != 0 && "Divide by zero error in lift_mod");
+    *result = *a % *b;
 }
 
 __device__ void lift_value( int *x_ts, int *y_ts,
@@ -437,7 +430,7 @@ __device__ void lift_value( int *x_ts, int *y_ts,
         }
     }
     else{
-        // If they match, result timestamp is x/y timestamp and result value is the result of the lift function
+        // If they match, result timestamp is x/y timestamp and result value is the cresult of the lift function
         *out_ts = x_ts[*x_i];
         // Specific value based lift operation
         op(&x_v[*x_i], &y_v[*y_i], out_v);
@@ -529,8 +522,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
     __syncthreads();
 
     // Afterwards, threads have to check for overlapping timestamps in their c[] partition in case of merge
-    // VPT > 1 check not really necessary, we should guarantee that VPT > 1 beforehand, otherwise the mergepath is the full merge anyway
-    if (vpt > 1 && fct == lift_merge){
+    if (fct == lift_merge){
         for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
             int l = max(tidx*vpt + i - 1, 0);
             int r = max(tidx*vpt + i, 1);
@@ -562,9 +554,10 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 /**
  * Lift
  */
-void lift(IntStream *x, IntStream *y, IntStream *result, int threads, int op){
+void lift(IntStream *x, IntStream *y, IntStream *result, int op){
     int block_size = 0;
     int blocks = 0;
+    int threads = x->size + y->size;
     calcThreadsBlocks(threads, &block_size, &blocks);
 
     threads = (blocks) * (block_size);
@@ -669,4 +662,57 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
         *invalid_offset = cuml_invalid;
     }
     __syncthreads();
+}
+
+void slift(IntStream *x, IntStream *y, IntStream *result, int op){
+    IntStream x_prime;
+    IntStream y_prime;
+
+    int *x_ts = (int*)malloc(x->size*sizeof(int));
+    int *y_ts = (int*)malloc(y->size*sizeof(int));
+
+    // xy ... y is the unit stream
+    int *xy_ts = (int*)malloc(y->size*sizeof(int));
+    int *yx_ts = (int*)malloc(x->size*sizeof(int));
+    int *xy_v = (int*)malloc(y->size*sizeof(int));
+    int *yx_v = (int*)malloc(x->size*sizeof(int));
+
+    memset(xy_ts, -1, y->size*sizeof(int));
+    memset(yx_ts, -1, x->size*sizeof(int));
+
+    UnitStream x_unit(x->host_timestamp, x->size);
+    UnitStream y_unit(y->host_timestamp, y->size);
+
+    x_unit.copy_to_device();
+    y_unit.copy_to_device();
+
+    
+
+    IntStream last_xy(xy_ts, xy_v, y->size);
+    IntStream last_yx(yx_ts, yx_v, x->size);
+
+    printf("lastxy before\n");
+    last_xy.print();
+
+    last(x, &y_unit, &last_xy, 0);
+    last(y, &x_unit, &last_yx, 0);
+
+    printf("x stream\n");
+    x->print();
+    printf("y unit\n");
+    y_unit.print();
+    printf("last xy\n");
+    last_xy.print();
+
+    lift(x, &last_xy, &x_prime, MRG);
+    lift(y, &last_yx, &y_prime, MRG);
+
+    lift(&x_prime, &y_prime, result, op);
+
+    x_prime.free_device();
+    y_prime.free_device();
+    x_unit.free_device();
+    y_unit.free_device();
+    last_xy.free_device();
+    last_yx.free_device();
 }

@@ -12,7 +12,8 @@ void experimental_time(){
 
 }
 
-void test_lift(){
+void test_slift(){
+    printf("slift test\n");
     int sx = 50;
     int sy = 100;
     int *x_v = (int*)malloc(sx*sizeof(int));
@@ -40,7 +41,7 @@ void test_lift(){
     x.copy_to_device();
     y.copy_to_device();
 
-    lift(&x,&y,&res,31, 0);
+    slift(&x,&y,&res, ADD);
     res.copy_to_host();
 
     x.print();
@@ -122,7 +123,7 @@ int main(int argc, char **argv) {
     //might wanna derive MAX_THREADS and so on from here! TODO!
     printf("Using Device %d: %s\n", dev, deviceProp.name);
 
-    //test_lift();
+    test_slift();
 
     /*
     //create & allocate experimental streams
