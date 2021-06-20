@@ -686,15 +686,20 @@ void slift(IntStream *x, IntStream *y, IntStream *result, int op){
     x_unit.copy_to_device();
     y_unit.copy_to_device();
 
+    IntStream last_xy;//(xy_ts, xy_v, y->size);
+    IntStream last_yx;//(yx_ts, yx_v, x->size);
+
+    printf("x_unit\n");
+    x_unit.print();
+    printf("y_unit\n");
+    y_unit.print();
     
 
-    IntStream last_xy(xy_ts, xy_v, y->size);
-    IntStream last_yx(yx_ts, yx_v, x->size);
-
-    printf("lastxy before\n");
-    last_xy.print();
-
+    printf("before last xy\n");
+    printf("x size: %i\n", x->size);
+    printf("y unit size: %i\n", y_unit.size);
     last(x, &y_unit, &last_xy, 0);
+    cudaDeviceSynchronize();
     last(y, &x_unit, &last_yx, 0);
 
     printf("x stream\n");
