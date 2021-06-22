@@ -4,8 +4,6 @@
 
 #include "GPUScheduler.h"
 
-// TODO remember to resolve "free" update counters
-
 GPUScheduler::GPUScheduler(InstrInterface & interface) : Scheduler(interface) {
 }
 

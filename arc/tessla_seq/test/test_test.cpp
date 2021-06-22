@@ -1,10 +1,10 @@
 #include "catch2/catch.hpp"
-#include "../src/Event.h"
-#include "../src/Stream.h"
-#include "../src/Reader.h"
-#include "../src/Writer.h"
-#include "../src/StreamFunctions.h"
-#include "../src/Debug.h"
+#include <Event.h>
+#include <Stream.h>
+#include <Reader.h>
+#include <Writer.h>
+#include <StreamFunctions.h>
+#include <Debug.h>
 #include <chrono>
 #include <fstream>
 
@@ -216,13 +216,13 @@ TEST_CASE("Benchmarks") {
                 auto start2 = std::chrono::high_resolution_clock::now();
                 std::string path = "../test/data/benchmarking";
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamV = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
+                std::shared_ptr<IntStream> inputStreamV = inReader.getIntStream("z");
+                std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 Reader outReader = Reader(path+std::to_string(i)+"_last.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
                 
                 auto start = std::chrono::high_resolution_clock::now();
-                IntStream result = last(inputStreamV, inputStreamR);
+                std::shared_ptr<IntStream> result = last(*inputStreamV, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
                 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -249,12 +249,12 @@ TEST_CASE("Benchmarks") {
 
                 // Prepare empty output stream to fill
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStream = inReader.getIntStream("z");
+                std::shared_ptr<IntStream> inputStream = inReader.getIntStream("z");
                 Reader outReader = Reader(path+std::to_string(i)+"_time.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
                 auto start = std::chrono::high_resolution_clock::now();
-                IntStream result = time(inputStream);
+                std::shared_ptr<IntStream> result = time(*inputStream);
                 auto stop = std::chrono::high_resolution_clock::now();
 
                 REQUIRE(result == CORRECT_STREAM);
@@ -282,13 +282,12 @@ TEST_CASE("Benchmarks") {
                 std::string path = "../test/data/benchmarking";
 
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamD = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
+                std::shared_ptr<IntStream> inputStreamD = inReader.getIntStream("z");
+                std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 Reader outReader = Reader(path+std::to_string(i)+"_delay.out");
-                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
-
+                std::shared_ptr<UnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
                 auto start = std::chrono::high_resolution_clock::now();
-                UnitStream result = delay(inputStreamD, inputStreamR);
+                std::shared_ptr<UnitStream> result = delay(*inputStreamD, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
                 
                 //REQUIRE(result == CORRECT_STREAM);
