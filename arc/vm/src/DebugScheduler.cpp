@@ -104,3 +104,5 @@ bool DebugScheduler::next() {
 
 void DebugScheduler::warmup(std::string in_file) {
 }
+void DebugScheduler::cooldown(std::string outfile) {
+}

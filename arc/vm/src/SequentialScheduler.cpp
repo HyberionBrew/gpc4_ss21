@@ -171,10 +171,12 @@ bool SequentialScheduler::next() {
 
 void SequentialScheduler::set_reg(size_t pos, shared_ptr<IntStream> stream) {
     intRegisters[pos] = stream;
+    unitRegisters[pos] = nullptr;
 }
 
 void SequentialScheduler::set_reg(size_t pos, shared_ptr<UnitStream> stream) {
     unitRegisters[pos] = stream;
+    intRegisters[pos] = nullptr;
 }
 
 shared_ptr<IntStream> SequentialScheduler::get_intst(size_t reg) {
@@ -207,7 +209,7 @@ shared_ptr<Stream> SequentialScheduler::get_st(size_t reg) {
     return stream;
 }
 
-void SequentialScheduler::warmup(const char *in_file) {
+void SequentialScheduler::warmup(std::string in_file) {
     Reader reader(in_file);
     // Implement something smarter than busy waiting
     while (!instrInterface.ioReady);
@@ -226,10 +228,27 @@ void SequentialScheduler::warmup(const char *in_file) {
             }
         } else if (current.direction == io_out) {
             // If it is an output stream, save it for later
-            out_strems.push_back(current);
+            out_streams.push_back(current);
         } else {
             // Unreachable code
             assert(false);
         }
     }
+}
+
+void SequentialScheduler::cooldown(std::string outfile) {
+    Writer writer(outfile);
+    Stream* stream_ptr;
+    for (auto & stream : out_streams) {
+        if (get_ust(stream.regname) != nullptr) {
+            // Add unit stream
+            writer.addStream(stream.name, get_ust(stream.regname));
+        } else if (get_intst(stream.regname) != nullptr) {
+            // Add integer stream
+            writer.addStream((stream.name), get_intst(stream.regname));
+        } else {
+            assert(false);
+        }
+    }
+    writer.writeOutputFile();
 }

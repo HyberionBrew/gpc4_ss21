@@ -669,9 +669,9 @@ void Decode::print_header() {
         str << "2 Byte register addresses." << std::endl;
     }
     str << "Input streams:" << std::endl;
-    for (std::vector<IOStream>::iterator current = in_streams.begin(); current != in_streams.end(); current++) {
-        str << current->name << " in pseudo register " << current->regname << " of type ";
-        if (current->type == io_unit) {
+    for (auto & in_stream : in_streams) {
+        str << in_stream.name << " in pseudo register " << in_stream.regname << " of type ";
+        if (in_stream.type == io_unit) {
             str << "UNIT";
         } else {
             str << "INTEGER";
@@ -679,8 +679,8 @@ void Decode::print_header() {
         str << std::endl;
     }
     str << "Output streams:" << std::endl;
-    for (std::vector<IOStream>::iterator current = out_streams.begin(); current != out_streams.end(); current++) {
-        str << current->name << " in pseudo register " << current->regname << std::endl;
+    for (auto & out_stream : out_streams) {
+        str << out_stream.name << " in pseudo register " << out_stream.regname << std::endl;
     }
     std::cout << str.str();
 }

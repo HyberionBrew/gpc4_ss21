@@ -12,9 +12,10 @@ private:
     std::vector<Instruction> lookahead;
     std::vector<Register> registers;
 public:
-    GPUScheduler(InstrInterface & interface);
+    explicit GPUScheduler(InstrInterface & interface);
     bool next() override;
     void warmup(std::string in_file) override;
+    void cooldown (std::string outfile) override;
 };
 
 

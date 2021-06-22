@@ -8,6 +8,7 @@
 #include "Event.h"
 #include <vector>
 #include <string>
+#include <memory>
 
 /**
  * A Vector of UnitEvents which only contain a timestamp
@@ -59,15 +60,6 @@ public:
 
     friend bool operator==(const UnitStream lhs, const UnitStream rhs);
 };
-
-class OutputStream {
-public:
-    Stream& stream;
-    std::string name;
-
-    OutputStream(std::string name, Stream& stream);
-};
-
 
 // For further implementation:
 // typedef BoolStream std::vector<BoolEvent>

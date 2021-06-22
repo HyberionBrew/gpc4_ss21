@@ -11,7 +11,7 @@
 
 using namespace std;
 
-Reader::Reader(const char *inputFile) {
+Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
     readStreams();
 }
@@ -79,18 +79,20 @@ void Reader::readStreams() {
     }
 }
 
-shared_ptr<UnitStream> Reader::getUnitStream(const char *name) {
-    if (this->unitStreams.find(name) != this->unitStreams.end()) {
-        return this->unitStreams.find(name)->second;
+shared_ptr<UnitStream> Reader::getUnitStream(string name) {
+    const char* name_ptr = name.c_str();
+    if (this->unitStreams.find(name_ptr) != this->unitStreams.end()) {
+        return this->unitStreams.find(name_ptr)->second;
     } else {
-        throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
+        throw std::runtime_error("could not find unit stream \"" + name + "\"");
     }
 }
 
-shared_ptr<IntStream> Reader::getIntStream(const char *name) {
-    if (this->intStreams.find(name) != this->intStreams.end()) {
-        return this->intStreams.find(name)->second;
+shared_ptr<IntStream> Reader::getIntStream(string name) {
+    const char* name_ptr = name.c_str();
+    if (this->intStreams.find(name_ptr) != this->intStreams.end()) {
+        return this->intStreams.find(name_ptr)->second;
     } else {
-        throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
+        throw std::runtime_error("could not find int stream \"" + name + "\"");
     }
 }

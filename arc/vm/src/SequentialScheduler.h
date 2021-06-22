@@ -7,6 +7,7 @@
 
 #include "Scheduler.h"
 #include <Stream.h>
+#include <Writer.h>
 #include <unordered_map>
 #include <memory>
 using namespace std;
@@ -16,7 +17,7 @@ private:
     size_t line;
     unordered_map<size_t, shared_ptr<IntStream>> intRegisters;
     unordered_map<size_t, shared_ptr<UnitStream>> unitRegisters;
-    vector<IOStream> out_strems;
+    vector<IOStream> out_streams;
     void set_reg (size_t pos, shared_ptr<IntStream> stream);
     void set_reg (size_t pos, shared_ptr<UnitStream> stream);
     shared_ptr<IntStream> get_intst (size_t reg);
@@ -25,7 +26,8 @@ private:
 public:
     SequentialScheduler(InstrInterface & interface);
     bool next() override;
-    void warmup(const char *in_file) override;
+    void warmup(std::string in_file) override;
+    void cooldown(std::string outfile) override;
 };
 
 #endif //GPC4_SS21_SEQUENTIALSCHEDULER_H
