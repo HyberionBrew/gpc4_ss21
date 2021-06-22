@@ -201,6 +201,7 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
 
 #define BENCHMARKING_CASES 8
 #define BENCHMARKING_LOOPS 1
+//#define CHECK_RESULTS
 
 TEST_CASE("Benchmarks") {
     SECTION("last() benchmarking example"){
@@ -224,7 +225,11 @@ TEST_CASE("Benchmarks") {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<IntStream> result = last(*inputStreamV, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
-                
+
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
+
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 printf("%li us\n",duration.count());
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
@@ -257,7 +262,10 @@ TEST_CASE("Benchmarks") {
                 std::shared_ptr<IntStream> result = time(*inputStream);
                 auto stop = std::chrono::high_resolution_clock::now();
 
-                REQUIRE(result == CORRECT_STREAM);
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
+
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
                 
@@ -289,8 +297,10 @@ TEST_CASE("Benchmarks") {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<UnitStream> result = delay(*inputStreamD, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
-                
-                //REQUIRE(result == CORRECT_STREAM);
+
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
