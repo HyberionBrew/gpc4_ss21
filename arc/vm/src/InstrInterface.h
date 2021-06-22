@@ -8,6 +8,8 @@
 #include <lfqueue.h>
 #include <cstddef>
 #include <cstdint>
+#include <atomic>
+#include "IOStream.h"
 
 // Careful! This is a single reader multiple writer construction!!!
 
@@ -28,12 +30,18 @@ struct Instruction {
 class InstrInterface {
 private:
     lfqueue_t queue;
+    lfqueue_t ioStreams;
 public:
+    volatile bool ioReady;
+
     InstrInterface();
+    ~InstrInterface();
     void push(Instruction inst);
     Instruction pop();
     bool is_nonempty();
-    ~InstrInterface();
+    void push_iostream(IOStream stream);
+    IOStream pop_iostream();
+    bool iostream_pending();
 };
 
 

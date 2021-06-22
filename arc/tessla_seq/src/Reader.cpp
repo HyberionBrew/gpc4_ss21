@@ -8,67 +8,91 @@
 #include <fstream>
 #include <regex>
 #include <string>
-using namespace std;
 
+using namespace std;
 
 Reader::Reader(string inputFile) {
     this->FILENAME = inputFile;
+    readStreams();
 }
 
-UnitStream Reader::getUnitStream(string name) {
+void Reader::readStreams() {
     fstream file;
     file.open(this->FILENAME, ios::in);
-    UnitStream readStream;
-
-    if (file.is_open()) {
+    if (file.is_open())  {
         string buf;
-        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*\\(\\)\\s*");
+        int i = 0;
         while (getline(file, buf)) {
-            // match each line to regex
-            smatch matches;
-            if (regex_match(buf, matches, pattern)) {
-                int timestamp = stoi(matches[1]);
-                if (name.compare(matches[2]) == 0) {
-                    UnitEvent ue{static_cast<size_t>(timestamp)};
-                    readStream.stream.push_back(ue);
+            i++;
+            buf.erase(std::remove_if(buf.begin(), buf.end(),::isspace), buf.end());
+            size_t colPos = buf.find(':');
+            size_t eqPos = buf.find('=');
+            if (colPos == std::string::npos || eqPos == std::string::npos) {
+                char buff[50];
+                std::snprintf(buff, sizeof(buff), "Line %d: invalid pattern", i);
+                throw std::runtime_error(buff);
+            }
+            int timestamp = stoi(buf, nullptr);
+            string name = buf.substr(colPos+1, eqPos-colPos-1);
+
+            size_t post_eq = eqPos + 1;
+            try {
+                int value = stoi(buf.substr(post_eq));
+                // create int event
+                IntEvent ev = IntEvent(timestamp, value);
+
+                // check if exists in map
+                if (this->intStreams.find(name) == this->intStreams.end()) {
+                    auto s = std::make_shared<IntStream>();
+                    this->intStreams.insert(std::pair<string,shared_ptr<IntStream>>(name, s));
+                }
+
+                if (this->intStreams.find(name) != this->intStreams.end()) {
+                    this->intStreams.find(name)->second->stream.push_back(ev);
+                } else {
+                    throw std::runtime_error("Error in IntStream map insertion for Stream \"" + name + "\"");
+                }
+
+            } catch (std::invalid_argument &ia) {
+                // check unit event validity
+                if (buf.substr(post_eq) != "()") {
+                    throw std::runtime_error("Invalid string \"" + buf.substr(post_eq) +
+                                             "\" at RHS of non-int stream");
+                }
+
+                // create unit event
+                UnitEvent ev = UnitEvent(timestamp);
+
+                // check if exists in map
+                if (this->unitStreams.find(name) == this->unitStreams.end()) {
+                    auto s = std::make_shared<UnitStream>();
+                    this->unitStreams.insert(std::pair<string, shared_ptr<UnitStream>>(name, s));
+                }
+
+                if (this->unitStreams.find(name) != this->unitStreams.end()) {
+                    this->unitStreams.find(name)->second->stream.push_back(ev);
+                } else {
+                    throw std::runtime_error("Error in UnitStream map insertion for Stream \"" + name + "\"");
                 }
             }
         }
-        file.close();
     }
-    if (readStream.stream.size() == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
-    }
-    return readStream;
 }
 
-IntStream Reader::getIntStream(string name) {
-    fstream file;
-    file.open(this->FILENAME, ios::in);
-    IntStream readStream;
+shared_ptr<UnitStream> Reader::getUnitStream(string name) {
+    const char* name_ptr = name.c_str();
+    if (this->unitStreams.find(name_ptr) != this->unitStreams.end()) {
+        return this->unitStreams.find(name_ptr)->second;
+    } else {
+        throw std::runtime_error("could not find unit stream \"" + name + "\"");
+    }
+}
 
-    if (file.is_open()) {
-        string buf;
-        // match each line to regex
-        regex pattern("([0-9]+):\\s*([A-Za-z][0-9A-Za-z]*)\\s*=\\s*(-?[0-9]+)\\s*");
-        while (getline(file, buf)) {
-            // match each line to regex
-            smatch matches;
-            if (regex_match(buf, matches, pattern)) {
-                int timestamp = stoi(matches[1]);
-                int value = stoi(matches[3]);
-                if (name.compare(matches[2]) == 0) {
-                    IntEvent ie{static_cast<size_t>(timestamp), value};
-                    readStream.stream.push_back(ie);
-                }
-            }
-        }
-        file.close();
+shared_ptr<IntStream> Reader::getIntStream(string name) {
+    const char* name_ptr = name.c_str();
+    if (this->intStreams.find(name_ptr) != this->intStreams.end()) {
+        return this->intStreams.find(name_ptr)->second;
+    } else {
+        throw std::runtime_error("could not find int stream \"" + name + "\"");
     }
-    if (readStream.stream.size() == 0) {
-        cerr << "Stream " << name << " is not present in the input file" << "\n";
-        exit(1);
-    }
-    return readStream;
 }

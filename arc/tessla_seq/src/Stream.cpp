@@ -32,8 +32,6 @@ std::vector<Event*> UnitStream::get_event_stream() {
     return vec;
 }
 
-OutputStream::OutputStream(std::string name, Stream& stream) : name(name), stream(stream) { }
-
 Stream::~Stream() {};
 //LockQueue& operator=(const LockQueue & q);  // Assignment Operator
 

@@ -13,6 +13,8 @@ private:
 public:
     DebugScheduler(InstrInterface & interface);
     bool next() override;
+    void warmup(std::string in_file) override;
+    void cooldown (std::string outfile) override;
 };
 
 #endif //GPC4_SS21_DEBUGSCHEDULER_H

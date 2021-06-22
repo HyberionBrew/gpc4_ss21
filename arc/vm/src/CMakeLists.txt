@@ -12,6 +12,7 @@ link_directories(
 add_executable(arc
         main.cpp
         DebugScheduler.cpp
+        SequentialScheduler.cpp
         Decode.cpp
         GPUScheduler.cpp
         InstrInterface.cpp InstrInterface.h
