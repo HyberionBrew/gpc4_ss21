@@ -15,7 +15,7 @@
 #include <cassert>
 
 std::string usage_string = "Usage: arc [-D | -t | -s | -o FILENAME] -v coil_file input_file";
-constexpr scheduler DEFAULT_SCHEDULER = debug;
+constexpr scheduler DEFAULT_SCHEDULER = sched_debug;
 
 void decode (InstrInterface & interface, std::string coil_file, bool verbose) {
 
@@ -33,6 +33,7 @@ void decode (InstrInterface & interface, std::string coil_file, bool verbose) {
         decodeprt->print_header();
     }
 
+    // Start decoding the coil file
     bool next = true;
     while (next) {
         next = false;
@@ -53,16 +54,19 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         str << "Computing using ";
     }
     Scheduler *scheduler;
+
+    // Select the scheduler
     switch (type) {
-        case debug:
+        case sched_debug:
             scheduler = new DebugScheduler(interface);
             if (verbose) str << "Debug";
             break;
-        case gpu:
+        case sched_gpu:
+        case sched_thrust:
             scheduler = new GPUScheduler(interface);
             if (verbose) str << "GPU";
             break;
-        case sequential:
+        case sched_sequential:
             scheduler = new SequentialScheduler(interface);
             if (verbose) str << "Sequential";
             break;
@@ -70,13 +74,15 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
             std::cout << "Required scheduler not yet implemented.\n";
             return;
     }
+
+    // Print out verbose messages
     if (verbose) {
         str << " scheduler." << std::endl;
         std::cout << str.str();
-    }
-    if (verbose) {
         std::cout << "Warming up on input file " << in_file << std::endl;
     }
+
+    // Warm up the scheduler
     try {
         scheduler->warmup(in_file);
         if (verbose) {
@@ -88,6 +94,8 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         std::cout << "Exiting." << std::endl;
         exit(1);
     }
+
+    // Perform actual calculations
     if (verbose) {
         std::cout << "Starting calculations...\n";
     }
@@ -97,6 +105,8 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         std::cout << "Finished calculations.\n";
         std::cout << "Writing output file.\n";
     }
+
+    // Cool down the scheduler
     scheduler->cooldown(outfile);
     if (verbose) {
         std::cout << "Output written to " << outfile << "\n";
@@ -114,7 +124,7 @@ int main(int argc, char **argv) {
 
     // Read in command line arguments
     scheduler scheduler = DEFAULT_SCHEDULER;
-    const char * optstring = "Dtsvo:";
+    const char * optstring = "Dtsvgo:";
     bool verbose = false;
     char opt;
 
@@ -138,13 +148,16 @@ int main(int argc, char **argv) {
         }
         switch (opt) {
             case 'D':
-                scheduler = debug;
+                scheduler = sched_debug;
                 break;
             case 't':
-                scheduler = thrust;
+                scheduler = sched_thrust;
                 break;
             case 's':
-                scheduler = sequential;
+                scheduler = sched_sequential;
+                break;
+            case 'g':
+                scheduler = sched_gpu;
                 break;
             case 'v':
                 // Set verbose mode
@@ -155,6 +168,7 @@ int main(int argc, char **argv) {
                 output_file = optarg;
                 break;
             case '?':
+                // Unknown option
                 if (optopt == 'o') {
                     std::cout << "Option \'o\' requires an option." << std::endl;
                 } else {

@@ -9,7 +9,7 @@
 #include "Scheduler.h"
 #include <string>
 
-enum scheduler{debug, sequential, gpu, thrust};
+enum scheduler{sched_debug, sched_sequential, sched_gpu, sched_thrust};
 
 int main(int argc, char **argv);
 void decode (InstrInterface & interface, std::string coil_file, bool verbose);
