@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     // Read in command line arguments
     scheduler scheduler = DEFAULT_SCHEDULER;
-    const char * optstring = "Dtsvc:i:o:";
+    const char * optstring = "Dtsvo:";
     bool verbose = false;
     char opt;
 
@@ -153,6 +153,7 @@ int main(int argc, char **argv) {
             case 'o':
                 // Set custom outfile
                 output_file = optarg;
+                break;
             case '?':
                 if (optopt == 'o') {
                     std::cout << "Option \'o\' requires an option." << std::endl;
