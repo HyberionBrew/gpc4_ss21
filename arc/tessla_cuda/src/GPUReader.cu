@@ -199,8 +199,6 @@ GPUIntStream Reader::getGPUIntStream(string name) {
 #endif
 
 #ifdef NEW_READER
-
-
 shared_ptr<GPUUnitStream> GPUReader::getUnitStream(string name) {
     if (this->GPUUnitStreams.find(name) != this->GPUUnitStreams.end()) {
         vector<int> *timestamps = &this->GPUUnitStreams.find(name)->second->timestamps;
@@ -218,20 +216,6 @@ shared_ptr<GPUUnitStream> GPUReader::getUnitStream(string name) {
     } else {
         throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
     }
-}
-
-shared_ptr<GPUUnitStream> GPUReader::getUnitStreamDebug(string name) {
-    shared_ptr<GPUUnitStream> result;
-    try {
-        result = getUnitStream(name);
-    } catch (exception e) {
-        // Stream not found, return an empty stream
-        printf("Stream was not found!\n");
-        int *timestampsA = (int*) malloc(0);
-        size_t size = 0;
-        result = std::make_shared<GPUUnitStream>(GPUUnitStream{timestampsA, size});
-    }
-    return result;
 }
 
 shared_ptr<GPUIntStream> GPUReader::getIntStream(string name) {
@@ -258,20 +242,5 @@ shared_ptr<GPUIntStream> GPUReader::getIntStream(string name) {
     } else {
         throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
     }
-}
-
-shared_ptr<GPUIntStream> GPUReader::getIntStreamDebug(string name) {
-    shared_ptr<GPUIntStream> result;
-    try {
-        result = getIntStream(name);
-    } catch (exception e) {
-        // Stream not found, return an empty stream
-        printf("Stream was not found!\n");
-        int *timestampsA = (int*) malloc(0);
-        int *valuesA = (int*) malloc(0);
-        size_t size = 0;
-        result = make_shared<GPUIntStream>(GPUIntStream{timestampsA, valuesA, size});
-    }
-    return result;
 }
 #endif

@@ -29,8 +29,6 @@ public:
     GPUReader(std::string inputfile);
     std::shared_ptr<GPUUnitStream> getUnitStream(std::string name);
     std::shared_ptr<GPUIntStream> getIntStream(std::string name);
-    std::shared_ptr<GPUUnitStream> getUnitStreamDebug(std::string name);
-    std::shared_ptr<GPUIntStream> getIntStreamDebug(std::string name);
 };
 
 void printArray(int* array, size_t len, std::string name);

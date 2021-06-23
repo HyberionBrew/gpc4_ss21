@@ -4,7 +4,6 @@
 #include <cuda_runtime.h>
 #include <sys/time.h>
 #include <assert.h>
-#include <stdexcept>
 #include "main.cuh"
 #include "helper.cuh"
 #include "Stream.cuh"
@@ -197,7 +196,7 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
     resetTimestamps += *resetOffset;
     results += *resultOffset;
 
-    // For each tempEvent, check if there's a matching (valid) event in GPUIntStream s
+    // For each tempEvent, check if there's a matching (valid) event in IntStream s
     int index = lookUpElement(inputSize, resetTimestamps[i], inputIntTimestamps);
     if (index != INT_MIN && inputIntValues[index] != -1) {
         results[i] = inputIntTimestamps[index] + inputIntValues[index];

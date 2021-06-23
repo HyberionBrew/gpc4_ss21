@@ -116,6 +116,7 @@ void GPUUnitStream::free_host(){
 void GPUIntStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
+
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
@@ -172,50 +173,15 @@ GPUUnitStream::GPUUnitStream(int*timestamp, size_t size) {
     onDevice =false;
 }
 
-/**
- * Create an empty stream of size size and copy over to CUDA device if necessary.
- * Does not set memory on host to all 0. Might contain bogus values.
- * @param size size The size of the stream to create
- * @param createOnDevice Allocate the memory on CUDA device
- */
-GPUUnitStream::GPUUnitStream(size_t size, bool createOnDevice) {
-    int sizeAllocated = size * sizeof(int);
-    this->size = size;
-    this->host_timestamp = (int *) malloc(size * sizeof(int));
-    this->host_offset = (int *) malloc(sizeof(int));
-    // Check if we have enough memory left
-    if (this->host_timestamp == nullptr) {
-        throw std::runtime_error("Out of memory.");
-    }
 
-    if (createOnDevice) this->copy_to_device(false);
-}
-
-/**
- * Copy constructor of Unit Stream. If onDevice is set, the stream is also copied on the CUDA device
- * @param stream Stream to be copied.
- * @param onDevice Also copy data from CUDA device
- */
-GPUUnitStream::GPUUnitStream(GPUUnitStream &stream, bool onDevice) : GPUUnitStream(stream.size, onDevice){
-    this->host_offset = stream.host_offset;
-    memcpy(this->host_timestamp, stream.host_timestamp, stream.size * sizeof (int));
-
-    if (onDevice) {
-        this->device_offset = stream.device_offset;
-        // TODO make this more high performance
-        CHECK(cudaMemcpy(this->device_timestamp, stream.device_timestamp, stream.size * sizeof (int), cudaMemcpyDeviceToDevice));
-    }
-}
-
-
-void GPUUnitStream::free_device(){
+void UnitStream::free_device(){
     CHECK(cudaFree(this->device_timestamp));
     CHECK(cudaFree(this->device_offset));
    // free(this->host_timestamp);
     free(this->host_offset);
 }
 
-void GPUUnitStream::copy_to_device(){
+void UnitStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -225,7 +191,7 @@ void GPUUnitStream::copy_to_device(){
 
 }
 
-void GPUUnitStream::copy_to_device(bool valid){
+void UnitStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -237,7 +203,7 @@ void GPUUnitStream::copy_to_device(bool valid){
 }
 
 
-void GPUUnitStream::copy_to_host() {
+void UnitStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
     memset(this->host_timestamp,  0, sizeAllocate);
