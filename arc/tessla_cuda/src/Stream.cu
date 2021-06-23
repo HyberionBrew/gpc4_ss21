@@ -6,7 +6,7 @@
 #include "Stream.cuh"
 #include "helper.cuh"
 
-IntStream::IntStream(int *timestamp,int *value, size_t size, int offs) {
+GPUIntStream::GPUIntStream(int *timestamp, int *value, size_t size, int offs) {
     this->host_timestamp = timestamp;
     this->host_values = value;
     this->size = size;
@@ -16,7 +16,7 @@ IntStream::IntStream(int *timestamp,int *value, size_t size, int offs) {
     onDevice =false;
 
 }
-IntStream::IntStream(int *timestamp,int *value, size_t size) {
+GPUIntStream::GPUIntStream(int *timestamp, int *value, size_t size) {
     this->host_timestamp = timestamp;
     this->host_values = value;
     this->size = size;
@@ -28,47 +28,47 @@ IntStream::IntStream(int *timestamp,int *value, size_t size) {
 }
 //DEVICE ONLY dont use
 // THIS CAN BE DELETED!
-IntStream::IntStream() {
+GPUIntStream::GPUIntStream() {
     this->host_offset = (int *) malloc(sizeof(int));
     memset( this->host_offset,0,sizeof(int));
     onDevice =false;
 }
-UnitStream::UnitStream() {
+GPUUnitStream::GPUUnitStream() {
     this->host_offset = (int *) malloc(sizeof(int));
     memset( this->host_offset,0,sizeof(int));
     onDevice =false;
 }
 
-void IntStream::print() {
-    printf("IntStream\n");
+void GPUIntStream::print() {
+    printf("GPUIntStream\n");
     printf("t|value\n");
     //
     for (int i = *this->host_offset; i< this->size;i++) {
         printf("%d|%d \n",this->host_timestamp[i],this->host_values[i]);
     }
-    printf("end IntStream\n");
+    printf("end GPUIntStream\n");
 }
 
-void IntStream::free_device(){
+void GPUIntStream::free_device(){
     CHECK(cudaFree(this->device_timestamp));
     CHECK(cudaFree(this->device_values));
     CHECK(cudaFree(this->device_offset));
     free(this->host_offset);
 }
 
-void IntStream::free_host(){
+void GPUIntStream::free_host(){
     free(this->host_timestamp);
     free(this->host_values);
 }
 
-void UnitStream::free_host(){
+void GPUUnitStream::free_host(){
     free(this->host_timestamp);
 }
 
 //TODO! implement Staged concurrent copy and execute
 //https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations
 // i.e. maybe have a function that doesnt just copy but also performs function?
-void IntStream::copy_to_device(bool valid){
+void GPUIntStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
 
@@ -84,7 +84,7 @@ void IntStream::copy_to_device(bool valid){
     }
 }
 
-void IntStream::copy_to_device(){
+void GPUIntStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -99,7 +99,7 @@ void IntStream::copy_to_device(){
 }
 
 
-void IntStream::copy_to_host() {
+void GPUIntStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
     memset(this->host_values, 0, sizeAllocate);
@@ -111,17 +111,17 @@ void IntStream::copy_to_host() {
 }
 
 
-void UnitStream::print() {
-    printf("UnitStream\n");
+void GPUUnitStream::print() {
+    printf("GPUUnitStream\n");
     printf("t\n");
     for (int i = *this->host_offset; i< this->size;i++) {
         printf("%d \n",this->host_timestamp[i]);
     }
-    printf("end UnitStream\n");
+    printf("end GPUUnitStream\n");
 }
 
 
-UnitStream::UnitStream(int*timestamp,size_t size, int offs) {
+GPUUnitStream::GPUUnitStream(int*timestamp, size_t size, int offs) {
     this->host_timestamp = timestamp;
     this->size = size;
     this->host_offset = (int *) malloc(size* sizeof(int));
@@ -129,7 +129,7 @@ UnitStream::UnitStream(int*timestamp,size_t size, int offs) {
     onDevice =false;
 }
 
-UnitStream::UnitStream(int*timestamp,size_t size) {
+GPUUnitStream::GPUUnitStream(int*timestamp, size_t size) {
     this->host_timestamp = timestamp;
     this->size = size;
     this->host_offset = (int *) malloc(size* sizeof(int));
@@ -138,14 +138,14 @@ UnitStream::UnitStream(int*timestamp,size_t size) {
 }
 
 
-void UnitStream::free_device(){
+void GPUUnitStream::free_device(){
     CHECK(cudaFree(this->device_timestamp));
     CHECK(cudaFree(this->device_offset));
    // free(this->host_timestamp);
     free(this->host_offset);
 }
 
-void UnitStream::copy_to_device(){
+void GPUUnitStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -155,7 +155,7 @@ void UnitStream::copy_to_device(){
 
 }
 
-void UnitStream::copy_to_device(bool valid){
+void GPUUnitStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -167,7 +167,7 @@ void UnitStream::copy_to_device(bool valid){
 }
 
 
-void UnitStream::copy_to_host() {
+void GPUUnitStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
     memset(this->host_timestamp,  0, sizeAllocate);

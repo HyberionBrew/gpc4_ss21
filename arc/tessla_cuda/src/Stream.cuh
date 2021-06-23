@@ -6,7 +6,7 @@
 #define TESSLA_CUDA_STREAM_CUH
 
 /**
- * Stream class, can contain either an IntStream or a UnitStream
+ * Stream class, can contain either an GPUIntStream or a GPUUnitStream
  */
 /*class Stream {
 public:
@@ -16,7 +16,7 @@ public:
     bool OnDevice;
 };*/
 
-class IntStream{
+class GPUIntStream{
 public:
     //DO NOT USE DESTRUCTOR! LEADS TO ERROR IN CONJUNCTION WITH
     //CHECK(cudaDeviceReset());
@@ -31,21 +31,21 @@ public:
     int * host_offset;
     int * device_offset;
     bool onDevice;
-    IntStream(int *timestamp,int *value, size_t size);
-    IntStream();
-    IntStream(int *timestamp,int *value, size_t size, int offs);
+    GPUIntStream(int *timestamp, int *value, size_t size);
+    GPUIntStream();
+    GPUIntStream(int *timestamp, int *value, size_t size, int offs);
     //just allocate on host
 
     void copy_to_device(bool valid);
     void copy_to_device();
     void copy_to_host();
     void free_device();
-    IntStream(bool deviceOnly, size_t size);
+    GPUIntStream(bool deviceOnly, size_t size);
     void free_host();
     void print();
 };
 
-class UnitStream  {
+class GPUUnitStream  {
 public:
     size_t size;
     bool onDevice;
@@ -53,9 +53,9 @@ public:
     int * device_timestamp;
     int * host_offset;
     int * device_offset;
-    UnitStream();
-    UnitStream(int *timestamp, size_t size);
-    UnitStream(int *timestamp, size_t size,int offs);
+    GPUUnitStream();
+    GPUUnitStream(int *timestamp, size_t size);
+    GPUUnitStream(int *timestamp, size_t size, int offs);
     void copy_to_device();
     void copy_to_device(bool valid);
     void copy_to_host();

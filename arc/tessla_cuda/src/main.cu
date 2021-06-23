@@ -34,9 +34,9 @@ void test_slift(){
         y_v[i] = i;
     }
 
-    IntStream x(x_ts, x_v, sx);
-    IntStream y(y_ts, y_v, sy);
-    IntStream res;
+    GPUIntStream x(x_ts, x_v, sx);
+    GPUIntStream y(y_ts, y_v, sy);
+    GPUIntStream res;
 
     x.copy_to_device();
     y.copy_to_device();
@@ -85,9 +85,9 @@ void experimental_last(){
     memset(host_timestampOut,0,sizeAllocated);
     memset(host_valueOut,0,sizeAllocated);
 
-    IntStream inputStream(host_timestamp,host_value, size,1);
-    IntStream outputStream(host_timestampOut,host_valueOut,size);
-    UnitStream inputUnitStream(host_unit_timestamp,size,1);
+    GPUIntStream inputStream(host_timestamp, host_value, size, 1);
+    GPUIntStream outputStream(host_timestampOut, host_valueOut, size);
+    GPUUnitStream inputUnitStream(host_unit_timestamp, size, 1);
     inputStream.print();
     inputUnitStream.print();
     //device copies
@@ -171,11 +171,11 @@ int main(int argc, char **argv) {
     memset(host_timestampOut,0,sizeAllocated);
     memset(host_valueOut,0,sizeAllocated);
 
-    IntStream inputStream(host_timestamp,host_value, size);
-    IntStream outputStream(host_timestampOut,host_valueOut,size);
-    IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
-    //IntStream outputStream2(host_timestampOut2,host_valueOut2,size);
-    UnitStream inputUnitStream(host_unit_timestamp,size);
+    GPUIntStream inputStream(host_timestamp,host_value, size);
+    GPUIntStream outputStream(host_timestampOut,host_valueOut,size);
+    GPUIntStream outputStream2(host_timestampOut2,host_valueOut2,size);
+    //GPUIntStream outputStream2(host_timestampOut2,host_valueOut2,size);
+    GPUUnitStream inputUnitStream(host_unit_timestamp,size);
     // create streams for parallel kernel launches
     int MAX_STREAMS = 16; // check if this is really max
     // I think we can +2 streams for in/out sync? but not sure

@@ -9,6 +9,6 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 
-void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream);
+void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream);
 
 #endif //TESSLA_CUDA_STREAMFUNCTIONSTHRUST_CUH

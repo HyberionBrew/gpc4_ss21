@@ -20,15 +20,15 @@ public:
     UnitInStream();
 };
 
-class Reader {
+class GPUReader {
     std::string FILENAME;
-    std::map<std::string, std::shared_ptr<UnitInStream>> unitStreams;
-    std::map<std::string, std::shared_ptr<IntInStream>> intStreams;
+    std::map<std::string, std::shared_ptr<UnitInStream>> GPUUnitStreams;
+    std::map<std::string, std::shared_ptr<IntInStream>> GPUIntStreams;
     void readStreams();
 public:
-    Reader(std::string inputfile);
-    UnitStream getUnitStream(std::string name);
-    IntStream getIntStream(std::string name);
+    GPUReader(std::string inputfile);
+    std::shared_ptr<GPUUnitStream> getUnitStream(std::string name);
+    std::shared_ptr<GPUIntStream> getIntStream(std::string name);
 };
 
 void printArray(int* array, size_t len, std::string name);

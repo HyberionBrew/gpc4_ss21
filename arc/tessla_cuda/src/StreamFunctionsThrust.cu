@@ -16,7 +16,7 @@ struct is_larger_zero
   }
 };
 
-void last_thrust(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
+void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream){
     
     //first cast device pointers to thrust pointers
     auto offsetInt = thrust::device_pointer_cast(inputInt->device_offset);

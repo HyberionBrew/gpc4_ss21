@@ -1,4 +1,4 @@
-#include "Reader.cuh"
+#include "GPUReader.cuh"
 #include <assert.h>
 #include <fstream>
 #include <iostream>
@@ -10,7 +10,7 @@ using namespace std;
 
 #define NEW_READER
 
-Reader::Reader(string inputFile) {
+GPUReader::GPUReader(string inputFile) {
     this->FILENAME = inputFile;
 #ifdef NEW_READER
     readStreams();
@@ -31,7 +31,7 @@ void printArray(int* array, size_t len, string name) {
     printf("%d]\n", array[len-1]);
 }
 
-void Reader::readStreams() {
+void GPUReader::readStreams() {
     fstream file;
     clock_t start = clock();
     file.open(this->FILENAME, ios::in);
@@ -58,18 +58,18 @@ void Reader::readStreams() {
                 int value = stoi(buf.substr(post_eq));
 
                 // check if exists in map
-                if (this->intStreams.find(name) == this->intStreams.end()) {
+                if (this->GPUIntStreams.find(name) == this->GPUIntStreams.end()) {
                     //printf("Create int stream %s\n", name.c_str());
                     shared_ptr<IntInStream> s = make_shared<IntInStream>();
-                    this->intStreams.insert(std::pair<string,shared_ptr<IntInStream>>(name, s));
+                    this->GPUIntStreams.insert(std::pair<string,shared_ptr<IntInStream>>(name, s));
                 }
 
-                if (this->intStreams.find(name) != this->intStreams.end()) {
+                if (this->GPUIntStreams.find(name) != this->GPUIntStreams.end()) {
                     //printf("Insert (%d, %d) int stream %s\n", timestamp, value, name.c_str());
-                    this->intStreams.find(name)->second->timestamps.push_back(timestamp);
-                    this->intStreams.find(name)->second->values.push_back(value);
+                    this->GPUIntStreams.find(name)->second->timestamps.push_back(timestamp);
+                    this->GPUIntStreams.find(name)->second->values.push_back(value);
                 } else {
-                    throw std::runtime_error("Error in IntStream map insertion for Stream \"" + name + "\"");
+                    throw std::runtime_error("Error in GPUIntStream map insertion for Stream \"" + name + "\"");
                 }
 
             } catch (std::invalid_argument &ia) {
@@ -80,19 +80,19 @@ void Reader::readStreams() {
                 }
 
                 // check if exists in map
-                if (this->unitStreams.find(name) == this->unitStreams.end()) {
+                if (this->GPUUnitStreams.find(name) == this->GPUUnitStreams.end()) {
                     //printf("Create unit stream %s\n", name.c_str());
                     shared_ptr<UnitInStream> s = make_shared<UnitInStream>();
-                    this->unitStreams.insert(std::pair<string,shared_ptr<UnitInStream>>(name, s));
+                    this->GPUUnitStreams.insert(std::pair<string,shared_ptr<UnitInStream>>(name, s));
                 }
 
-                if (this->unitStreams.find(name) != this->unitStreams.end()) {
+                if (this->GPUUnitStreams.find(name) != this->GPUUnitStreams.end()) {
                     //printf("Insert %d in unit stream %s\n", timestamp, name.c_str());
-                    this->unitStreams.find(name)->second->timestamps.push_back(timestamp);
-                    //printf("last elem in %s: %d\n", name.c_str(), this->unitStreams.find(name)->second->timestamps.back());
+                    this->GPUUnitStreams.find(name)->second->timestamps.push_back(timestamp);
+                    //printf("last elem in %s: %d\n", name.c_str(), this->GPUUnitStreams.find(name)->second->timestamps.back());
                     //printf("Post insert unit stream %s\n", name.c_str());
                 } else {
-                    throw std::runtime_error("Error in UnitStream map insertion for Stream \"" + name + "\"");
+                    throw std::runtime_error("Error in GPUUnitStream map insertion for Stream \"" + name + "\"");
                 }
             }
         }
@@ -102,7 +102,7 @@ void Reader::readStreams() {
 }
 
 #ifndef NEW_READER
-UnitStream Reader::getUnitStream(string name) {
+GPUUnitStream Reader::getGPUUnitStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
     vector<int> timestamps;
@@ -140,11 +140,11 @@ UnitStream Reader::getUnitStream(string name) {
     }
      */
 
-    UnitStream readStream = UnitStream(timestampsA, timestampsCnt);
+    GPUUnitStream readStream = GPUUnitStream(timestampsA, timestampsCnt);
     return readStream;
 }
 
-IntStream Reader::getIntStream(string name) {
+GPUIntStream Reader::getGPUIntStream(string name) {
     fstream file;
     file.open(this->FILENAME, ios::in);
     vector<int> timestamps;
@@ -193,15 +193,15 @@ IntStream Reader::getIntStream(string name) {
     }
     */
 
-    IntStream readStream = IntStream(timestampsA, valuesA, timestampsCnt);
+    GPUIntStream readStream = GPUIntStream(timestampsA, valuesA, timestampsCnt);
     return readStream;
 }
 #endif
 
 #ifdef NEW_READER
-UnitStream Reader::getUnitStream(string name) {
-    if (this->unitStreams.find(name) != this->unitStreams.end()) {
-        vector<int> *timestamps = &this->unitStreams.find(name)->second->timestamps;
+shared_ptr<GPUUnitStream> GPUReader::getUnitStream(string name) {
+    if (this->GPUUnitStreams.find(name) != this->GPUUnitStreams.end()) {
+        vector<int> *timestamps = &this->GPUUnitStreams.find(name)->second->timestamps;
         size_t mallocSize = timestamps->size() * sizeof(int);
         size_t size = timestamps->size();
         int *timestampsA = (int*) malloc(mallocSize);
@@ -212,16 +212,16 @@ UnitStream Reader::getUnitStream(string name) {
             printArray(&(*timestamps)[0], timestamps->size(), "ts (" + name + ")");
         }
          */
-        return {timestampsA, size};
+        return std::make_shared<GPUUnitStream>(GPUUnitStream{timestampsA, size});
     } else {
         throw std::runtime_error("could not find unit stream \"" + std::string(name) + "\"");
     }
 }
 
-IntStream Reader::getIntStream(string name) {
-    if (this->intStreams.find(name) != this->intStreams.end()) {
-        vector<int> *timestamps = &this->intStreams.find(name)->second->timestamps;
-        vector<int> *values = &this->intStreams.find(name)->second->values;
+shared_ptr<GPUIntStream> GPUReader::getIntStream(string name) {
+    if (this->GPUIntStreams.find(name) != this->GPUIntStreams.end()) {
+        vector<int> *timestamps = &this->GPUIntStreams.find(name)->second->timestamps;
+        vector<int> *values = &this->GPUIntStreams.find(name)->second->values;
         size_t mallocSize = timestamps->size() * sizeof(int);
         size_t size = timestamps->size();
         int *timestampsA = (int*) malloc(mallocSize);
@@ -238,7 +238,7 @@ IntStream Reader::getIntStream(string name) {
             printArray(&(*values)[0], values->size(), "vs (" + name + ")");
         }
          */
-        return {timestampsA, valuesA, size};
+        return make_shared<GPUIntStream>(GPUIntStream{timestampsA, valuesA, size});
     } else {
         throw std::runtime_error("could not find int stream \"" + std::string(name) + "\"");
     }

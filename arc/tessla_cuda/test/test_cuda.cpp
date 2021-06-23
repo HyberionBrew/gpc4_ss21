@@ -4,7 +4,7 @@
 #include <string.h>
 #include <vector>
 #include "../../test/catch2/catch.hpp"
-#include <Reader.cuh>
+#include <GPUReader.cuh>
 #include <Stream.cuh>
 #include <StreamFunctions.cuh>
 
@@ -21,15 +21,15 @@ TEST_CASE("last_thrust()"){
     SECTION("last() tuwel example") {
         // Read input and correct output data
         
-        Reader inReader = Reader("../test/data/bt_last.in");
-        IntStream inputStreamV = inReader.getIntStream("v");
-        UnitStream inputStreamR = inReader.getUnitStream("r");
-        Reader outReader = Reader("../test/data/bt_last.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("v");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r");
+        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
-        IntStream outputStream;
+        GPUIntStream outputStream;
         printf("??!\n");
         // Run kernel
         inputStreamV.copy_to_device();
@@ -67,17 +67,17 @@ TEST_CASE("last_thrust()"){
 
 SECTION("last() small random example") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test1.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test1.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/last_test1.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test1.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
         //printf("%d \n\n",  CORRECT_STREAM.size);
 
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -106,13 +106,13 @@ SECTION("last() small random example") {
 
     SECTION("last() large random example") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test2.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test2.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/last_test2.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test2.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
         // Prepare empty output stream to fill
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -144,18 +144,18 @@ SECTION("last() small random example") {
 
     SECTION("last() twice test with no invalids") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test3.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStream2 = inReader.getUnitStream("a");
-        UnitStream inputStreamR = inReader.getUnitStream("x");
-        Reader outReader = Reader("../test/data/last_test3.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+        GPUReader inReader = GPUReader("../test/data/last_test3.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStream2 = inReader.getGPUUnitStream("a");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("x");
+        GPUReader outReader = GPUReader("../test/data/last_test3.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("o");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
 
-        IntStream intermediateStream;
-        IntStream outputStream;
+        GPUIntStream intermediateStream;
+        GPUIntStream outputStream;
           
         // Run kernel
         inputStreamV.copy_to_device();
@@ -188,12 +188,12 @@ SECTION("last() small random example") {
     SECTION("last() twice test with invalids in Unit Stream") {
         //printf("-------------------------\n");
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test4.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStream2 = inReader.getUnitStream("x");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test4.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+        GPUReader inReader = GPUReader("../test/data/last_test4.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStream2 = inReader.getGPUUnitStream("x");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test4.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("o");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
@@ -209,8 +209,8 @@ SECTION("last() small random example") {
 
         memset(host_timestampOut2, 0, inputStream2.size * sizeof(int));
         memset(host_valueOut2, 0, inputStream2.size * sizeof(int));
-        IntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
-        IntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
+        GPUIntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
+        GPUIntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
         // Run kernel
         intermediateStream.copy_to_device();
         inputStreamV.copy_to_device();
@@ -247,13 +247,13 @@ SECTION("last() small random example") {
     }
     SECTION("last empty"){
         //reading only invalid streams (they are empty)
-        Reader inReader = Reader("../test/data/bt_last.in");
-        IntStream inputStreamV = inReader.getIntStream("v2");
-        UnitStream inputStreamR = inReader.getUnitStream("r2");
-        Reader outReader = Reader("../test/data/bt_last.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y2");
+        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("v2");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r2");
+        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y2");
         int size = CORRECT_STREAM.size;
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -290,13 +290,13 @@ TEST_CASE("last()"){
     
     SECTION("last empty"){
         //reading only invalid streams (they are empty)
-        Reader inReader = Reader("../test/data/bt_last.in");
-        IntStream inputStreamV = inReader.getIntStream("v2");
-        UnitStream inputStreamR = inReader.getUnitStream("r2");
-        Reader outReader = Reader("../test/data/bt_last.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y2");
+        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("v2");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r2");
+        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y2");
         int size = CORRECT_STREAM.size;
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -326,15 +326,15 @@ TEST_CASE("last()"){
     SECTION("last() tuwel example") {
         // Read input and correct output data
         
-        Reader inReader = Reader("../test/data/bt_last.in");
-        IntStream inputStreamV = inReader.getIntStream("v");
-        UnitStream inputStreamR = inReader.getUnitStream("r");
-        Reader outReader = Reader("../test/data/bt_last.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("v");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r");
+        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -363,17 +363,17 @@ TEST_CASE("last()"){
 
     SECTION("last() small random example") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test1.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test1.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/last_test1.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test1.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
         //printf("%d \n\n",  CORRECT_STREAM.size);
 
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -402,13 +402,13 @@ TEST_CASE("last()"){
 
     SECTION("last() large random example") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test2.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test2.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y");
+        GPUReader inReader = GPUReader("../test/data/last_test2.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test2.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
         // Prepare empty output stream to fill
-        IntStream outputStream;
+        GPUIntStream outputStream;
 
         // Run kernel
         inputStreamV.copy_to_device();
@@ -440,18 +440,18 @@ TEST_CASE("last()"){
 
     SECTION("last() twice test with no invalids") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test3.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStream2 = inReader.getUnitStream("a");
-        UnitStream inputStreamR = inReader.getUnitStream("x");
-        Reader outReader = Reader("../test/data/last_test3.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+        GPUReader inReader = GPUReader("../test/data/last_test3.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStream2 = inReader.getGPUUnitStream("a");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("x");
+        GPUReader outReader = GPUReader("../test/data/last_test3.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("o");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
 
-        IntStream intermediateStream;
-        IntStream outputStream;
+        GPUIntStream intermediateStream;
+        GPUIntStream outputStream;
           
         // Run kernel
         inputStreamV.copy_to_device();
@@ -484,12 +484,12 @@ TEST_CASE("last()"){
     SECTION("last() twice test with invalids in Unit Stream") {
         //printf("-------------------------\n");
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/last_test4.in");
-        IntStream inputStreamV = inReader.getIntStream("z");
-        UnitStream inputStream2 = inReader.getUnitStream("x");
-        UnitStream inputStreamR = inReader.getUnitStream("a");
-        Reader outReader = Reader("../test/data/last_test4.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("o");
+        GPUReader inReader = GPUReader("../test/data/last_test4.in");
+        GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStream2 = inReader.getGPUUnitStream("x");
+        GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+        GPUReader outReader = GPUReader("../test/data/last_test4.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("o");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
@@ -505,8 +505,8 @@ TEST_CASE("last()"){
 
         memset(host_timestampOut2, 0, inputStream2.size * sizeof(int));
         memset(host_valueOut2, 0, inputStream2.size * sizeof(int));
-        IntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
-        IntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
+        GPUIntStream intermediateStream(host_timestampOut, host_valueOut, inputStreamR.size);
+        GPUIntStream outputStream(host_timestampOut2, host_valueOut2,inputStream2.size);
         // Run kernel
         intermediateStream.copy_to_device();
         inputStreamV.copy_to_device();
@@ -568,22 +568,22 @@ TEST_CASE("BENCHMARKING"){
             for (int i = 1;i<=BENCHMARKING_CASES; i++){
                 auto start2 = std::chrono::high_resolution_clock::now();
                 std::string path = "../test/data/benchmarking";
-                Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamV = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
-                Reader outReader = Reader(path+std::to_string(i)+"_last.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
-                /*Reader inReader = Reader("../test/data/bt_last.in");
-                IntStream inputStreamV = inReader.getIntStream("v");
-                UnitStream inputStreamR = inReader.getUnitStream("r");
-                Reader outReader = Reader("../test/data/bt_last.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");*/
+                GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
+                GPUIntStream inputStreamV = inReader.getGPUIntStream("z");
+                GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+                GPUReader outReader = GPUReader(path + std::to_string(i) + "_last.out");
+                GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
+                /*GPUReader inReader = GPUReader("../test/data/bt_last.in");
+                GPUIntStream inputStreamV = inReader.getGPUIntStream("v");
+                GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r");
+                GPUReader outReader = GPUReader("../test/data/bt_last.out");
+                GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");*/
                 //now start timer
                 
                 // Prepare empty output stream to fill
                 int size = CORRECT_STREAM.size;
                 auto start = std::chrono::high_resolution_clock::now();
-                IntStream outputStream;
+                GPUIntStream outputStream;
 
                 // Run kernel
                 inputStreamV.copy_to_device();
@@ -650,15 +650,15 @@ TEST_CASE("BENCHMARKING"){
                 std::string path = "../test/data/benchmarking";
 
                 // Prepare empty output stream to fill
-                Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStream = inReader.getIntStream("z");
-                Reader outReader = Reader(path+std::to_string(i)+"_time.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
+                GPUIntStream inputStream = inReader.getGPUIntStream("z");
+                GPUReader outReader = GPUReader(path + std::to_string(i) + "_time.out");
+                GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
                 // Prepare empty output stream to fill
                 int size = CORRECT_STREAM.size;
 
-                IntStream outputStream; //(host_timestampOut, host_valueOut, size);
+                GPUIntStream outputStream; //(host_timestampOut, host_valueOut, size);
 
                 // Run kernel
                  auto start = std::chrono::high_resolution_clock::now();
@@ -713,18 +713,18 @@ TEST_CASE("BENCHMARKING"){
 
                 // Prepare empty output stream to fill
 
-                Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamD = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
-                Reader outReader = Reader(path+std::to_string(i)+"_delay.out");
-                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+                GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
+                GPUIntStream inputStreamD = inReader.getGPUIntStream("z");
+                GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+                GPUReader outReader = GPUReader(path + std::to_string(i) + "_delay.out");
+                GPUUnitStream CORRECT_STREAM = outReader.getGPUUnitStream("y");
 
                 // Prepare empty output stream to fill
                 int size = inputStreamR.size;
                 int sizeAllocated = (size_t) size * sizeof(int);
                 int *host_timestampOut = (int *) malloc(size * sizeof(int));
                 memset(host_timestampOut, -1, sizeAllocated);
-                UnitStream outputStream(host_timestampOut, size);
+                GPUUnitStream outputStream(host_timestampOut, size);
                 auto start = std::chrono::high_resolution_clock::now();
                 // Run kernel
                 inputStreamD.copy_to_device();
@@ -781,18 +781,18 @@ TEST_CASE("BENCHMARKING"){
 
                 // Prepare empty output stream to fill
 
-                Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamD = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
-                Reader outReader = Reader(path+std::to_string(i)+"_lift.out");
-                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+                GPUReader inReader = GPUReader(path+std::to_string(i)+".in");
+                GPUIntStream inputStreamD = inReader.getGPUIntStream("z");
+                GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+                GPUReader outReader = GPUReader(path+std::to_string(i)+"_lift.out");
+                GPUUnitStream CORRECT_STREAM = outReader.getGPUUnitStream("y");
 
                 // Prepare empty output stream to fill
                 int size = inputStreamR.size;
                 int sizeAllocated = (size_t) size * sizeof(int);
                 int *host_timestampOut = (int *) malloc(size * sizeof(int));
                 memset(host_timestampOut, -1, sizeAllocated);
-                UnitStream outputStream(host_timestampOut, size);
+                GPUUnitStream outputStream(host_timestampOut, size);
                 auto start = std::chrono::high_resolution_clock::now();
                 // Run kernel
                 inputStreamD.copy_to_device();
@@ -831,16 +831,16 @@ TEST_CASE("BENCHMARKING"){
 TEST_CASE("extensive stream ops"){
     SECTION("last|time"){
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/extensive_benchmark.in");
-        IntStream inputStreamZ = inReader.getIntStream("z");
-        UnitStream inputStreamA = inReader.getUnitStream("a");
-        UnitStream inputStreamB = inReader.getUnitStream("b");
-        Reader outReader = Reader("../test/data/extensive_benchmark.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("y5");
+        GPUReader inReader = GPUReader("../test/data/extensive_benchmark.in");
+        GPUIntStream inputStreamZ = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamA = inReader.getGPUUnitStream("a");
+        GPUUnitStream inputStreamB = inReader.getGPUUnitStream("b");
+        GPUReader outReader = GPUReader("../test/data/extensive_benchmark.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y5");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
-        IntStream y1,y2,y3,y4,y5;
+        GPUIntStream y1,y2,y3,y4,y5;
 
         // Run kernel
         inputStreamZ.copy_to_device();
@@ -880,23 +880,23 @@ TEST_CASE("extensive stream ops"){
     SECTION("last|time|delay"){
         // Read input and correct output data
         printf("------------- \n");
-        Reader inReader = Reader("../test/data/extensive_benchmark.in");
-        IntStream inputStreamZ = inReader.getIntStream("z");
-        UnitStream inputStreamA = inReader.getUnitStream("a");
-        UnitStream inputStreamB = inReader.getUnitStream("b");
-        Reader outReader = Reader("../test/data/extensive_benchmark2.out");
-        IntStream CORRECT_STREAM1 = outReader.getIntStream("y1");
-        IntStream CORRECT_STREAM2 = outReader.getIntStream("y2");
+        GPUReader inReader = GPUReader("../test/data/extensive_benchmark.in");
+        GPUIntStream inputStreamZ = inReader.getGPUIntStream("z");
+        GPUUnitStream inputStreamA = inReader.getGPUUnitStream("a");
+        GPUUnitStream inputStreamB = inReader.getGPUUnitStream("b");
+        GPUReader outReader = GPUReader("../test/data/extensive_benchmark2.out");
+        GPUIntStream CORRECT_STREAM1 = outReader.getGPUIntStream("y1");
+        GPUIntStream CORRECT_STREAM2 = outReader.getGPUIntStream("y2");
         //TODO! crate nil streams in output file!
         //otherwise comment out the below
-        UnitStream CORRECT_STREAM3 = outReader.getUnitStream("y3");
-        UnitStream CORRECT_STREAM4 = outReader.getUnitStream("y4");
-        IntStream CORRECT_STREAM5 = outReader.getIntStream("y5");
-        UnitStream CORRECT_STREAM6 = outReader.getUnitStream("y6");
+        GPUUnitStream CORRECT_STREAM3 = outReader.getGPUUnitStream("y3");
+        GPUUnitStream CORRECT_STREAM4 = outReader.getGPUUnitStream("y4");
+        GPUIntStream CORRECT_STREAM5 = outReader.getGPUIntStream("y5");
+        GPUUnitStream CORRECT_STREAM6 = outReader.getGPUUnitStream("y6");
         // Prepare empty output stream to fill
         //int size = CORRECT_STREAM.size;
-        IntStream y1,y2,y5;
-        UnitStream y3,y4,y6;
+        GPUIntStream y1,y2,y5;
+        GPUUnitStream y3,y4,y6;
         // Run kernel
         inputStreamZ.copy_to_device();
         inputStreamA.copy_to_device();
@@ -967,18 +967,18 @@ TEST_CASE("Basic Stream Operations") {
     SECTION("delay()") {
         SECTION("delay() with small dataset") {
             // Read input and correct output data
-            Reader inReader = Reader("../test/data/bt_delay.in");
-            IntStream inputStreamD = inReader.getIntStream("d");
-            UnitStream inputStreamR = inReader.getUnitStream("r");
-            Reader outReader = Reader("../test/data/bt_delay.out");
-            UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+            GPUReader inReader = GPUReader("../test/data/bt_delay.in");
+            GPUIntStream inputStreamD = inReader.getGPUIntStream("d");
+            GPUUnitStream inputStreamR = inReader.getGPUUnitStream("r");
+            GPUReader outReader = GPUReader("../test/data/bt_delay.out");
+            GPUUnitStream CORRECT_STREAM = outReader.getGPUUnitStream("y");
 
             // Prepare empty output stream to fill
             int size = inputStreamR.size;
             int sizeAllocated = (size_t) size * sizeof(int);
             int *host_timestampOut = (int *) malloc(size * sizeof(int));
             memset(host_timestampOut, -1, sizeAllocated);
-            UnitStream outputStream(host_timestampOut, size);
+            GPUUnitStream outputStream(host_timestampOut, size);
 
             // Run kernel
             inputStreamD.copy_to_device();
@@ -1004,18 +1004,18 @@ TEST_CASE("Basic Stream Operations") {
 
         SECTION("delay() with middle dataset") {
             // Read input and correct output data
-            Reader inReader = Reader("../test/data/bt_delay.middle.in");
-            IntStream inputStreamD = inReader.getIntStream("z");
-            UnitStream inputStreamR = inReader.getUnitStream("a");
-            Reader outReader = Reader("../test/data/bt_delay.middle.out");
-            UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+            GPUReader inReader = GPUReader("../test/data/bt_delay.middle.in");
+            GPUIntStream inputStreamD = inReader.getGPUIntStream("z");
+            GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+            GPUReader outReader = GPUReader("../test/data/bt_delay.middle.out");
+            GPUUnitStream CORRECT_STREAM = outReader.getGPUUnitStream("y");
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
             int sizeAllocated = (size_t) size * sizeof(int);
             int *host_timestampOut = (int *) malloc(size * sizeof(int));
             memset(host_timestampOut, 0, sizeAllocated);
-            UnitStream outputStream(host_timestampOut, size);
+            GPUUnitStream outputStream(host_timestampOut, size);
 
             // Run kernel
             inputStreamD.copy_to_device();
@@ -1039,18 +1039,18 @@ TEST_CASE("Basic Stream Operations") {
 
         SECTION("delay() with bigger dataset") {
             // Read input and correct output data
-            Reader inReader = Reader("../test/data/bt_delay.bigger.in");
-            IntStream inputStreamD = inReader.getIntStream("z");
-            UnitStream inputStreamR = inReader.getUnitStream("a");
-            Reader outReader = Reader("../test/data/bt_delay.bigger.out");
-            UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
+            GPUReader inReader = GPUReader("../test/data/bt_delay.bigger.in");
+            GPUIntStream inputStreamD = inReader.getGPUIntStream("z");
+            GPUUnitStream inputStreamR = inReader.getGPUUnitStream("a");
+            GPUReader outReader = GPUReader("../test/data/bt_delay.bigger.out");
+            GPUUnitStream CORRECT_STREAM = outReader.getGPUUnitStream("y");
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
             int sizeAllocated = (size_t) size * sizeof(int);
             int *host_timestampOut = (int *) malloc(size * sizeof(int));
             memset(host_timestampOut, 0, sizeAllocated);
-            UnitStream outputStream(host_timestampOut, size);
+            GPUUnitStream outputStream(host_timestampOut, size);
 
             // Run kernel
             inputStreamD.copy_to_device();
@@ -1074,11 +1074,11 @@ TEST_CASE("Basic Stream Operations") {
 
     SECTION("merge() (not implemented yet)") {
         // Read input and correct output data
-        Reader inReader = Reader("../test/data/bt_merge.in");
-        IntStream inputStreamX = inReader.getIntStream("x");
-        IntStream inputStreamY = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_merge.out");
-        IntStream CORRECT_STREAM = outReader.getIntStream("z");
+        GPUReader inReader = GPUReader("../test/data/bt_merge.in");
+        GPUIntStream inputStreamX = inReader.getGPUIntStream("x");
+        GPUIntStream inputStreamY = inReader.getGPUIntStream("y");
+        GPUReader outReader = GPUReader("../test/data/bt_merge.out");
+        GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("z");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM.size;
@@ -1087,7 +1087,7 @@ TEST_CASE("Basic Stream Operations") {
         int *host_valueOut = (int*) malloc(size * sizeof(int));
         memset(host_timestampOut, 0, sizeAllocated);
         memset(host_valueOut, 0, sizeAllocated);
-        IntStream outputStream(host_timestampOut, host_valueOut, size);
+        GPUIntStream outputStream(host_timestampOut, host_valueOut, size);
 
         // Run kernel
         inputStreamX.copy_to_device();
@@ -1115,15 +1115,15 @@ TEST_CASE("Basic Stream Operations") {
     SECTION("time()") {
         SECTION("time() with small dataset") {
             // Read input and correct output data
-            Reader inReader = Reader("../test/data/bt_time.in");
-            IntStream inputStream = inReader.getIntStream("x");
-            Reader outReader = Reader("../test/data/bt_time.out");
-            IntStream CORRECT_STREAM = outReader.getIntStream("x");
+            GPUReader inReader = GPUReader("../test/data/bt_time.in");
+            std::shared_ptr<GPUIntStream> inputStream = inReader.getGPUIntStream("x");
+            GPUReader outReader = GPUReader("../test/data/bt_time.out");
+            std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getGPUIntStream("x");
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
 
-            IntStream outputStream; //(host_timestampOut, host_valueOut, size);
+            GPUIntStream outputStream; //(host_timestampOut, host_valueOut, size);
 
             // Run kernel
             inputStream.copy_to_device();
@@ -1146,15 +1146,15 @@ TEST_CASE("Basic Stream Operations") {
         
         SECTION("time() with bigger dataset (~109k/250k events)") {
             // Read input and correct output data
-            Reader inReader = Reader("../test/data/bt_time.bigger.in");
-            IntStream inputStream = inReader.getIntStream("z");
-            Reader outReader = Reader("../test/data/bt_time.bigger.out");
-            IntStream CORRECT_STREAM = outReader.getIntStream("y");
+            GPUReader inReader = GPUReader("../test/data/bt_time.bigger.in");
+            GPUIntStream inputStream = inReader.getGPUIntStream("z");
+            GPUReader outReader = GPUReader("../test/data/bt_time.bigger.out");
+            GPUIntStream CORRECT_STREAM = outReader.getGPUIntStream("y");
 
             // Prepare empty output stream to fill
             int size = CORRECT_STREAM.size;
 
-            IntStream outputStream;
+            GPUIntStream outputStream;
 
             // Run kernel
             inputStream.copy_to_device();
@@ -1178,15 +1178,15 @@ TEST_CASE("Basic Stream Operations") {
     
 }
 
-TEST_CASE("Reader (bt_delay.in)") {
-    Reader reader = Reader("../test/data/bt_delay.in");
+TEST_CASE("GPUReader (bt_delay.in)") {
+    GPUReader reader = GPUReader("../test/data/bt_delay.in");
 
-    SECTION("Read existing IntStream correctly") {
+    SECTION("Read existing GPUIntStream correctly") {
         int CORRECT_STREAM_SIZE = 6;
         int CORRECT_STREAM_TIMESTAMPS[CORRECT_STREAM_SIZE] = {1, 2, 3, 4, 6, 7};
         int CORRECT_STREAM_INTS[CORRECT_STREAM_SIZE] = {1, 2, 4, 1, 2, 3};
 
-        IntStream dStream = reader.getIntStream("d");
+        GPUIntStream dStream = reader.getGPUIntStream("d");
         REQUIRE(dStream.size == CORRECT_STREAM_SIZE);
         for (int i = 0; i < CORRECT_STREAM_SIZE; i++) {
             REQUIRE(dStream.host_timestamp[i] == CORRECT_STREAM_TIMESTAMPS[i]);
@@ -1194,11 +1194,11 @@ TEST_CASE("Reader (bt_delay.in)") {
         }
     }
 
-    SECTION("Read existing UnitStream correctly") {
+    SECTION("Read existing GPUUnitStream correctly") {
         int CORRECT_STREAM_SIZE = 3;
         int CORRECT_STREAM_TIMESTAMPS[CORRECT_STREAM_SIZE] = {2, 7, 8};
 
-        UnitStream dStream = reader.getUnitStream("r");
+        GPUUnitStream dStream = reader.getGPUUnitStream("r");
         REQUIRE(dStream.size == CORRECT_STREAM_SIZE);
         for (int i = 0; i < CORRECT_STREAM_SIZE; i++) {
             REQUIRE(dStream.host_timestamp[i] == CORRECT_STREAM_TIMESTAMPS[i]);
