@@ -26,20 +26,20 @@ int simp_compare(const void *a, const void *b) { // TODO: Delete when no longer 
 }
 
 
-void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
-    // Prune IntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
+void delay(GPUIntStream *s, GPUUnitStream *r, GPUUnitStream*result, cudaStream_t stream){
+    // Prune GPUIntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
     delay_preliminary_prune(s, r, stream);
 
-    // Allocate arrays for search and set reset-UnitStream as first input
+    // Allocate arrays for search and set reset-GPUUnitStream as first input
     // New output events in each iteration are bounded by size of r
     int *prevResultsTimestamps = (int*) malloc(r->size * sizeof(int));
     memcpy(prevResultsTimestamps, r->host_timestamp, r->size * sizeof(int));
-    UnitStream prevResults(prevResultsTimestamps, r->size);
+    GPUUnitStream prevResults(prevResultsTimestamps, r->size);
     prevResults.copy_to_device();
     *prevResults.host_offset = (int) r->size;
 
     int *tempResultsTimestamps = (int*) malloc(r->size * sizeof(int));
-    UnitStream tempResults(tempResultsTimestamps, r->size);
+    GPUUnitStream tempResults(tempResultsTimestamps, r->size);
     tempResults.copy_to_device();
 
     int resultIndex = 0; // TODO: Change?
@@ -81,7 +81,7 @@ void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
 
         // Switch prevResults and tempResults to continue search with newly found timestamps
         prevResultsCount = threads - firstResult;
-        UnitStream temp = prevResults;
+        GPUUnitStream temp = prevResults;
         prevResults = tempResults;
         tempResults = temp;
         *prevResults.host_offset = prevResults.size - prevResultsCount;
@@ -100,7 +100,7 @@ void delay(IntStream *s, UnitStream *r, UnitStream*result, cudaStream_t stream){
     free(tempResultsTimestamps);
 }
 
-void delay_preliminary_prune(IntStream *s, UnitStream *r, cudaStream_t stream) {
+void delay_preliminary_prune(GPUIntStream *s, GPUUnitStream *r, cudaStream_t stream) {
     int threads = (int) s->size;
     int block_size = 1;
     int blocks = 1;
@@ -183,7 +183,7 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
     resetTimestamps += *resetOffset;
     results += *resultOffset;
 
-    // For each tempEvent, check if there's a matching (valid) event in IntStream s
+    // For each tempEvent, check if there's a matching (valid) event in GPUIntStream s
     int index = lookUpElement(inputSize, resetTimestamps[i], inputIntTimestamps);
     if (index != INT_MIN && inputIntValues[index] != -1) {
         results[i] = inputIntTimestamps[index] + inputIntValues[index];
@@ -198,7 +198,7 @@ __device__ void delay_cuda_rec(){
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
 // ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
 // Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
-void time(IntStream *input, IntStream *result,cudaStream_t stream){
+void time(GPUIntStream *input, GPUIntStream *result, cudaStream_t stream){
     int threads = input->size;
     int block_size = 1;
     int blocks = 1;
@@ -220,7 +220,7 @@ void time(IntStream *input, IntStream *result,cudaStream_t stream){
 
 
 
-void last(IntStream *inputInt, UnitStream *inputUnit, IntStream *result, cudaStream_t stream){
+void last(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream){
     int threads = (int) inputUnit->size;
     int block_size =1;
     int blocks = 1;
@@ -558,7 +558,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 /**
  * Lift
  */
-void lift(IntStream *x, IntStream *y, IntStream *result, int op){
+void lift(GPUIntStream *x, GPUIntStream *y, GPUIntStream *result, int op){
     int block_size = 0;
     int blocks = 0;
     int x_offset = *(x->host_offset);
@@ -568,7 +568,7 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int op){
     calcThreadsBlocks(threads, &block_size, &blocks);
 
     threads = (blocks) * (block_size);
-    
+
 
     if (!result->onDevice) {
         result->size = x->size + y->size;
@@ -602,7 +602,7 @@ void lift(IntStream *x, IntStream *y, IntStream *result, int op){
                                         result->device_timestamp, 
                                         x->device_values, y->device_values,
                                         result->device_values,
-                                        threads, (x->size), (y->size), 
+                                        threads, (x->size), (y->size),
                                         op, valid_d, invalid_d, 
                                         out_ts_cpy, out_v_cpy, result->device_offset,
                                         x->device_offset, y->device_offset);
@@ -649,11 +649,11 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
     lift_partition( x_ts+xo, y_ts+yo, out_ts_cpy+len_offset,
                     x_v+xo, y_v+yo, out_v_cpy+len_offset,
                     x_start, y_start, vpt, tidx, 
-                    x_len-xo, y_len-yo, lift_funcs[fct], lift_ops[op], 
+                    x_len-xo, y_len-yo, lift_funcs[fct], lift_ops[op],
                     valid, invalid);
 
     // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
-    
+
     int cuml_invalid = 0;
     for (int i = 0; i < threads; i++){
         cuml_invalid += invalid[i];
@@ -679,13 +679,13 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
         (*invalid_offset) = cuml_invalid+len_offset;
         printf("inv offs %i\n", *invalid_offset);
     }
-    
+
     __syncthreads();
 }
 
-void slift(IntStream *x, IntStream *y, IntStream *result, int op){
-    IntStream x_prime;
-    IntStream y_prime;
+void slift(GPUIntStream *x, GPUIntStream *y, GPUIntStream *result, int op){
+    GPUIntStream x_prime;
+    GPUIntStream y_prime;
 
     int *x_ts = (int*)malloc(x->size*sizeof(int));
     int *y_ts = (int*)malloc(y->size*sizeof(int));
@@ -699,17 +699,18 @@ void slift(IntStream *x, IntStream *y, IntStream *result, int op){
     memset(xy_ts, -1, y->size*sizeof(int));
     memset(yx_ts, -1, x->size*sizeof(int));
 
-    UnitStream x_unit(x->host_timestamp, x->size);
-    UnitStream y_unit(y->host_timestamp, y->size);
+    GPUUnitStream x_unit(x->host_timestamp, x->size);
+    GPUUnitStream y_unit(y->host_timestamp, y->size);
     *x_unit.host_offset = 0;
     *y_unit.host_offset = 0;
 
     x_unit.copy_to_device();
     y_unit.copy_to_device();
 
-    IntStream last_xy;//(xy_ts, xy_v, y->size);
-    IntStream last_yx;//(yx_ts, yx_v, x->size);
-    
+    GPUIntStream last_xy;//(xy_ts, xy_v, y->size);
+    GPUIntStream last_yx;//(yx_ts, yx_v, x->size);
+
+
     last(x, &y_unit, &last_xy, 0);
     last(y, &x_unit, &last_yx, 0);
     cudaDeviceSynchronize();
