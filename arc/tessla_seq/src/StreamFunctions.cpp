@@ -72,8 +72,11 @@ shared_ptr<UnitStream> delay(IntStream& d, Stream& r){
             size_t target = currEventD->timestamp + currEventD->value;
             currEventR++;
             if (currEventR >= rstream.end() || (*currEventR)->get_timestamp() >= target) {
-                UnitEvent node{target};
-                outstream.push_back(node);
+                // don't push timestamps that are after input stream
+                if (target <= (d.stream.end()-1)->timestamp ) {
+                    UnitEvent node{target};
+                    outstream.push_back(node);
+                }
             }
             currEventR--;
         }
