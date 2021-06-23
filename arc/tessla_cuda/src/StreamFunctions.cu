@@ -245,6 +245,23 @@ std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> inputInt, std::
                                                  result->device_values, inputInt->size, threads,
                                                  inputInt->device_offset, inputUnit->device_offset);
     //TODO! comment out
+    printf("beforecalc\n");
+    calcThreadsBlocks(threads,&block_size,&blocks);
+    printf("aftercalc\n");
+    //copy result vector to device
+    if (!result->onDevice) {
+        //TODO! where do we free this?
+        int sizeAllocated = inputUnit->size * sizeof(int);
+        result->size = inputUnit->size;
+        result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
+        result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
+        memset(result->host_timestamp, 0, sizeAllocated);
+        memset(result->host_values, 0, sizeAllocated);
+        result->copy_to_device(false);
+    }
+    cudaDeviceSynchronize();
+    //TODO! check that no expection is thrown at launch!
+    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
     cudaDeviceSynchronize();
     calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp, result->device_offset, threads);
     printf("Scheduled last() with <<<%d,%d>>> \n", blocks, block_size);
@@ -294,7 +311,7 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     input_timestamp += *offsInt;
     input_values += *offsInt;
     int local_unit_timestamp;
-    
+
     if (i < size){
         output_timestamps[i] = -1;
         local_unit_timestamp = unit_stream_timestamps[i];
@@ -304,7 +321,7 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
 
     output_timestamps += *offsUnit;
     output_values += *offsUnit;
-    int out =  -1;
+    int out =  -2;
 
 
     //Search for the timestamp per thread
@@ -340,7 +357,14 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     //now the threads perform an and reduction starting at 0 going to size
     __syncthreads();
     if (i < size){
+        if (out <0){
+            //printf("out %d \n",out);
+        }
         output_values[i] = out;
+        if (i < 40){
+            //printf("thread: %d \n",i);
+            //printf("out value %d\n", out);
+        }
     }
 }
 
@@ -448,7 +472,7 @@ __device__ void lift_merge( int *x_ts, int *y_ts,
                             int *out_ts, int *out_v,
                             bool x_done, bool y_done, lift_op op){
 
-    if (x_ts[*x_i] <= y_ts[*y_i] && !x_done || y_done){
+    if (x_ts[*x_i] <= y_ts[*y_i] && !x_done){
         *out_ts = x_ts[*x_i];
         *out_v = x_v[*x_i];
         (*x_i)++;
@@ -509,7 +533,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 
     // Count valid/invalid timestamps per partition
     for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
-        if (out_ts[tidx*vpt+i] < 0){
+        if (out_ts[tidx*vpt+i] == -1){
             invalid[tidx]++;
         }
         else{
@@ -520,13 +544,6 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
     __syncthreads();
 
     // Afterwards, threads have to check for overlapping timestamps in their c[] partition in case of merge
-    if (tidx == 26){
-        printf("xlen %i\n", x_len);
-        printf("ylen %i\n", y_len);
-        for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
-            printf("part[%i] = %i\n", tidx*vpt+i, out_ts[tidx*vpt+i]);
-        }
-    }
     if (fct == lift_merge){
         for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
             int l = max(tidx*vpt + i - 1, 0);
@@ -562,10 +579,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
     int block_size = 0;
     int blocks = 0;
-    int x_offset = *(x->host_offset);
-    int y_offset = *(y->host_offset);
-    int len_offset = x_offset+y_offset;
-    int threads = (x->size-x_offset) + (y->size-y_offset);
+    int threads = x->size + y->size;
     calcThreadsBlocks(threads, &block_size, &blocks);
 
     threads = (blocks) * (block_size);
@@ -578,6 +592,14 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     memset(result->host_timestamp, -1, result->size);
     memset(result->host_values, 0, result->size);
     result->copy_to_device(false);
+    if (!result->onDevice) {
+        result->size = x->size + y->size;
+        result->host_timestamp = (int*)malloc(result->size * sizeof(int));
+        result->host_values = (int*)malloc(result->size * sizeof(int));
+        memset(result->host_timestamp, -1, result->size);
+        memset(result->host_values, 0, result->size);
+        result->copy_to_device(false);
+    }
 
     // Array to count valid timestamps
     int *valid_h = (int*)malloc(threads*sizeof(int));
@@ -602,42 +624,26 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
                                         result->device_timestamp, 
                                         x->device_values, y->device_values,
                                         result->device_values,
-                                        threads, (x->size), (y->size),
+                                        threads, x->size, y->size,
                                         op, valid_d, invalid_d, 
                                         out_ts_cpy, out_v_cpy, result->device_offset,
                                         x->device_offset, y->device_offset);
 
-   return result; 
+   return result;
 }
 
 __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
                             int *x_v, int *y_v, int *out_v,
                             int threads, int x_len, int y_len, 
                             int op, int *valid, int *invalid,
-                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset,
-                            int *x_offset, int *y_offset){
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset){
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
 
-    int xo = (*x_offset);
-    int yo = (*y_offset);
+    int vpt = ceil((double)(x_len + y_len) / (double)threads);      // Values per thread
+    int diag = tidx * vpt;                                          // Binary search constraint
 
-    if (tidx == 0){
-        printf("lift x\n");
-        for (int i = xo; i < x_len; i++){
-            printf("x_ts[%i] = %i\n",i,x_ts[i]);
-        }
-        for (int i = yo; i < y_len; i++){
-            printf("y_ts[%i] = %i\n",i,y_ts[i]);
-        }
-    }
-
-    int len_offset = xo+yo;
-
-    int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads);     // Values per thread
-    int diag = tidx * vpt;                                                      // Binary search constraint
-
-    int intersect = merge_path(x_ts+xo, y_ts+yo, diag, x_len-xo, y_len-yo);
+    int intersect = merge_path(x_ts, y_ts, diag, x_len, y_len);
     int x_start = intersect;
     int y_start = diag - intersect;
 
@@ -649,22 +655,21 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
     }
 
     // Set thread local valid/invalid counters to 0
-    //invalid[tidx] = 0;
-    //valid[tidx] = 0;
+    invalid[tidx] = 0;
+    valid[tidx] = 0;
     
-    if (tidx*vpt < (x_len+y_len)-len_offset) {
-        int mems = min(vpt, ((x_len+y_len)-len_offset)-tidx*vpt);
-        memset(out_ts_cpy+len_offset+tidx*vpt, -1, mems*sizeof(int));
+    if (tidx*vpt < x_len+y_len) {
+        int mems = min(vpt, (x_len+y_len)-tidx*vpt);
+        memset(out_ts_cpy+tidx*vpt, -1, mems*sizeof(int));
     }
     
-    lift_partition( x_ts+xo, y_ts+yo, out_ts_cpy+len_offset,
-                    x_v+xo, y_v+yo, out_v_cpy+len_offset,
+    lift_partition( x_ts, y_ts, out_ts_cpy,
+                    x_v, y_v, out_v_cpy,
                     x_start, y_start, vpt, tidx, 
-                    x_len-xo, y_len-yo, lift_funcs[fct], lift_ops[op],
+                    x_len, y_len, lift_funcs[fct], lift_ops[op],
                     valid, invalid);
 
     // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
-
     int cuml_invalid = 0;
     for (int i = 0; i < threads; i++){
         cuml_invalid += invalid[i];
@@ -678,19 +683,17 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
     int vals_before = cuml_invalid + cuml_valid_before;
     int valid_cnt = 0;
 
-    for (int i = 0; i < vpt && tidx*vpt+i < (x_len+y_len)-len_offset; i++){
-        if (out_ts_cpy[tidx*vpt+i+len_offset] >= 0){
-            out_ts[vals_before+valid_cnt+len_offset] = out_ts_cpy[tidx*vpt+i+len_offset];
-            out_v[vals_before+valid_cnt+len_offset] = out_v_cpy[tidx*vpt+i+len_offset];
+    for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
+        if (out_ts_cpy[tidx*vpt+i] != -1){
+            out_ts[vals_before+valid_cnt] = out_ts_cpy[tidx*vpt+i];
+            out_v[vals_before+valid_cnt] = out_v_cpy[tidx*vpt+i];
             valid_cnt++;
         }
     }
     // Only one thread does this
     if (tidx == 0) {
-        (*invalid_offset) = cuml_invalid+len_offset;
-        printf("inv offs %i\n", *invalid_offset);
+        *invalid_offset = cuml_invalid;
     }
-
     __syncthreads();
 }
 
@@ -727,11 +730,32 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
 
     std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
     std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
+    printf("x_unit\n");
+    x_unit.print();
+    printf("y_unit\n");
+    y_unit.print();
+
+
+    printf("before last xy\n");
+    printf("x size: %i\n", x->size);
+    printf("y unit size: %i\n", y_unit.size);
+    last(x, &y_unit, &last_xy, 0);
     cudaDeviceSynchronize();
 
     std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
     std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
     cudaDeviceSynchronize();
+    last(y, &x_unit, &last_yx, 0);
+
+    printf("x stream\n");
+    x->print();
+    printf("y unit\n");
+    y_unit.print();
+    printf("last xy\n");
+    last_xy.print();
+
+    lift(x, &last_xy, &x_prime, MRG);
+    lift(y, &last_yx, &y_prime, MRG);
 
     std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
     cudaDeviceSynchronize();
