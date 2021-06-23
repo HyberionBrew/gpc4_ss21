@@ -11,11 +11,18 @@
 
 Writer::Writer(std::string outputFile){
     this->FILENAME = outputFile;
+    this->unitPos = 0;
 }
 
-void Writer::addStream(std::string name, std::shared_ptr<Stream> stream) {
-    this->streams.push_back(stream);
+void Writer::addIntStream(std::string name, std::shared_ptr<Stream> intStream) {
+    this->streams.push_back(intStream);
     this->stream_names.push_back(name);
+}
+
+void Writer::addUnitStream(std::string name, std::shared_ptr<Stream> unitStream) {
+    this->streams.insert((this->streams.begin() + unitPos), unitStream);
+    this->stream_names.insert((this->stream_names.begin() + unitPos), name);
+    this->unitPos++;
 }
 
 void Writer::writeOutputFile() {

@@ -13,9 +13,11 @@ class Writer {
     std::vector<std::shared_ptr<Stream>> streams;
     std::vector<std::string> stream_names;
     std::string FILENAME;
+    long unitPos; // position of last unit stream
 public:
     Writer(std::string outputFile);
-    void addStream(std::string name, std::shared_ptr<Stream> stream);
+    void addUnitStream(std::string name, std::shared_ptr<Stream> unitStream);
+    void addIntStream(std::string name, std::shared_ptr<Stream> intStream);
     void writeOutputFile();
 };
 

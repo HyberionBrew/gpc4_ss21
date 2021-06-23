@@ -242,10 +242,10 @@ void SequentialScheduler::cooldown(std::string outfile) {
     for (auto & stream : out_streams) {
         if (get_ust(stream.regname) != nullptr) {
             // Add unit stream
-            writer.addStream(stream.name, get_ust(stream.regname));
+            writer.addUnitStream(stream.name, get_ust(stream.regname));
         } else if (get_intst(stream.regname) != nullptr) {
             // Add integer stream
-            writer.addStream((stream.name), get_intst(stream.regname));
+            writer.addIntStream((stream.name), get_intst(stream.regname));
         } else {
             assert(false);
         }
