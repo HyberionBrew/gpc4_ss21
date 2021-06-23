@@ -1,4 +1,5 @@
-include_directories(${arc_SOURCE_DIR}/tessla_seq/src)
+include_directories(${PROJECT_SOURCE_DIR}/tessla_seq/src)
+
 add_library(tessla_seq
         Debug.cpp
         Event.cpp
@@ -8,13 +9,3 @@ add_library(tessla_seq
         Writer.cpp
 )
 
-add_executable(tessla_seq_test
-        Debug.cpp
-        Event.cpp
-        Reader.cpp
-        Stream.cpp
-        StreamFunctions.cpp
-        Writer.cpp
-        ../test/test_main.cpp
-        ../test/test_test.cpp
-)

@@ -222,6 +222,7 @@ impl CompilableStat for DefStat {
     fn compute_last_use(&self, c: &mut Compiler) {
         if c.is_used(&self.id) {
             self.value.compute_last_use(c);
+           c.mark_last_usage(&self.id);
         }
     }
 
@@ -230,6 +231,7 @@ impl CompilableStat for DefStat {
         if c.is_used(&self.id) {
             c.alloc_reg(&self.id);
             self.value.compile(c,&self.id);
+            c.free_if_last_usage(&self.id);
         }
     }
 }
@@ -577,7 +579,9 @@ impl Compiler {
     fn free_if_last_usage(&mut self, id: &Vec<u8>) {
         // unwrap ok because of static and dependency check
         if *self.last_use.get(id).unwrap() == self.curr_index {
-            self.free_reg(id);
+            if !self.out_nodes.iter().any(|(x,_)| x == id) { // don't free output regs
+                self.free_reg(id);
+            }
         }
     }
 

@@ -4,9 +4,9 @@
 #include <string.h>
 #include <vector>
 #include "../../test/catch2/catch.hpp"
-#include "../src/Reader.cuh"
-#include "../src/Stream.cuh"
-#include "../src/StreamFunctions.cuh"
+#include <Reader.cuh>
+#include <Stream.cuh>
+#include <StreamFunctions.cuh>
 
 #include <chrono>
 #include <fstream>
@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
 
-#include "../src/StreamFunctionsThrust.cuh"
+#include <StreamFunctionsThrust.cuh>
 
 TEST_CASE("last_thrust()"){
 

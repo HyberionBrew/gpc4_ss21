@@ -206,3 +206,6 @@ CMakeUserPresets.json
 arc/tessla_cuda/profiler
 arc/test/bin
 *.bak
+
+# Tesla output files
+*.out

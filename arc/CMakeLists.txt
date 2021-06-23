@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(arc LANGUAGES CUDA CXX)
+set(CMAKE_CXX_STANDARD 14)
 
 # Set gcc compiler flags
 SET(GCC_COMPILE_FLAGS "-g --std=c++14 -pthread")
@@ -30,7 +31,20 @@ endif ()
 # Set output directory
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
+# Require CUDA module
+find_package(CUDA  REQUIRED)
+include_directories("${CUDA_INCLUDE_DIRS}")
+
+# Require the OpenMP package
+FIND_PACKAGE(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 # Add VM and lib subdirectories
 add_subdirectory(tessla_seq)
+add_subdirectory(tessla_cuda)
 add_subdirectory(external/lfqueue)
 add_subdirectory(vm)

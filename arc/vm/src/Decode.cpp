@@ -53,6 +53,7 @@ Decode::Decode(std::string coil_file, InstrInterface & interface) : instrInterfa
     }
     bytes.clear();
     parse_header();
+    instrInterface.ioReady = true;
 };
 
 
@@ -95,23 +96,30 @@ void Decode::parse_header() {
 
         // Check for reading string
         if (readState == head_read_string) {
-            bytes.push_back(byte);
             // In case of finished string, save everything
             if (byte == 0x00) {
                 // Save the current stream
                 current.name = bytes;
                 if (instreamState == inst_r5) {
                     // Add the stream to the input streams
+                    current.direction = io_in;
                     in_streams.push_back(current);
+                    instrInterface.push_iostream(current);
                 } else if (outstreamState == outst_r4) {
+                    current.direction = io_out;
                     out_streams.push_back(current);
+                    instrInterface.push_iostream(current);
                 } else {
                     throw std::runtime_error("Bad state machine configuration while parsing header. String parsed when no string needed.");
                 }
+
                 // Free the current read stream representation
                 bytes.clear();
                 // Require head field delimiter
                 readState = head_delim_needed;
+            } else {
+                // If not terminated, add the character to the string.
+                bytes.push_back(byte);
             }
             continue;
         }
@@ -278,10 +286,10 @@ void Decode::parse_header() {
         if (instreamState == inst_r4) {
             if (byte == 0x00) {
                 // Unit stream
-                current.type = unit;
+                current.type = io_unit;
             } else if (byte == 0x01) {
                 // Integer stream
-                current.type = integer;
+                current.type = io_integer;
             } else {
                 // Unsupported stream type
                 throw std::runtime_error("Unsupported input stream type.");
@@ -652,25 +660,27 @@ int32_t Decode::read_imm(unsigned char opcode) {
 }
 
 void Decode::print_header() {
-    std::cout << "Header for current coil file:" << std::endl;
-    std::cout << "Operating on specification version " << majorV << "." << minorV << std::endl;
+    std::stringstream str;
+    str << "Header for current coil file:" << std::endl;
+    str << "Operating on specification version " << majorV << "." << minorV << std::endl;
     if (wideAddresses) {
-        std::cout << "4 Byte register addresses." << std::endl;
+        str << "4 Byte register addresses." << std::endl;
     } else {
-        std::cout << "2 Byte register addresses." << std::endl;
+        str << "2 Byte register addresses." << std::endl;
     }
-    std::cout << "Input streams:" << std::endl;
-    for (std::vector<IOStream>::iterator current = in_streams.begin(); current != in_streams.end(); current++) {
-        std::cout << current->name << " in pseudo register " << current->regname << " of type ";
-        if (current->type == unit) {
-            std::cout << "UNIT";
+    str << "Input streams:" << std::endl;
+    for (auto & in_stream : in_streams) {
+        str << in_stream.name << " in pseudo register " << in_stream.regname << " of type ";
+        if (in_stream.type == io_unit) {
+            str << "UNIT";
         } else {
-            std::cout << "INTEGER";
+            str << "INTEGER";
         }
-        std::cout << std::endl;
+        str << std::endl;
     }
-    std::cout << "Output streams:" << std::endl;
-    for (std::vector<IOStream>::iterator current = out_streams.begin(); current != out_streams.end(); current++) {
-        std::cout << current->name << " in pseudo register " << current->regname << std::endl;
+    str << "Output streams:" << std::endl;
+    for (auto & out_stream : out_streams) {
+        str << out_stream.name << " in pseudo register " << out_stream.regname << std::endl;
     }
+    std::cout << str.str();
 }

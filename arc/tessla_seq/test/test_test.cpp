@@ -1,10 +1,10 @@
 #include "catch2/catch.hpp"
-#include "../src/Event.h"
-#include "../src/Stream.h"
-#include "../src/Reader.h"
-#include "../src/Writer.h"
-#include "../src/StreamFunctions.h"
-#include "../src/Debug.h"
+#include <Event.h>
+#include <Stream.h>
+#include <Reader.h>
+#include <Writer.h>
+#include <StreamFunctions.h>
+#include <Debug.h>
 #include <chrono>
 #include <fstream>
 
@@ -12,66 +12,66 @@ TEST_CASE("Basic Stream Operations") {
 
     SECTION("bt_delay") {
         Reader inReader = Reader("../test/data/bt_delay.in");
-        IntStream delayStreamIn = inReader.getIntStream("d");
-        UnitStream resetStreamIn = inReader.getUnitStream("r");
+        std::shared_ptr<IntStream> delayStreamIn = inReader.getIntStream("d");
+        std::shared_ptr<UnitStream> resetStreamIn = inReader.getUnitStream("r");
 
         Reader outReader = Reader("../test/data/bt_delay.out");
-        UnitStream intendedResult = outReader.getUnitStream("y");
+        std::shared_ptr<UnitStream> intendedResult = outReader.getUnitStream("y");
 
-        UnitStream result = delay(delayStreamIn, resetStreamIn);
+        std::shared_ptr<UnitStream> result = delay(*delayStreamIn, *resetStreamIn);
 
-        REQUIRE(result == intendedResult);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_last") {
         Reader inReader = Reader("../test/data/bt_last.in");
-        IntStream vStreamIn = inReader.getIntStream("v");
-        UnitStream rStreamIn = inReader.getUnitStream("r");
+        std::shared_ptr<IntStream> vStreamIn = inReader.getIntStream("v");
+        std::shared_ptr<UnitStream> rStreamIn = inReader.getUnitStream("r");
 
         Reader outReader = Reader("../test/data/bt_last.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = last(vStreamIn, rStreamIn);
+        std::shared_ptr<IntStream> result = last(*vStreamIn, *rStreamIn);
 
-        REQUIRE(result == intendedResult);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_merge") {
         Reader inReader = Reader("../test/data/bt_merge.in");
-        IntStream xStreamIn = inReader.getIntStream("x");
-        IntStream yStreamIn = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> yStreamIn = inReader.getIntStream("y");
 
         Reader outReader = Reader("../test/data/bt_merge.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = merge(xStreamIn, yStreamIn);
+        std::shared_ptr<IntStream> result = merge(*xStreamIn, *yStreamIn);
 
-        REQUIRE(result == intendedResult);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_time") {
         SECTION("bt_time small dataset") {
             Reader inReader = Reader("../test/data/bt_time.in");
-            IntStream xStreamIn = inReader.getIntStream("x");
+            std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("x");
 
             Reader outReader = Reader("../test/data/bt_time.out");
-            IntStream intendedResult = outReader.getIntStream("x");
+            std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("x");
 
-            IntStream result = time(xStreamIn);
+            std::shared_ptr<IntStream> result = time(*xStreamIn);
 
-            REQUIRE(result == intendedResult);
+            REQUIRE(*result == *intendedResult);
         }
 
         SECTION("bt_time bigger dataset") {
             Reader inReader = Reader("../test/data/bt_time.bigger.in");
-            IntStream xStreamIn = inReader.getIntStream("z");
+            std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("z");
 
             Reader outReader = Reader("../test/data/bt_time.bigger.out");
-            IntStream intendedResult = outReader.getIntStream("y");
+            std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-            IntStream result = time(xStreamIn);
+            std::shared_ptr<IntStream> result = time(*xStreamIn);
 
-            REQUIRE(result == intendedResult);
+            REQUIRE(*result == *intendedResult);
         }
     }
 
@@ -81,63 +81,63 @@ TEST_CASE("Constant Test Cases") {
 
     SECTION("bt_addc") {
         Reader inReader = Reader("../test/data/bt_addc.in");
-        IntStream inStream = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
         Reader outReader = Reader("../test/data/bt_addc.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = add(inStream, 1);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = add(*inStream, 1);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_adds") {
         Reader inReader = Reader("../test/data/bt_adds.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_adds.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = add(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = add(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_subc") {
         Reader inReader = Reader("../test/data/bt_subc.in");
-        IntStream inStream = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
         Reader outReader = Reader("../test/data/bt_subc.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = sub1(inStream, 3);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = sub1(*inStream, 3);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_mulc") {
         Reader inReader = Reader("../test/data/bt_mulc.in");
-        IntStream inStream = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
         Reader outReader = Reader("../test/data/bt_mulc.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = mul(inStream, 4);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = mul(*inStream, 4);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_divc") {
         Reader inReader = Reader("../test/data/bt_divc.in");
-        IntStream inStream = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
         Reader outReader = Reader("../test/data/bt_divc.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = div1(inStream, 3);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = div1(*inStream, 3);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_modc") {
         Reader inReader = Reader("../test/data/bt_modc.in");
-        IntStream inStream = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
         Reader outReader = Reader("../test/data/bt_modc.out");
-        IntStream intendedResult = outReader.getIntStream("y");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
-        IntStream result = mod1(inStream, 2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = mod1(*inStream, 2);
+        REQUIRE(*result == *intendedResult);
     }
 }
 
@@ -145,62 +145,63 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
 
     SECTION("bt_adds") {
         Reader inReader = Reader("../test/data/bt_adds.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_adds.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = add(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = add(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_subs") {
         Reader inReader = Reader("../test/data/bt_subs.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_subs.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = sub(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = sub(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_muls") {
         Reader inReader = Reader("../test/data/bt_muls.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_muls.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = mul(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = mul(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_divs") {
         Reader inReader = Reader("../test/data/bt_divs.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_divs.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = div(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = div(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 
     SECTION("bt_mods") {
         Reader inReader = Reader("../test/data/bt_mods.in");
-        IntStream inStream1 = inReader.getIntStream("x");
-        IntStream inStream2 = inReader.getIntStream("y");
+        std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
+        std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
         Reader outReader = Reader("../test/data/bt_mods.out");
-        IntStream intendedResult = outReader.getIntStream("z");
+        std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
-        IntStream result = mod(inStream1, inStream2);
-        REQUIRE(result == intendedResult);
+        std::shared_ptr<IntStream> result = mod(*inStream1, *inStream2);
+        REQUIRE(*result == *intendedResult);
     }
 }
 
 #define BENCHMARKING_CASES 8
 #define BENCHMARKING_LOOPS 1
+//#define CHECK_RESULTS
 
 TEST_CASE("Benchmarks") {
     SECTION("last() benchmarking example"){
@@ -216,15 +217,19 @@ TEST_CASE("Benchmarks") {
                 auto start2 = std::chrono::high_resolution_clock::now();
                 std::string path = "../test/data/benchmarking";
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamV = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
+                std::shared_ptr<IntStream> inputStreamV = inReader.getIntStream("z");
+                std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 Reader outReader = Reader(path+std::to_string(i)+"_last.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
                 
                 auto start = std::chrono::high_resolution_clock::now();
-                IntStream result = last(inputStreamV, inputStreamR);
+                std::shared_ptr<IntStream> result = last(*inputStreamV, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
-                
+
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
+
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 printf("%li us\n",duration.count());
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
@@ -249,15 +254,18 @@ TEST_CASE("Benchmarks") {
 
                 // Prepare empty output stream to fill
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStream = inReader.getIntStream("z");
+                std::shared_ptr<IntStream> inputStream = inReader.getIntStream("z");
                 Reader outReader = Reader(path+std::to_string(i)+"_time.out");
-                IntStream CORRECT_STREAM = outReader.getIntStream("y");
+                std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
                 auto start = std::chrono::high_resolution_clock::now();
-                IntStream result = time(inputStream);
+                std::shared_ptr<IntStream> result = time(*inputStream);
                 auto stop = std::chrono::high_resolution_clock::now();
 
-                REQUIRE(result == CORRECT_STREAM);
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
+
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
                 
@@ -282,16 +290,17 @@ TEST_CASE("Benchmarks") {
                 std::string path = "../test/data/benchmarking";
 
                 Reader inReader = Reader(path+std::to_string(i)+".in");
-                IntStream inputStreamD = inReader.getIntStream("z");
-                UnitStream inputStreamR = inReader.getUnitStream("a");
+                std::shared_ptr<IntStream> inputStreamD = inReader.getIntStream("z");
+                std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 Reader outReader = Reader(path+std::to_string(i)+"_delay.out");
-                UnitStream CORRECT_STREAM = outReader.getUnitStream("y");
-
+                std::shared_ptr<UnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
                 auto start = std::chrono::high_resolution_clock::now();
-                UnitStream result = delay(inputStreamD, inputStreamR);
+                std::shared_ptr<UnitStream> result = delay(*inputStreamD, *inputStreamR);
                 auto stop = std::chrono::high_resolution_clock::now();
-                
-                //REQUIRE(result == CORRECT_STREAM);
+
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
