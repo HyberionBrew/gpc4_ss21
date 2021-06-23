@@ -1,0 +1,7 @@
+in x : Events[Int]
+def y = time(x)
+def z = x + 1
+def a = 1 - y
+out z
+out a
+out y
