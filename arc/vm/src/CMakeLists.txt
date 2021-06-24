@@ -19,7 +19,7 @@ add_executable(arc
         GPUScheduler.cpp
         InstrInterface.cpp InstrInterface.h
         Scheduler.cpp
-)
+        runner.cpp runner.h)
 target_link_libraries(arc tessla_seq)
 target_link_libraries(arc tessla_cuda)
 target_link_libraries(arc lfqueue)

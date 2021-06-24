@@ -79,47 +79,47 @@ bool SequentialScheduler::next() {
             break;
         }
         case inst_addi: {
-            // Add two int streams together
+            // rd = r1 + imm
             set_reg(inst.rd, add(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_muli: {
-            // Add two int streams together
+            // rd = r1 * imm
             set_reg(inst.rd, mul(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_subi: {
-            // Add two int streams together
+            // rd = r1 - imm
             set_reg(inst.rd, sub1(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_subii: {
-            // Add two int streams together
+            // rd = imm - r1
             set_reg(inst.rd, sub2(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_divi: {
-            // Add two int streams together
+            // rd = r1 / imm
             set_reg(inst.rd, div1(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_divii: {
-            // Add two int streams together
+            // rd = imm / r1
             set_reg(inst.rd, div2(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_modi: {
-            // Add two int streams together
+            // rd = r1 % imm
             set_reg(inst.rd, mod1(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_modii: {
-            // Add two int streams together
+            // rd = imm % r1
             set_reg(inst.rd, mod2(*(get_intst(inst.r1)), inst.imm));
             break;
         }
         case inst_default: {
-            // Add two int streams together
+            // Initialize intStream with event of value imm at ts 0
             set_reg(inst.rd, def(inst.imm));
             break;
         }
@@ -242,10 +242,10 @@ void SequentialScheduler::cooldown(std::string outfile) {
     for (auto & stream : out_streams) {
         if (get_ust(stream.regname) != nullptr) {
             // Add unit stream
-            writer.addUnitStream(stream.name, get_ust(stream.regname));
+            writer.addStream(stream.name, get_ust(stream.regname));
         } else if (get_intst(stream.regname) != nullptr) {
             // Add integer stream
-            writer.addIntStream((stream.name), get_intst(stream.regname));
+            writer.addStream((stream.name), get_intst(stream.regname));
         } else {
             assert(false);
         }

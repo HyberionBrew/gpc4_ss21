@@ -84,11 +84,17 @@ shared_ptr<UnitStream> delay(IntStream& d, Stream& r){
     return make_shared<UnitStream>(outstream);
 }
 
-shared_ptr<IntStream> count(UnitStream& y) {
+shared_ptr<IntStream> count(Stream& y) {
     shared_ptr<IntStream> outstream = make_shared<IntStream>();
+    std::vector<Event*> ev_stream = y.get_event_stream();
     int32_t index = 0;
-    for(std::vector<UnitEvent>::iterator it = y.stream.begin(); it != y.stream.end(); ++it) {
-        outstream->stream.push_back((IntEvent){it->timestamp,index});
+    // event at ts 0
+    if ((*ev_stream.begin())->get_timestamp() != 0) {
+        outstream->stream.emplace_back(0,0);
+    }
+    for(auto & it : ev_stream) {
+        index++;
+        outstream->stream.push_back((IntEvent){it->get_timestamp(),index});
     }
     return outstream;
 }

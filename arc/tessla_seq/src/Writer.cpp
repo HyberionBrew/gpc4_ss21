@@ -11,18 +11,11 @@
 
 Writer::Writer(std::string outputFile){
     this->FILENAME = outputFile;
-    this->unitPos = 0;
 }
 
-void Writer::addIntStream(std::string name, std::shared_ptr<Stream> intStream) {
+void Writer::addStream(std::string name, std::shared_ptr<Stream> intStream) {
     this->streams.push_back(intStream);
     this->stream_names.push_back(name);
-}
-
-void Writer::addUnitStream(std::string name, std::shared_ptr<Stream> unitStream) {
-    this->streams.insert((this->streams.begin() + unitPos), unitStream);
-    this->stream_names.insert((this->stream_names.begin() + unitPos), name);
-    this->unitPos++;
 }
 
 void Writer::writeOutputFile() {
@@ -61,8 +54,14 @@ void Writer::writeOutputFile() {
     */
 
     std::vector<Event*> tmp;
+    int ind = 0;
     while (!finished) {
         // std::cout << best_stream_idx << std::endl; // Debug print
+        ind++;
+        if (ind % 100 == 0) {
+            printf("%d\n", ind);
+            fflush(0);
+        }
 
         finished = true; // termination condition
         uint32_t lowest_timestamp = UINT32_MAX; // set to maximum and check for lower (timestamp is size_t)
