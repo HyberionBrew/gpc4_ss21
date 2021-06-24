@@ -3,11 +3,11 @@
 //
 
 #include "Writer.h"
-#include <vector>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <ios>
+#include <queue>
 
 Writer::Writer(std::string outputFile){
     this->FILENAME = outputFile;
@@ -19,75 +19,70 @@ void Writer::addStream(std::string name, std::shared_ptr<Stream> intStream) {
 }
 
 void Writer::writeOutputFile() {
-    //traverse streams
 
-    int value = 0;
-    //IntStream bestIntStream;
-    //UnitStream bestUnitStream;
-
+    // Open output file
     std::ofstream f;
     f.open(FILENAME);
-    std::string streamName = "";
 
-    std::vector<Event*>* currStream;
-    std::vector<Event*>* bestStream;
+    // Priority queue of streams to be put in
+    std::priority_queue<std::pair<int, int>, std::deque<std::pair<int,int>>, std::greater<std::pair<int, int>>> sorter;
 
-    // termination condition
-    bool finished = false;
+    // Current positions in stream
+    int* positions = (int*) calloc(streams.size(), sizeof (int));
 
-    // holds indices that were already written for each stream
-    std::vector<int> ev_cnt(this->streams.size(), 0);
+    // Format events for quick execution
+    Event*** event_streams = (Event***) malloc(streams.size()*sizeof(Event**));
 
-    // indices of current prioritized streams ?
-    int best_stream_idx = 0;
-    int stream_idx = 0;
+    // Event array sizes
+    size_t* sizes = (size_t*) malloc(streams.size() * sizeof (size_t));
 
-    // PRINT ALL STREAMS
-    /*
-    for (auto it = streams.begin(); it != streams.end(); it++) {
-        std::vector<Event*> event_vector = (*it)->get_event_stream();
-        for (auto ev : event_vector) {
-            int idx = (it-streams.begin());
-            std::cout << "STREAM | "<< ev->string_rep(stream_names[idx]) << std::endl;
-        }
+    if (positions == nullptr || event_streams == nullptr || sizes == nullptr) {
+        throw std::runtime_error("Out of memory. Cannot sort output streams.");
     }
-    */
 
-    std::vector<Event*> tmp;
-    int ind = 0;
-    while (!finished) {
-        // std::cout << best_stream_idx << std::endl; // Debug print
-        ind++;
-        if (ind % 100 == 0) {
-            printf("%d\n", ind);
-            fflush(0);
-        }
+    // Populate data structures
+    int i = 0;
+    for (auto & stream : streams) {
+        auto ev = stream->get_event_stream();
 
-        finished = true; // termination condition
-        uint32_t lowest_timestamp = UINT32_MAX; // set to maximum and check for lower (timestamp is size_t)
-        for (auto it = streams.begin(); it != streams.end(); it++) {
-            tmp = (*it)->get_event_stream();
-            currStream = &tmp;
-            stream_idx = it - streams.begin();
-            // If all events of this stream have been added, go to the next stream
-            if (currStream->begin() + ev_cnt[stream_idx] >= currStream->end()) {
-                continue;
-            }
-            // If this streams timestamp is better than the best so far, save it for later
-            if (lowest_timestamp > (*(currStream->begin() + ev_cnt[stream_idx]))->get_timestamp()) {
-                finished = false;
-                best_stream_idx = stream_idx;
-                lowest_timestamp = ((*(currStream->begin() + ev_cnt[stream_idx]))->get_timestamp());
-            }
+        // Save position
+        sizes[i] = ev.size();
+
+        // Copy events
+        event_streams[i] = (Event**) malloc(ev.size() * sizeof (Event**));
+        if (event_streams[i] == nullptr) {
+            throw std::runtime_error("Out of memory. Cannot sort output streams.");
         }
-        // Add the best event ot the output
-        if (!finished){
-            std::vector<Event*> bs = this->streams[best_stream_idx]->get_event_stream();
-            Event* ev = *(bs.begin() + ev_cnt[best_stream_idx]);
-            f << ev->string_rep(this->stream_names[best_stream_idx]) << "\n";
-            (ev_cnt[best_stream_idx])++; // only increment ev_cnt here
-        }
+        std::copy(ev.begin(), ev.end(), event_streams[i]);
+
+        sorter.push(std::make_pair(event_streams[i][0]->get_timestamp(), i));
+        i++;
     }
+
+    std::pair<int, int> current;
+
+    // Traverse the priority queue
+    while (true) {
+
+        // Check if queue is empty
+        if (sorter.empty()) break;
+
+        // Pop the first element and write it to the file
+        current = sorter.top();
+        f << event_streams[current.second][positions[current.second]]->string_rep(this->stream_names[current.second]) << "\n";
+        positions[current.second]++;
+
+        // Check if end is reached and sort it back in
+        if (positions[current.second] < sizes[current.second]) {
+            sorter.push(std::make_pair(event_streams[current.second][positions[current.second]]->get_timestamp(), current.second));
+        }
+
+        // Remove the first element
+        sorter.pop();
+    }
+
+    // Close the file and free the position array
     f.close();
-
+    delete positions;
+    delete event_streams;
 }

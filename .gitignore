@@ -212,3 +212,14 @@ arc/test/bin
 
 # fulltest bin folder (is rebuilt automatically)
 benchmark/fulltest/bin/*
+
+# winder profiler
+winder/target/*
+arc/arc
+
+*.cmake
+*.so
+*/Makefile
+*.marks
+*/CMakeFiles/*
+arc/external/*
