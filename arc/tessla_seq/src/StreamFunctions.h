@@ -31,7 +31,7 @@ std::shared_ptr<IntStream> last(IntStream& v, Stream& r);
 std::shared_ptr<UnitStream> delay(IntStream& d, Stream& r);
 
 // count operation (running counter of unit events on x)
-std::shared_ptr<IntStream> count(UnitStream& x);
+std::shared_ptr<IntStream> count(Stream& x);
 
 /**
  * Merges 2 input streams x and y, if oth events contain an event at the same timestamp,

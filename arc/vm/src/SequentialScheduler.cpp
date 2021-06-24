@@ -74,8 +74,17 @@ bool SequentialScheduler::next() {
             break;
         }
         case inst_count: {
-            // Add two int streams together
-            set_reg(inst.rd, count(*(get_ust(inst.r1))));
+            // Set the event values to their position
+            shared_ptr<IntStream> in = get_intst(inst.r1);
+            shared_ptr<UnitStream> un = get_ust(inst.r1);
+
+            if (in != nullptr) {
+                set_reg(inst.rd, count(*in));
+            } else if (un != nullptr) {
+                set_reg(inst.rd, count(*un));
+            } else {
+                assert(false);
+            }
             break;
         }
         case inst_addi: {
@@ -197,14 +206,10 @@ shared_ptr<UnitStream> SequentialScheduler::get_ust(size_t reg) {
 
 shared_ptr<Stream> SequentialScheduler::get_st(size_t reg) {
     shared_ptr<Stream> stream;
-    if (intRegisters.find(reg) == intRegisters.end()) {
-        if (unitRegisters.find(reg) == unitRegisters.end()) {
+    if ((stream = static_pointer_cast<Stream>(get_intst(reg))) == nullptr) {
+        if ((stream = static_pointer_cast<Stream>(get_ust(reg))) == nullptr) {
             assert(false);
-        } else {
-            stream = static_pointer_cast<Stream>(unitRegisters[reg]);
         }
-    } else {
-        stream = static_pointer_cast<Stream>(intRegisters[reg]);
     }
     return stream;
 }

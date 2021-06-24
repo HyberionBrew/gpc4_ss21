@@ -4,12 +4,12 @@ include_directories(${arc_SOURCE_DIR}/vm/src)
 include_directories(
         ${PROJECT_SOURCE_DIR}/external/lfqueue
         ${PROJECT_SOURCE_DIR}/tessla_seq/src
-        ${PROJECT_SOURCE_DIR}/tessla_cuda/src
+#        ${PROJECT_SOURCE_DIR}/tessla_cuda/src
 )
 link_directories(
         ${PROJECT_SOURCE_DIR}/external/lfqueue
         ${PROJECT_SOURCE_DIR}/tessla_seq/src
-        ${PROJECT_SOURCE_DIR}/tessla_cuda/src
+#        ${PROJECT_SOURCE_DIR}/tessla_cuda/src
 )
 add_executable(arc
         main.cpp
@@ -21,5 +21,5 @@ add_executable(arc
         Scheduler.cpp
         runner.cpp runner.h)
 target_link_libraries(arc tessla_seq)
-target_link_libraries(arc tessla_cuda)
+#target_link_libraries(arc tessla_cuda)
 target_link_libraries(arc lfqueue)
