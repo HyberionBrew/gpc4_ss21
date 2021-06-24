@@ -9,6 +9,6 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 
-void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream);
+std::shared_ptr<GPUIntStream> last_thrust(std::shared_ptr<GPUIntStream>  inputInt, std::shared_ptr<GPUUnitStream>  inputUnit, cudaStream_t stream);
 
 #endif //TESSLA_CUDA_STREAMFUNCTIONSTHRUST_CUH

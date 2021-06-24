@@ -9,6 +9,9 @@ link_directories(
 add_executable(tessla_cuda_test
         test_main.cpp
         test_cuda.cpp
+        test_time.cpp
+        test_last.cpp
+        test_benchmark.cpp
         )
 
 set_target_properties(tessla_cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

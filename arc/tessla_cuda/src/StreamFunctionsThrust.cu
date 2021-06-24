@@ -16,7 +16,7 @@ struct is_larger_zero
   }
 };
 
-void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream){
+std::shared_ptr<GPUIntStream> last_thrust(std::shared_ptr<GPUIntStream> inputInt, std::shared_ptr<GPUUnitStream>  inputUnit, cudaStream_t stream){
     
     //first cast device pointers to thrust pointers
     auto offsetInt = thrust::device_pointer_cast(inputInt->device_offset);
@@ -25,17 +25,24 @@ void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream 
     auto inputInt_timestamps = thrust::device_pointer_cast(inputInt->device_timestamp+*offsetInt);
     auto inputInt_values = thrust::device_pointer_cast(inputInt->device_values+*offsetInt);
     auto inputUnit_timestamps = thrust::device_pointer_cast(inputUnit->device_timestamp+*offsetUnit);
-    
     //Standard guard
-    if (!result->onDevice) {
-        int sizeAllocated = inputUnit->size * sizeof(int);
-        result->size = inputUnit->size;
-        result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
-        result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
-        memset(result->host_timestamp, 0, sizeAllocated);
-        memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device(false);
+
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
+    int sizeAllocated = inputUnit->size * sizeof(int);
+    result->size = inputUnit->size;
+    result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
+    result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
+
+    // Check if we have enough memory left
+    if (result->host_values == nullptr || result->host_timestamp == nullptr) {
+        throw std::runtime_error("Out of memory.");
     }
+
+    memset(result->host_timestamp, 0, sizeAllocated);
+    memset(result->host_values, 0, sizeAllocated);
+    result->copy_to_device(false);
+
+
 
     auto result_values = thrust::device_pointer_cast(result->device_values);
     auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
@@ -74,5 +81,5 @@ void last_thrust(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream 
     
     //final offset calculation
     *result_offs = *result_offs+*offsetUnit;
-
+    return result;
 }

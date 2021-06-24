@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include <sys/time.h>
 #include <assert.h>
+#include <stdexcept>
 #include "main.cuh"
 #include "helper.cuh"
 #include "Stream.cuh"
@@ -26,24 +27,28 @@ int simp_compare(const void *a, const void *b) { // TODO: Delete when no longer 
 }
 
 
-void delay(GPUIntStream *s, GPUUnitStream *r, GPUUnitStream*result, cudaStream_t stream){
+std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
+    std::shared_ptr<GPUIntStream> s_prune = std::make_shared<GPUIntStream>(*s, true);
+    std::shared_ptr<GPUUnitStream> r_prune = std::make_shared<GPUUnitStream>(*r, true);
+
     // Prune GPUIntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
-    delay_preliminary_prune(s, r, stream);
+    delay_preliminary_prune(s_prune, r_prune, stream);
 
     // Allocate arrays for search and set reset-GPUUnitStream as first input
     // New output events in each iteration are bounded by size of r
-    int *prevResultsTimestamps = (int*) malloc(r->size * sizeof(int));
-    memcpy(prevResultsTimestamps, r->host_timestamp, r->size * sizeof(int));
-    GPUUnitStream prevResults(prevResultsTimestamps, r->size);
+    int *prevResultsTimestamps = (int*) malloc(r_prune->size * sizeof(int));
+    memcpy(prevResultsTimestamps, r_prune->host_timestamp, r_prune->size * sizeof(int));
+    GPUUnitStream prevResults(prevResultsTimestamps, r_prune->size);
     prevResults.copy_to_device();
-    *prevResults.host_offset = (int) r->size;
+    *prevResults.host_offset = (int) r_prune->size;
 
-    int *tempResultsTimestamps = (int*) malloc(r->size * sizeof(int));
-    GPUUnitStream tempResults(tempResultsTimestamps, r->size);
+    int *tempResultsTimestamps = (int*) malloc(r_prune->size * sizeof(int));
+    GPUUnitStream tempResults(tempResultsTimestamps, r_prune->size);
     tempResults.copy_to_device();
 
     int resultIndex = 0; // TODO: Change?
-    int prevResultsCount = r->size; // TODO: Change?
+    int prevResultsCount = r_prune->size; // TODO: Change?
+    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>();
     *result->host_offset = (int) result->size; // TODO: Change?
 
     // Iteratively search for new output events
@@ -86,6 +91,7 @@ void delay(GPUIntStream *s, GPUUnitStream *r, GPUUnitStream*result, cudaStream_t
         tempResults = temp;
         *prevResults.host_offset = prevResults.size - prevResultsCount;
         *tempResults.host_offset = 0;
+
     }
 
     // TODO: Sort & prune duplicate result
@@ -98,9 +104,17 @@ void delay(GPUIntStream *s, GPUUnitStream *r, GPUUnitStream*result, cudaStream_t
     tempResults.free_device();
     free(prevResultsTimestamps);
     free(tempResultsTimestamps);
+
+    return result;
 }
 
-void delay_preliminary_prune(GPUIntStream *s, GPUUnitStream *r, cudaStream_t stream) {
+/**
+ * Removes all timestamps that cannot cause delay due to reset events. Caution: Has side effects on input streams.
+ * @param s Integer input stream
+ * @param r Unit input stream
+ * @param stream CUDA stream number
+ */
+void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
     int threads = (int) s->size;
     int block_size = 1;
     int blocks = 1;
@@ -195,53 +209,49 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
 __device__ void delay_cuda_rec(){
 
 }
+
+
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
 // ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
 // Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
-void time(GPUIntStream *input, GPUIntStream *result, cudaStream_t stream){
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStream_t stream){
     int threads = input->size;
     int block_size = 1;
     int blocks = 1;
     calcThreadsBlocks(threads,&block_size,&blocks);
-    //set output stream to input stream size
-    if (!result->onDevice) {
-        int sizeAllocated = input->size * sizeof(int);
-        result->size = input->size;
-        result->host_timestamp = (int *) malloc(input->size * sizeof(int));
-        result->host_values = (int *) malloc(input->size * sizeof(int));
-        memset(result->host_timestamp, 0, sizeAllocated);
-        memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device(false);
-    }
+
+    // Create new stream on device the size of the input stream
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
+
+    // Fire off the actual calculation
     time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
     printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
+    return result;
 };
 
 
 
 
-void last(GPUIntStream *inputInt, GPUUnitStream *inputUnit, GPUIntStream *result, cudaStream_t stream){
+std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> inputInt, std::shared_ptr<GPUUnitStream> inputUnit, cudaStream_t stream) {
     int threads = (int) inputUnit->size;
-    int block_size =1;
+    int block_size = 1;
     int blocks = 1;
-    calcThreadsBlocks(threads,&block_size,&blocks);
-    //copy result vector to device
-    if (!result->onDevice) {
-        //TODO! where do we free this?
-        int sizeAllocated = inputUnit->size * sizeof(int);
-        result->size = inputUnit->size;
-        result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
-        result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
-        memset(result->host_timestamp, 0, sizeAllocated);
-        memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device(false);
-    }
-    cudaDeviceSynchronize();
+    calcThreadsBlocks(threads, &block_size, &blocks);
+
+    // Create new stream on devicewith the size of the unit input stream
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(inputUnit->size, true);
+
     //TODO! check that no expection is thrown at launch!
-    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
+
+    // Fire off the CUDA calculation
+    last_cuda<<<blocks, block_size, 0, stream>>>(inputInt->device_timestamp, inputInt->device_values,
+                                                 inputUnit->device_timestamp, result->device_timestamp,
+                                                 result->device_values, inputInt->size, threads,
+                                                 inputInt->device_offset, inputUnit->device_offset);
     cudaDeviceSynchronize();
-    calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp,result->device_offset, threads);
-    printf("Scheduled last() with <<<%d,%d>>> \n",blocks,block_size);
+    calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp, result->device_offset, threads);
+    printf("Scheduled last() with <<<%d,%d>>> \n", blocks, block_size);
+    return result;
 }
 
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
@@ -558,6 +568,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 /**
  * Lift
  */
+ /*
 void lift(GPUIntStream *x, GPUIntStream *y, GPUIntStream *result, int op){
     int block_size = 0;
     int blocks = 0;
@@ -737,4 +748,4 @@ void slift(GPUIntStream *x, GPUIntStream *y, GPUIntStream *result, int op){
     y_unit.free_device();
     last_xy.free_device();
     last_yx.free_device();
-}
+}*/
