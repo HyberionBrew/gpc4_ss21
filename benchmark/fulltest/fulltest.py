@@ -118,7 +118,7 @@ def run_tessla(spec, infile):
         print("{}: Execution successful ({} ms)\n".format(TESSLA, tessla_et))
 
 
-def run_arc(spec, infile, mode):
+def run_arc(spec, infile, mode, verbose):
     print("{}: Compiling .coil file...".format(WINDER))
 
     # compile spec
@@ -139,13 +139,17 @@ def run_arc(spec, infile, mode):
     coil_file = matches.group(1)
 
     arc_mode = get_arc_mode(mode)
-    command = "{} -o {} {} {} {}".format(os.path.join(BIN, ARC), ARC_OUT, arc_mode, coil_file, infile)
+    command = ""
+    if verbose:
+        command = "{} -o {} {} {} {}".format(os.path.join(BIN, ARC), ARC_OUT, arc_mode, coil_file, infile)
+    else:
+        command = "{} -v -o {} {} {} {}".format(os.path.join(BIN, ARC), ARC_OUT, arc_mode, coil_file, infile)
     print("{}: Running interpreter in mode {}".format(ARC, magenta(name_str(mode))))
     start = time.time()
     arc_ec = os.system(command)
     arc_et = round(((time.time()-start)*1000))
     if arc_ec != 0:
-        print_red("{}: Problem during execution, exiting.".format(ARC))
+        print_red("{}: Problem during execution, exiting. (arc exited with exit code {})".format(ARC, arc_ec))
         exit(1)
     else:
         print("{}: Execution successful ({} ms, total: {} ms) \n".format(ARC, arc_et, winder_et + arc_et))
@@ -166,11 +170,11 @@ def check_diff():
         return exit_code
 
 
-def compare(spec, infile, arc_mode):
+def compare(spec, infile, arc_mode, arc_verbose):
     print_bright("Running comparison for specification {} and input file {}...\n".format(magenta(spec),
                                                                                          magenta(infile)))
-    run_arc(spec, infile, arc_mode)
     run_tessla(spec, infile)
+    run_arc(spec, infile, arc_mode, arc_verbose)
     exit_code = check_diff()
     if exit_code == 0:
         os.remove(ARC_OUT)
@@ -179,7 +183,7 @@ def compare(spec, infile, arc_mode):
         exit(exit_code)
 
 
-def compare_all(arc_mode):
+def compare_all(arc_mode, arc_verbose):
     # collect all files in data folder
     files = os.listdir(DATA)
     input_files = list(filter(lambda a: a.endswith(".in"), files))
@@ -192,7 +196,7 @@ def compare_all(arc_mode):
             all_list.append((os.path.join(DATA, spec[0]), os.path.join(DATA, inf)))
     c = 0
     for s, i in all_list:
-        compare(s, i, arc_mode)
+        compare(s, i, arc_mode, arc_verbose)
         c += 1
         if c != len(all_list):
             print_delimiter()
@@ -205,6 +209,7 @@ def main():
     parser.add_argument("-i", "--input", help="Input file to run the comparison on")
     parser.add_argument("-m", "--mode", help="Running mode for arc vm", choices=["seq", "cuda", "cuda-sm", "thrust"],
                         default="seq")
+    parser.add_argument("-v", "--verbose", help="Whether to run arc with -v", action="store_true")
     args = parser.parse_args()
 
     if args.spec is not None and args.input is None or args.input is not None and args.spec is None:
@@ -222,10 +227,10 @@ def main():
 
     if args.spec is not None:
         # run single comparison
-        compare(args.spec, args.input, mode)
+        compare(args.spec, args.input, mode, args.verbose)
     else:
         # run all comparisons
-        compare_all(mode)
+        compare_all(mode, args.verbose)
 
 
 if __name__ == "__main__":

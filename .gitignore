@@ -209,3 +209,6 @@ arc/test/bin
 
 # Tesla output files
 *.out
+
+# fulltest bin folder (is rebuilt automatically)
+benchmark/fulltest/bin/*
