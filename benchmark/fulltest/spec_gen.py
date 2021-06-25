@@ -27,7 +27,7 @@ STREAM = 2
 
 PICK_CHANCE = 0.75
 
-ARITH_OPS = ["+", "*"]  # exclude "-", "/", "%" for now to not kill delay :)
+ARITH_OPS = ["+"]  # exclude "*", "-", "/", "%" for now to not kill delay or generate overflows :)
 
 RESERVED_KW = {"delay", "last", "time", "merge", "count", "in", "out", "def", "next", "as"}
 

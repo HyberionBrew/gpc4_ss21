@@ -42,7 +42,7 @@ shared_ptr<IntStream> last(IntStream& v, Stream& r){
         }
         else{
             if ((currEventV+1) != v.stream.end()){
-                while ((currEventV+1) != v.stream.end() && (currEventV+1)->get_timestamp() <= (*currEventR)->get_timestamp()){
+                while ((currEventV+1) != v.stream.end() && (currEventV+1)->get_timestamp() < (*currEventR)->get_timestamp()){
                     currEventV++;
                 }
             }
