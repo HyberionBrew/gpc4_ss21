@@ -13,6 +13,7 @@
 #include <functional>
 #include <sstream>
 #include <cassert>
+#include <time.h>
 
 std::string usage_string = "Usage: arc [-D | -t | -s | -o FILENAME] -v coil_file input_file";
 constexpr scheduler DEFAULT_SCHEDULER = debug;
@@ -73,10 +74,10 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
     if (verbose) {
         str << " scheduler." << std::endl;
         std::cout << str.str();
-    }
-    if (verbose) {
         std::cout << "Warming up on input file " << in_file << std::endl;
     }
+
+    clock_t warmup_time = clock();
     try {
         scheduler->warmup(in_file);
         if (verbose) {
@@ -88,18 +89,34 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         std::cout << "Exiting." << std::endl;
         std::terminate();
     }
+    warmup_time = clock() - warmup_time;
     if (verbose) {
+        std::cout << "Took " << static_cast<float>(warmup_time) / 1000000 << "s to do so.\n";
         std::cout << "Starting calculations...\n";
     }
+
+    clock_t calc_time = clock();
     while (scheduler->next()) {}
+    calc_time = clock() - calc_time;
 
     if (verbose) {
         std::cout << "Finished calculations.\n";
+        std::cout << "Took " << static_cast<float>(calc_time) / 1000000 << "s to do so.\n";
         std::cout << "Writing output file.\n";
     }
+    clock_t cooldown_time = clock();
     scheduler->cooldown(outfile);
+    cooldown_time = clock() - cooldown_time;
     if (verbose) {
         std::cout << "Output written to " << outfile << "\n";
+        std::cout << "Took " << static_cast<float>(cooldown_time) / 1000000 << "s to do so.\n";
+        std::cout << "\n";
+        std::cout << "Done.\n";
+        std::cout << "Took " << static_cast<float>(warmup_time + calc_time + cooldown_time) / 1000000
+            << "s (Warmup: " << static_cast<float>(warmup_time) / 1000000
+            << "s, Calculations: " << static_cast<float>(calc_time) / 1000000
+            << "s, Cooldown: " << static_cast<float>(cooldown_time) / 1000000 << "s) to do so.\n";
+        std::cout << "\n";
     }
 }
 
