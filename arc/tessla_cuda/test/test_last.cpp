@@ -23,10 +23,10 @@ TEST_CASE("last_thrust()") {
     SECTION("last_thrust() tuwel example") {
         // Read input and correct output data
 
-        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUReader inReader = GPUReader("test/data/bt_last.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r");
-        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUReader outReader = GPUReader("test/data/bt_last.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
 
         // Prepare empty output stream to fill
@@ -69,10 +69,10 @@ TEST_CASE("last_thrust()") {
 
     SECTION("last() large random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test2.in");
+        GPUReader inReader = GPUReader("test/data/last_test2.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test2.out");
+        GPUReader outReader = GPUReader("test/data/last_test2.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
         // Prepare empty output stream to fill
         std::shared_ptr<GPUIntStream> outputStream;
@@ -107,11 +107,11 @@ TEST_CASE("last_thrust()") {
 
     SECTION("last() twice test with no invalids") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test3.in");
+        GPUReader inReader = GPUReader("test/data/last_test3.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("a");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("x");
-        GPUReader outReader = GPUReader("../test/data/last_test3.out");
+        GPUReader outReader = GPUReader("test/data/last_test3.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
 
         // Prepare empty output stream to fill
@@ -151,11 +151,11 @@ TEST_CASE("last_thrust()") {
     SECTION("last() twice test with invalids in Unit Stream") {
         //printf("-------------------------\n");
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test4.in");
+        GPUReader inReader = GPUReader("test/data/last_test4.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("x");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test4.out");
+        GPUReader outReader = GPUReader("test/data/last_test4.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
 
         // Prepare empty output stream to fill
@@ -215,10 +215,10 @@ TEST_CASE("last_thrust()") {
     }
     SECTION("last empty"){
         //reading only invalid streams (they are empty)
-        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUReader inReader = GPUReader("test/data/bt_last.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v2");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r2");
-        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUReader outReader = GPUReader("test/data/bt_last.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y2");
         int size = CORRECT_STREAM->size;
         std::shared_ptr<GPUIntStream> outputStream;
@@ -253,24 +253,26 @@ TEST_CASE("last_thrust()") {
 TEST_CASE("last()") {
     SECTION("last() small random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test1.in");
+        GPUReader inReader = GPUReader("test/data/last_test1.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test1.out");
+        GPUReader outReader = GPUReader("test/data/last_test1.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
 
         // Prepare empty output stream to fill
         int size = CORRECT_STREAM->size;
         //printf("%d \n\n",  CORRECT_STREAM.size);
 
-
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
+        inputStreamV->print();
+        inputStreamR->print();
         //inputStreamV.print();
         //inputStreamR.print();
         std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
+        outputStream->print();
         //printf("xx");
         // outputStream.print();
         //outputStream.print();
@@ -293,13 +295,13 @@ TEST_CASE("last()") {
     }
 
     SECTION("last empty") {
+
         //reading only invalid streams (they are empty)
-        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUReader inReader = GPUReader("test/data/bt_last.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v2");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r2");
-        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUReader outReader = GPUReader("test/data/bt_last.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y2");
-
         int size = CORRECT_STREAM->size;
         std::shared_ptr<GPUIntStream> outputStream;
 
@@ -334,10 +336,10 @@ TEST_CASE("last()") {
     SECTION("last() tuwel example") {
         // Read input and correct output data
 
-        GPUReader inReader = GPUReader("../test/data/bt_last.in");
+        GPUReader inReader = GPUReader("test/data/bt_last.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r");
-        GPUReader outReader = GPUReader("../test/data/bt_last.out");
+        GPUReader outReader = GPUReader("test/data/bt_last.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
 
         // Prepare empty output stream to fill
@@ -374,10 +376,10 @@ TEST_CASE("last()") {
 
     SECTION("last() small random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test1.in");
+        GPUReader inReader = GPUReader("test/data/last_test1.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test1.out");
+        GPUReader outReader = GPUReader("test/data/last_test1.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
 
         // Prepare empty output stream to fill
@@ -416,10 +418,10 @@ TEST_CASE("last()") {
 
     SECTION("last() large random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test2.in");
+        GPUReader inReader = GPUReader("test/data/last_test2.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test2.out");
+        GPUReader outReader = GPUReader("test/data/last_test2.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
         // Prepare empty output stream to fill
         std::shared_ptr<GPUIntStream> outputStream;
@@ -458,11 +460,11 @@ TEST_CASE("last()") {
 
     SECTION("last() twice test with no invalids") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test3.in");
+        GPUReader inReader = GPUReader("test/data/last_test3.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("a");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("x");
-        GPUReader outReader = GPUReader("../test/data/last_test3.out");
+        GPUReader outReader = GPUReader("test/data/last_test3.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
 
         // Prepare empty output stream to fill
@@ -505,11 +507,11 @@ TEST_CASE("last()") {
     SECTION("last() twice test with invalids in Unit Stream") {
         //printf("-------------------------\n");
         // Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/last_test4.in");
+        GPUReader inReader = GPUReader("test/data/last_test4.in");
         std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("x");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("../test/data/last_test4.out");
+        GPUReader outReader = GPUReader("test/data/last_test4.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
 
         // Prepare empty output stream to fill

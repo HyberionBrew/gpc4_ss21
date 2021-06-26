@@ -40,13 +40,14 @@ GPUIntStream::GPUIntStream(size_t size, bool createOnDevice) {
     this->size = size;
     this->host_timestamp = (int *) malloc(size * sizeof(int));
     this->host_values = (int *) malloc(size * sizeof(int));
-
+    this->host_offset = (int *) malloc(sizeof(int));
+    memset( this->host_offset,0,sizeof(int));
     // Check if we have enough memory left
     if (this->host_values == nullptr || this->host_timestamp == nullptr) {
         throw std::runtime_error("Out of memory.");
     }
-
     if (createOnDevice) this->copy_to_device(false);
+
 }
 
 /**
@@ -57,14 +58,14 @@ GPUIntStream::GPUIntStream(size_t size, bool createOnDevice) {
 GPUIntStream::GPUIntStream(GPUIntStream &stream, bool onDevice) : GPUIntStream(stream.size, onDevice) {
     size_t allocSize = stream.size * sizeof (int);
     // Copy host data
-    this->host_offset = stream.host_offset;
+    memcpy(this->host_offset,stream.host_offset,sizeof(int));
     memcpy(this->host_timestamp, stream.host_timestamp, allocSize);
     memcpy(this->host_values, stream.host_values, allocSize);
-
     // Copy device data
     if (onDevice) {
         this->device_offset = stream.device_offset;
         // TODO make this more high performance
+        CHECK(cudaMemcpy(this->device_offset, stream.device_offset, allocSize, cudaMemcpyDeviceToDevice));
         CHECK(cudaMemcpy(this->device_timestamp, stream.device_timestamp, allocSize, cudaMemcpyDeviceToDevice));
         CHECK(cudaMemcpy(this->device_values, stream.device_values, allocSize, cudaMemcpyDeviceToDevice));
     }
@@ -115,7 +116,6 @@ void GPUUnitStream::free_host(){
 void GPUIntStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
-
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_values, sizeAllocate));
     CHECK(cudaMalloc((int**)&this->device_offset, sizeof(int)));
@@ -182,7 +182,7 @@ GPUUnitStream::GPUUnitStream(size_t size, bool createOnDevice) {
     int sizeAllocated = size * sizeof(int);
     this->size = size;
     this->host_timestamp = (int *) malloc(size * sizeof(int));
-
+    this->host_offset = (int *) malloc(sizeof(int));
     // Check if we have enough memory left
     if (this->host_timestamp == nullptr) {
         throw std::runtime_error("Out of memory.");

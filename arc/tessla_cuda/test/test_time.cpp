@@ -22,24 +22,21 @@
 
 TEST_CASE("time()") {
     SECTION("time() with small dataset") {
-// Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/bt_time.in");
+        // Read input and correct output data
+        
+        GPUReader inReader = GPUReader("test/data/bt_time.in");
         std::shared_ptr<GPUIntStream> inputStream = inReader.getIntStreamDebug("x");
-        GPUReader outReader = GPUReader("../test/data/bt_time.out");
+        GPUReader outReader = GPUReader("test/data/bt_time.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("x");
-
-// Prepare empty output stream to fill
+        // Prepare empty output stream to fill
         int size = CORRECT_STREAM->size;
-
-// outputStream; //(host_timestampOut, host_valueOut, size);
-
-// Run kernel
+        // outputStream; //(host_timestampOut, host_valueOut, size);
+        // Run kernel
         inputStream->copy_to_device();
-//outputStream.copy_to_device();
+        //outputStream.copy_to_device();
         std::shared_ptr<GPUIntStream> outputStream = time(inputStream, 0);
-        printf("Result size outputstream %d \n", outputStream->size);
         outputStream->copy_to_host();
-// Compare kernel result to correct data
+        // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp, outputStream->host_timestamp +
                                                                         sizeof(outputStream->host_timestamp) /
                                                                         sizeof(int));
@@ -54,16 +51,16 @@ TEST_CASE("time()") {
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
 
-// Cleanup
+        // Cleanup
         inputStream->free_device();
         outputStream->free_device();
     }
 
     SECTION("time() with bigger dataset (~109k/250k events)") {
-// Read input and correct output data
-        GPUReader inReader = GPUReader("../test/data/bt_time.bigger.in");
+        // Read input and correct output data
+        GPUReader inReader = GPUReader("test/data/bt_time.bigger.in");
         std::shared_ptr<GPUIntStream> inputStream = inReader.getIntStreamDebug("z");
-        GPUReader outReader = GPUReader("../test/data/bt_time.bigger.out");
+        GPUReader outReader = GPUReader("test/data/bt_time.bigger.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
 
 // Prepare empty output stream to fill

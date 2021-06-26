@@ -226,7 +226,7 @@ shared_ptr<GPUUnitStream> GPUReader::getUnitStreamDebug(string name) {
         result = getUnitStream(name);
     } catch (exception e) {
         // Stream not found, return an empty stream
-
+        printf("Stream was not found!\n");
         int *timestampsA = (int*) malloc(0);
         size_t size = 0;
         result = std::make_shared<GPUUnitStream>(GPUUnitStream{timestampsA, size});
@@ -266,8 +266,7 @@ shared_ptr<GPUIntStream> GPUReader::getIntStreamDebug(string name) {
         result = getIntStream(name);
     } catch (exception e) {
         // Stream not found, return an empty stream
-        // Stream not found, return an empty stream
-
+        printf("Stream was not found!\n");
         int *timestampsA = (int*) malloc(0);
         int *valuesA = (int*) malloc(0);
         size_t size = 0;

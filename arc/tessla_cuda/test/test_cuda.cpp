@@ -1,23 +1,3 @@
-
-#include <iostream>
-#include <string>
-#include <string.h>
-#include <vector>
-#include "../../test/catch2/catch.hpp"
-#include <GPUReader.cuh>
-#include <Stream.cuh>
-#include <StreamFunctions.cuh>
-
-#include <chrono>
-#include <fstream>
-#include <cuda_runtime.h>
-#include <sys/time.h>
-#include <cuda_profiler_api.h>
-
-#include <StreamFunctionsThrust.cuh>
-
-
-
 /*
 
 TEST_CASE("extensive stream ops"){

@@ -43,13 +43,13 @@ TEST_CASE("BENCHMARKING") {
 
             for (int i = 1; i <= BENCHMARKING_CASES; i++) {
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
                 GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
                 std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
                 std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
                 GPUReader outReader = GPUReader(path + std::to_string(i) + "_last.out");
                 std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-                /*GPUReader inReader = GPUReader("../test/data/bt_last.in");
+                /*GPUReader inReader = GPUReader("test/data/bt_last.in");
                 std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v");
                 std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r");
                 GPUReader outReader = GPUReader("../test/data/bt_last.out");
@@ -133,7 +133,7 @@ TEST_CASE("BENCHMARKING") {
 
             for (int i = 1;i <= BENCHMARKING_CASES; i++) {
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
 
                 // Prepare empty output stream to fill
                 GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
@@ -149,29 +149,25 @@ TEST_CASE("BENCHMARKING") {
                 // Run kernel
                 auto start = std::chrono::high_resolution_clock::now();
                 inputStream->copy_to_device();
-
+                //inputStream->print();
                 //outputStream.copy_to_device();
                 outputStream = time(inputStream, 0);
                 outputStream->copy_to_host();
-
-                cudaDeviceSynchronize();
+                //outputStream->print();
 
                 auto stop = std::chrono::high_resolution_clock::now();
-
+                //CORRECT_STREAM->print();
                 // Compare kernel result to correct data
-                std::vector<int> kernelTimestamps(outputStream->host_timestamp,
-                                                  outputStream->host_timestamp +
-                                                  sizeof(outputStream->host_timestamp) / sizeof(int));
-                std::vector<int> kernelValues(outputStream->host_values,
-                                              outputStream->host_values +
-                                              sizeof(outputStream->host_values) / sizeof(int));
+                std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
+                                          outputStream->host_timestamp + outputStream->size);
+                std::vector<int> kernelValues(outputStream->host_values + *(outputStream->host_offset),
+                                            outputStream->host_values + outputStream->size);
                 std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
-                                                   CORRECT_STREAM->host_timestamp +
-                                                   sizeof(CORRECT_STREAM->host_timestamp) / sizeof(int));
-                std::vector<int> correctValues(CORRECT_STREAM->host_values,
-                                               CORRECT_STREAM->host_values +
-                                               sizeof(CORRECT_STREAM->host_values) / sizeof(int));
-                REQUIRE(kernelTimestamps== correctTimestamps);
+                                                CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
+                std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
+                REQUIRE(kernelTimestamps == correctTimestamps);
+
+
                 REQUIRE(kernelValues == correctValues);
 
                 // Cleanup
@@ -214,7 +210,7 @@ TEST_CASE("BENCHMARKING") {
 
             for (int i = 3;i <= BENCHMARKING_CASES; i++) {
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
 
 // Prepare empty output stream to fill
 
@@ -263,7 +259,6 @@ TEST_CASE("BENCHMARKING") {
                 inputStreamR->free_device();
 
                 outputStream->free_device();
-
                 free(host_timestampOut);
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -295,7 +290,7 @@ TEST_CASE("BENCHMARKING") {
 
             for (int i = 3; i <= BENCHMARKING_CASES; i++) {
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
 
 // Prepare empty output stream to fill
 
