@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+import math
 import os
 import string
 import random
@@ -17,21 +18,67 @@ OUT_FORMAT = "out {}"
 DEF_FORMAT = "def {} = {}"
 ARITH_FORMAT = "{} {} {}"
 
+# random string generator state and alphabet
 ALPHABET = string.ascii_lowercase
 string_index = 1
 
 # stream "enums"
-INT_STREAM = 0
-UNIT_STREAM = 1
-STREAM = 2
+INT_STREAM = "INT_STREAM"
+UNIT_STREAM = "UNIT_STREAM"
+STREAM = "STREAM"
+
+# stream operations
+DELAY = "delay"
+LAST = "last"
+TIME = "time"
+MERGE = "merge"
+COUNT = "count"
 
 PICK_CHANCE = 0.75
 
-ARITH_OPS = ["+"]  # exclude "*", "-", "/", "%" for now to not kill delay or generate overflows :)
+ARITH_OPS = ["+", "-", "/", "%"]
 
-RESERVED_KW = {"delay", "last", "time", "merge", "count", "in", "out", "def", "next", "as"}
+RESERVED_KW = {DELAY, LAST, TIME, MERGE, COUNT, "in", "out", "def", "next", "as"}
 
 SEED_SIZE = 5
+
+MODE_DEBUG = "debug"
+MODE_BENCHMARK = "benchmark"
+
+POSITIVE = "POSITIVE"
+NON_POSITIVE = "NON_POSITIVE"
+UNIT = "UNIT"
+DONT_CARE = "DONT_CARE"
+
+DONT_CARE_REQ = (DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)
+
+MAX_INTEGER = 2147483647
+
+"""
+REQUIREMENTS:
+requirements and stream properties are a 5-tuple of the following:
+(IS_POSITIVE, MAX_VAL, ZERO_TS, MAX_SIZE, MAX_TIMESTAMP)
+-   IS_POSITIVE: marks whether a integer stream is positive (POSITIVE) or non-positive (NON_POSITIVE). Unit streams
+    are marked with UNIT
+-   MAX_VAL: integer denoting the theoretical max value of a stream
+-   ZERO_TS: boolean denoting whether a stream has an event at timestamp 0
+-   MAX_SIZE: integer denoting the theoretical max size of a stream
+-   MAX_TIMESTAMP: integer denoting the max timestamp of a stream
+
+requirements may specify DONT_CARE in a field where the value is not important. In cases where a value is not important
+or undefined, this may also be used in stream properties.
+
+DONT_CARE in stream properties is only allowed in the following combinations (_ marks values that may be arbitrary in 
+the specified value range):
+-   (NON_POSITIVE, DONT_CARE, _, _, _)
+-   (UNIT, DONT_CARE, _, _, _)
+
+The requirements system works as follows:
+1) An operation is "fixed" using fix_fmt() and returns its requirements for operands
+2) The stream stack is searched for fitting streams and new ones are created if none match the requirements
+3) return value properties are computed from the fixed operands
+4) the return stream with the properties is pushed to the stream stack
+"""
 
 
 def string_gen(x):
@@ -56,6 +103,47 @@ class Operation:
         op_list = ", ".join(ops)
         return "{}({})".format(self.name, op_list)
 
+    def fix_fmt(self):
+        if self.name == DELAY:
+            return [(POSITIVE, MAX_INTEGER, DONT_CARE, DONT_CARE, DONT_CARE), DONT_CARE_REQ]
+        elif self.name == TIME:
+            return [DONT_CARE_REQ]
+        elif self.name == MERGE and self.types[0] == UNIT_STREAM:
+            return [(UNIT, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE),
+                    (UNIT, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
+        elif self.name == MERGE and self.types[0] == INT_STREAM:
+            return [DONT_CARE_REQ, DONT_CARE_REQ]
+        elif self.name == LAST:
+            return [DONT_CARE_REQ, DONT_CARE_REQ]
+        elif self.name == COUNT:
+            return [DONT_CARE_REQ]
+
+    def get_return(self, ops):
+        _, pos_flag_l, max_val_l, max_size_l = ops[0]
+        _, pos_flag_r, max_val_r, max_size_r = (0, 0, 0, 0)
+        if len(ops) == 2:
+            _, pos_flag_r, max_val_r, max_size_r = ops[1]
+        if self.name == DELAY:
+            return UNIT, DONT_CARE, max_size_l
+        elif self.name == TIME:
+            # TODO maybe add another flag for ts 0
+            return NON_POSITIVE, DONT_CARE, max_size_l
+        elif self.name == MERGE and self.types[0] == UNIT_STREAM:
+            return UNIT, DONT_CARE, max_size_l + max_size_r
+        elif self.name == MERGE and self.types[0] == INT_STREAM:
+            if pos_flag_l == POSITIVE and pos_flag_r == POSITIVE:
+                return POSITIVE, max(max_val_l, max_val_r), max_size_l + max_size_r
+            else:
+                return NON_POSITIVE, DONT_CARE, max_size_l + max_size_r
+        elif self.name == LAST:
+            if pos_flag_l == POSITIVE:
+                return POSITIVE, max_val_l, max_size_r
+            else:
+                return NON_POSITIVE, DONT_CARE, max_size_r
+        elif self.name == COUNT:
+            # TODO maybe add another flag for ts 0
+            return NON_POSITIVE, DONT_CARE, max_size_l
+
     def __repr__(self):
         return self.name + "()"
 
@@ -64,15 +152,55 @@ class UnArithOp:
     def __init__(self):
         self.types = [INT_STREAM]
         self.ret_type = INT_STREAM
+        self.op_int = None
+        self.operator = None
+        self.op_type = False
+
+    # returns requirements
+    def fix_fmt(self):
+        self.op_int = random.randint(INT_MIN, INT_MAX)
+        self.operator = random.choice(ARITH_OPS)
+        self.op_type = random.random() <= 0.5
+        if self.operator == "+":
+            return [(POSITIVE, MAX_INTEGER - self.op_int, DONT_CARE, DONT_CARE, DONT_CARE)]
+        elif self.operator == "*":
+            return [(POSITIVE, MAX_INTEGER / self.op_int, DONT_CARE, DONT_CARE, DONT_CARE)]
+        elif self.operator == "/":
+            if self.op_type:
+                return [DONT_CARE_REQ]
+            else:
+                return [POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE]
+        elif self.operator == "-":
+            return [DONT_CARE_REQ]
+        elif self.operator == "%":
+            if self.op_type:
+                return [DONT_CARE_REQ]
+            else:
+                return [POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE]
+
+    def get_return(self, ops):
+        _, pos_flag, max_val, max_size, max_ts = ops[0]
+        if self.operator == "+":
+            return POSITIVE, self.op_int + max_val, max_size
+        elif self.operator == "*":
+            return POSITIVE, self.op_int * max_val, max_size
+        elif self.operator == "/":
+            if self.op_type:
+                # stream / op_int
+                return NON_POSITIVE, DONT_CARE, max_size
+            else:
+                return NON_POSITIVE, DONT_CARE, max_size
+        elif self.operator == "-":
+            return NON_POSITIVE, DONT_CARE, max_size
+        elif self.operator == "%":
+            return NON_POSITIVE, DONT_CARE, max_size
 
     def get_stat(self, ops):
         assert (len(ops) == len(self.types))
-        op_int = random.randint(INT_MIN, INT_MAX)
-        operator = random.choice(ARITH_OPS)
-        if random.random() <= 0.5:
-            return ARITH_FORMAT.format(op_int, operator, ops[0])
+        if self.op_type:
+            return ARITH_FORMAT.format(ops[0], self.operator, self.op_int)
         else:
-            return ARITH_FORMAT.format(ops[0], operator, op_int)
+            return ARITH_FORMAT.format(self.op_int, self.operator, ops[0])
         pass
 
     def __repr__(self):
@@ -83,14 +211,80 @@ class BinArithOp:
     def __init__(self):
         self.types = [INT_STREAM, INT_STREAM]
         self.ret_type = INT_STREAM
+        self.operator = None
 
     def get_stat(self, ops):
         assert (len(ops) == len(self.types))
-        operator = random.choice(ARITH_OPS)
-        return ARITH_FORMAT.format(ops[0], operator, ops[1])
+        self.operator = random.choice(ARITH_OPS)
+        return ARITH_FORMAT.format(ops[0], self.operator, ops[1])
+
+    # stream flags: positive, max_val, max_size
+    # returns requirements
+    def fix_fmt(self):
+        self.operator = random.choice(ARITH_OPS)
+        if self.operator == "+":
+            return [(POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE), (POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE)]
+        elif self.operator == "*":
+            return [(POSITIVE, math.sqrt(MAX_INTEGER), DONT_CARE, DONT_CARE, DONT_CARE),
+                    (POSITIVE, math.sqrt(MAX_INTEGER), DONT_CARE, DONT_CARE, DONT_CARE)]
+        elif self.operator == "/":
+            return [(POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE),
+                    (POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
+        elif self.operator == "-":
+            return [DONT_CARE_REQ, DONT_CARE_REQ]
+        elif self.operator == "%":
+            return [DONT_CARE_REQ,
+                    (POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
+
+    def get_return(self, ops):
+        _, pos_flag_l, max_val_l, max_size_l = ops[0]
+        _, pos_flag_r, max_val_r, max_size_r = ops[1]
+        new_size = max_size_r + max_size_l
+        if self.operator == "+":
+            return POSITIVE, max_val_l + max_val_r, new_size
+        elif self.operator == "*":
+            return POSITIVE, max_val_l * max_val_r, new_size
+        elif self.operator == "/":
+            return NON_POSITIVE, DONT_CARE, new_size
+        elif self.operator == "-":
+            return NON_POSITIVE, DONT_CARE, new_size
+        elif self.operator == "%":
+            return NON_POSITIVE, DONT_CARE, new_size
 
     def __repr__(self):
         return "binArithOp()"
+
+
+class DefaultOp:
+    def __init__(self):
+        self.types = []
+        self.ret_type = INT_STREAM
+        self.op_int = 0
+
+    def fix_fmt(self):
+        self.op_int = random.randint(INT_MIN, INT_MAX)
+        return []
+
+    def get_return(self, _ops):
+        return POSITIVE, self.op_int, 1
+
+    def get_stat(self, _ops):
+        return str(self.op_int)
+
+
+class UnitOp:
+    def __init__(self):
+        self.types = []
+        self.ret_type = UNIT_STREAM
+
+    def fix_fmt(self):
+        return []
+
+    def get_return(self, _ops):
+        return UNIT, DONT_CARE, 1
+
+    def get_stat(self, _ops):
+        return "()"
 
 
 class Stream:
@@ -118,7 +312,7 @@ class Stream:
 
 
 OPERATIONS = [
-    # Operation("delay", [INT_STREAM, STREAM], UNIT_STREAM),
+    Operation("delay", [INT_STREAM, STREAM], UNIT_STREAM),
     Operation("last", [INT_STREAM, STREAM], INT_STREAM),
     Operation("time", [STREAM], INT_STREAM),
     Operation("merge", [INT_STREAM, INT_STREAM], INT_STREAM),
@@ -126,6 +320,8 @@ OPERATIONS = [
     Operation("count", [STREAM], INT_STREAM),
     UnArithOp(),
     BinArithOp(),
+    DefaultOp(),
+    UnitOp()
 ]
 
 
@@ -174,18 +370,16 @@ def alloc_new(stream_stack, stream_type, is_input):
     return new_stream.name
 
 
-def generate_spec(length, seed):
+def generate_spec(length, seed, mode):
     random.seed(seed)
 
-    op_list = []
     def_list = []
     stream_stack = []
 
     # generate list of length elements
     for _ in range(length):
-        op_list.append(random.choice(OPERATIONS))
-
-    for op in op_list:
+        op = random.choice(OPERATIONS)
+        fmt, is_str, = op.get_fmt()
         operands = get_streams(stream_stack, op.types)
         new_name = alloc_new(stream_stack, op.ret_type, False)
         def_list.append(DEF_FORMAT.format(new_name, op.get_stat(operands)))
@@ -195,7 +389,7 @@ def generate_spec(length, seed):
     out_list = []
     int_names = []
     unit_names = []
-    for s in stream_stack:
+    for i, s in enumerate(stream_stack):
         if s.is_input:
             in_list.append(IN_FORMAT.format(s.name, s.type_str()))
             if s.stream_type == INT_STREAM:
@@ -205,7 +399,8 @@ def generate_spec(length, seed):
             else:
                 raise RuntimeError("Found stream with undefined type")
         else:
-            out_list.append(OUT_FORMAT.format(s.name, s.type_str()))
+            if mode == MODE_DEBUG or i >= len(stream_stack) - 4:
+                out_list.append(OUT_FORMAT.format(s.name, s.type_str()))
 
     stat_list = []
     stat_list.extend(in_list)
@@ -218,10 +413,9 @@ def random_string(str_size):
     return "".join(random.choice(string.ascii_letters) for _ in range(str_size))
 
 
-def generate_test(spec_length, trace_length, seed, target_folder):
-
+def generate_test(spec_length, trace_length, seed, target_folder, mode):
     # generate specification
-    int_names, unit_names, spec = generate_spec(spec_length, seed)
+    int_names, unit_names, spec = generate_spec(spec_length, seed, mode)
 
     # generate int_weights and unit weights
     random.seed(seed)
@@ -236,7 +430,7 @@ def generate_test(spec_length, trace_length, seed, target_folder):
     trace = generate_output(int_names, unit_names, int_weights, unit_weights, INT_MIN, INT_MAX, trace_length, seed)
 
     # write to files
-    test_name = "test_{}_sl{}_tl{}".format(seed, spec_length, trace_length)
+    test_name = "test_{}_sl{}_tl{}_{}".format(seed, spec_length, trace_length, mode)
     spec_name = test_name + ".tessla"
     trace_name = test_name + ".in"
     with open(os.path.join(target_folder, spec_name), "w") as file:
@@ -257,6 +451,9 @@ def main():
                         type=int, default=100)
     parser.add_argument("-o", "--output-folder", help="The folder to write the specification and input trace to",
                         type=str, default="")
+    parser.add_argument("-m", "--mode", help="Mode to be run in (debug := all intermediate output streams, "
+                                             "benchmark := max 3 output streams)", choices=[MODE_DEBUG, MODE_BENCHMARK],
+                        default=MODE_DEBUG)
 
     args = parser.parse_args()
 
@@ -264,13 +461,14 @@ def main():
     seed = random_string(SEED_SIZE) if args.seed is None else args.seed
 
     out_folder = args.output_folder
+    mode = args.mode
 
     # create output folder if it does not exist
     if not os.path.exists(out_folder):
         os.mkdir(out_folder)
 
     for _ in range(args.num_tests):
-        generate_test(args.spec_length, args.trace_length, seed, out_folder)
+        generate_test(args.spec_length, args.trace_length, seed, out_folder, mode)
         # get next seed
         random.seed(seed)
         seed = random_string(SEED_SIZE)

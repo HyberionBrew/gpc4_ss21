@@ -27,7 +27,7 @@ def main():
     args = parser.parse_args()
 
     out = generate_output(INTSTREAM_NAMES, UNITSTREAM_NAMES, args.intweights, args.unitweights,
-                          args.intmin, args.intmax, args.length)
+                          args.intmin, args.intmax, args.length, random.random())
 
     with open(args.output, "w") as outfile:
         outfile.write(out)
