@@ -50,6 +50,7 @@ NON_POSITIVE = "NON_POSITIVE"
 UNIT = "UNIT"
 DONT_CARE = "DONT_CARE"
 
+# don't care requirement for better readability
 DONT_CARE_REQ = (DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)
 
 MAX_INTEGER = 2147483647
@@ -105,44 +106,64 @@ class Operation:
 
     def fix_fmt(self):
         if self.name == DELAY:
+            # require positive to throw no runtime_error, second stream arbitrary
             return [(POSITIVE, MAX_INTEGER, DONT_CARE, DONT_CARE, DONT_CARE), DONT_CARE_REQ]
         elif self.name == TIME:
+            # input can be arbitrary, properties are propagated
             return [DONT_CARE_REQ]
         elif self.name == MERGE and self.types[0] == UNIT_STREAM:
-            return [(UNIT, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE),
-                    (UNIT, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
+            # types asserted by type check, rest arbitrary
+            return [DONT_CARE_REQ, DONT_CARE_REQ]
         elif self.name == MERGE and self.types[0] == INT_STREAM:
+            # both inputs must be int (=> type check), rest arbitrary
             return [DONT_CARE_REQ, DONT_CARE_REQ]
         elif self.name == LAST:
+            # no properties over type check required
             return [DONT_CARE_REQ, DONT_CARE_REQ]
         elif self.name == COUNT:
+            # no properties over type check required
             return [DONT_CARE_REQ]
 
     def get_return(self, ops):
-        _, pos_flag_l, max_val_l, max_size_l = ops[0]
-        _, pos_flag_r, max_val_r, max_size_r = (0, 0, 0, 0)
+        # returns (IS_POSITIVE, MAX_VAL, ZERO_TS, MAX_SIZE, MAX_TIMESTAMP)
+        _, pos_flag_l, max_val_l, zero_ts_l, max_size_l, max_ts_l = ops[0]
         if len(ops) == 2:
-            _, pos_flag_r, max_val_r, max_size_r = ops[1]
-        if self.name == DELAY:
-            return UNIT, DONT_CARE, max_size_l
-        elif self.name == TIME:
-            # TODO maybe add another flag for ts 0
-            return NON_POSITIVE, DONT_CARE, max_size_l
-        elif self.name == MERGE and self.types[0] == UNIT_STREAM:
-            return UNIT, DONT_CARE, max_size_l + max_size_r
-        elif self.name == MERGE and self.types[0] == INT_STREAM:
-            if pos_flag_l == POSITIVE and pos_flag_r == POSITIVE:
-                return POSITIVE, max(max_val_l, max_val_r), max_size_l + max_size_r
-            else:
-                return NON_POSITIVE, DONT_CARE, max_size_l + max_size_r
-        elif self.name == LAST:
-            if pos_flag_l == POSITIVE:
-                return POSITIVE, max_val_l, max_size_r
-            else:
-                return NON_POSITIVE, DONT_CARE, max_size_r
-        elif self.name == COUNT:
-            # TODO maybe add another flag for ts 0
-            return NON_POSITIVE, DONT_CARE, max_size_l
+            _, pos_flag_r, max_val_r, zero_ts_r, max_size_r, max_ts_r = ops[1]
+            if self.name == DELAY:
+                # streams has at most equal size and length as value stream
+                return UNIT, DONT_CARE, False, max_size_l, max_ts_l
+            elif self.name == MERGE and self.types[0] == UNIT_STREAM:
+                # unit stream, zts_l || zts_r, sum of max sizes (at most), maximum of last timestamps
+                return UNIT, DONT_CARE, zero_ts_r or zero_ts_l, max_size_l + max_size_r, max(max_ts_r, max_size_l)
+            elif self.name == MERGE and self.types[0] == INT_STREAM:
+                # int stream, zts_l || zts_r, sum of max sizes (at most), maximum of last timestamps
+                if pos_flag_l == POSITIVE and pos_flag_r == POSITIVE:
+                    # both inputs positive -> output positive
+                    return POSITIVE, DONT_CARE, zero_ts_r or zero_ts_l, \
+                           max_size_l + max_size_r, max(max_ts_r, max_size_l)
+                else:
+                    # otherwise non_positive
+                    return NON_POSITIVE, DONT_CARE, zero_ts_r or zero_ts_l, \
+                           max_size_l + max_size_r, max(max_ts_r, max_size_l)
+            elif self.name == LAST:
+                # follow trigger stream for all properties but value
+                if pos_flag_l == POSITIVE:
+                    return POSITIVE, max_val_l, zero_ts_r, max_size_r, max_ts_r
+                else:
+                    return NON_POSITIVE, DONT_CARE, zero_ts_r, max_size_r, max_ts_r
+        else:
+            if self.name == COUNT:
+                # max_size is new max_val (!), possibly non-positive if input has no event at ts 0
+                if zero_ts_l:
+                    return POSITIVE, max_size_l, True, max_size_l, max_ts_l
+                else:
+                    return NON_POSITIVE, DONT_CARE, True, max_size_l, max_ts_l
+            elif self.name == TIME:
+                # positive if no (!) event at timestamp 0, max_ts becomes new max_val
+                if zero_ts_l:
+                    return NON_POSITIVE, DONT_CARE, True, max_size_l, max_ts_l
+                else:
+                    return POSITIVE, max_ts_l, False, max_size_l, max_ts_l
 
     def __repr__(self):
         return self.name + "()"
@@ -161,6 +182,7 @@ class UnArithOp:
         self.op_int = random.randint(INT_MIN, INT_MAX)
         self.operator = random.choice(ARITH_OPS)
         self.op_type = random.random() <= 0.5
+        # prohibit overflows by constraining values
         if self.operator == "+":
             return [(POSITIVE, MAX_INTEGER - self.op_int, DONT_CARE, DONT_CARE, DONT_CARE)]
         elif self.operator == "*":
@@ -179,21 +201,23 @@ class UnArithOp:
                 return [POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE]
 
     def get_return(self, ops):
-        _, pos_flag, max_val, max_size, max_ts = ops[0]
+        # returns (IS_POSITIVE, MAX_VAL, ZERO_TS, MAX_SIZE, MAX_TIMESTAMP)
+        # zero_ts, max_size and max_ts are inherited from input, values are computed
+        _, pos_flag, max_val, zero_ts, max_size, max_ts = ops[0]
         if self.operator == "+":
-            return POSITIVE, self.op_int + max_val, max_size
+            return POSITIVE, self.op_int + max_val, zero_ts, max_size, max_ts
         elif self.operator == "*":
-            return POSITIVE, self.op_int * max_val, max_size
+            return POSITIVE, self.op_int * max_val, zero_ts, max_size, max_ts
         elif self.operator == "/":
             if self.op_type:
                 # stream / op_int
-                return NON_POSITIVE, DONT_CARE, max_size
+                return NON_POSITIVE, DONT_CARE, zero_ts, max_size, max_ts
             else:
-                return NON_POSITIVE, DONT_CARE, max_size
+                return NON_POSITIVE, DONT_CARE, zero_ts, max_size, max_ts
         elif self.operator == "-":
-            return NON_POSITIVE, DONT_CARE, max_size
+            return NON_POSITIVE, DONT_CARE, zero_ts, max_size, max_ts
         elif self.operator == "%":
-            return NON_POSITIVE, DONT_CARE, max_size
+            return NON_POSITIVE, DONT_CARE, zero_ts, max_size, max_ts
 
     def get_stat(self, ops):
         assert (len(ops) == len(self.types))
@@ -218,38 +242,45 @@ class BinArithOp:
         self.operator = random.choice(ARITH_OPS)
         return ARITH_FORMAT.format(ops[0], self.operator, ops[1])
 
-    # stream flags: positive, max_val, max_size
-    # returns requirements
     def fix_fmt(self):
         self.operator = random.choice(ARITH_OPS)
         if self.operator == "+":
-            return [(POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE), (POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE)]
+            # require positive streams to compute positive one
+            return [(POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE, DONT_CARE),
+                    (POSITIVE, MAX_INTEGER / 2, DONT_CARE, DONT_CARE, DONT_CARE)]
         elif self.operator == "*":
+            # require positive streams to compute positive one
             return [(POSITIVE, math.sqrt(MAX_INTEGER), DONT_CARE, DONT_CARE, DONT_CARE),
                     (POSITIVE, math.sqrt(MAX_INTEGER), DONT_CARE, DONT_CARE, DONT_CARE)]
         elif self.operator == "/":
-            return [(POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE),
-                    (POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
+            # first operand can be arbitrary since result must be non-positive anyway
+            return [DONT_CARE_REQ, (POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
         elif self.operator == "-":
+            # arbitrary operands since non-positive result in general
             return [DONT_CARE_REQ, DONT_CARE_REQ]
         elif self.operator == "%":
+            # arbitrary first operand (non-positive result), second positive for definition purposes
             return [DONT_CARE_REQ,
                     (POSITIVE, DONT_CARE, DONT_CARE, DONT_CARE, DONT_CARE)]
 
     def get_return(self, ops):
-        _, pos_flag_l, max_val_l, max_size_l = ops[0]
-        _, pos_flag_r, max_val_r, max_size_r = ops[1]
+        # returns (IS_POSITIVE, MAX_VAL, ZERO_TS, MAX_SIZE, MAX_TIMESTAMP)
+        # zero_ts, max_size and max_ts are inherited from input, values are computed
+        _, pos_flag_l, max_val_l, zero_ts_l, max_size_l, max_ts_l = ops[0]
+        _, pos_flag_r, max_val_r, zero_ts_r, max_size_r, max_ts_r = ops[1]
         new_size = max_size_r + max_size_l
+        new_zero_ts = zero_ts_l or zero_ts_r
+        new_max_ts = max(max_ts_r, max_ts_l)
         if self.operator == "+":
-            return POSITIVE, max_val_l + max_val_r, new_size
+            return POSITIVE, max_val_l + max_val_r, new_zero_ts, new_size, new_max_ts
         elif self.operator == "*":
-            return POSITIVE, max_val_l * max_val_r, new_size
+            return POSITIVE, max_val_l * max_val_r, new_zero_ts, new_size, new_max_ts
         elif self.operator == "/":
-            return NON_POSITIVE, DONT_CARE, new_size
+            return NON_POSITIVE, DONT_CARE, new_zero_ts, new_size, new_max_ts
         elif self.operator == "-":
-            return NON_POSITIVE, DONT_CARE, new_size
+            return NON_POSITIVE, DONT_CARE, new_zero_ts, new_size, new_max_ts
         elif self.operator == "%":
-            return NON_POSITIVE, DONT_CARE, new_size
+            return NON_POSITIVE, DONT_CARE, new_zero_ts, new_size, new_max_ts
 
     def __repr__(self):
         return "binArithOp()"
