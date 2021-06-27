@@ -55,5 +55,31 @@ def generate_output(int_names, unit_names, int_weights, unit_weights, int_min, i
     return "\n".join(output)
 
 
+def generate_property_trace(int_names, unit_names, int_props, unit_props,
+                            int_weights, unit_weights, int_min, int_max, length, seed):
+    random.seed(seed)
+    if unit_weights is None:
+        unit_streams = []
+    else:
+        unit_streams = list(zip(unit_names, unit_props, unit_weights))
+    if int_weights is None:
+        int_streams = []
+    else:
+        int_streams = list(zip(int_names, int_props, int_weights))
+
+    output = []
+    for i in range(0, length + 1):
+        for (name, prop, weight) in unit_streams:
+            zts = prop[2]
+            if not (i == 0 and not zts):
+                if weight <= random.random():
+                    output.append("{}: {} = ()".format(i, name))
+        for (name, prop, weight) in int_streams:
+            zts = prop[2]
+            if not (i == 0 and not zts):
+                if weight <= random.random():
+                    output.append("{}: {} = {}".format(i, name, random.randint(int_min, int_max)))
+    return "\n".join(output)
+
 if __name__ == "__main__":
     main()
