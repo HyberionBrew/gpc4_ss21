@@ -41,6 +41,8 @@ TEST_CASE("Random Tests") {
 #define TESTF_PATH "arc/vm/test/arc_input/"
 #define TF1 "test_1337_sl10_tl100"
 #define TF2 "test_lel_sl100_tl2500"
+#define TF3 "default"
+#define TF4 "test_peda_sl200_tl250_benchmark"
 #define COIL_F ".coil"
 #define IN_F ".in"
 #define concat(f,s,t) f s t
@@ -58,10 +60,25 @@ TEST_CASE("Random Tests") {
     }
 
     SECTION("test_lel_sl10_tl2500") {
-        argc = 5;
         optind = 0;
         const char* a4 = concat(TESTF_PATH, TF2, COIL_F);
         const char* a5 = concat(TESTF_PATH, TF2, IN_F);
+        const char* argv[] = {a1, a2, a3, a4, a5};
+        run(argc, const_cast<char **>(argv));
+    }
+
+    SECTION("default (assertion violation after default)") {
+        optind = 0;
+        const char* a4 = concat(TESTF_PATH, TF3, COIL_F);
+        const char* a5 = concat(TESTF_PATH, TF3, IN_F);
+        const char* argv[] = {a1, a2, a3, a4, a5};
+        run(argc, const_cast<char **>(argv));
+    }
+
+    SECTION("test_peda_sl200_tl250 (SIGSEGV)") {
+        optind = 0;
+        const char* a4 = concat(TESTF_PATH, TF4, COIL_F);
+        const char* a5 = concat(TESTF_PATH, TF4, IN_F);
         const char* argv[] = {a1, a2, a3, a4, a5};
         run(argc, const_cast<char **>(argv));
     }
