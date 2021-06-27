@@ -20,58 +20,8 @@
 #include <StreamFunctionsThrust.cuh>
 
 
-TEST_CASE("slift_thrust()"){
-    SECTION("slift() simple example") {
-        // Read input and correct output data
-        
-        GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift1.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
-        inputStreamZ->copy_to_device();
-        inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        printf("here= \n");
-        outputStream = slift_thrust(inputStreamZ, inputStreamY, 0);
-        printf("here= \n");
-        //inputStreamR.print();
-        outputStream->copy_to_host();
-              printf("here= \n");
-        //outputStream.print();
-        // Compare kernel result to correct data
-        std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
-        std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
-        std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
-        REQUIRE(kernelTimestamps == correctTimestamps);
-        REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
-        // Cleanup
-        inputStreamZ->free_device();
-
-        inputStreamY->free_device();
-        outputStream->free_device();
-        
-        inputStreamZ->free_host();
-        outputStream->free_host();
-        inputStreamY->free_host();
-    }
-}
-
-
-
-
 TEST_CASE("time()") {
     SECTION("time() with small dataset") {
-            exit(1);
         // Read input and correct output data
         
         GPUReader inReader = GPUReader("test/data/bt_time.in");

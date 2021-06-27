@@ -9,6 +9,7 @@ link_directories(
 add_executable(tessla_cuda_test
         test_main.cpp
         test_cuda.cpp
+        test_slift.cpp
         test_time.cpp
         test_last.cpp
         test_benchmark.cpp
