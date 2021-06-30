@@ -39,9 +39,6 @@ TEST_CASE("last_thrust()") {
         //  inputStreamR->print();
         outputStream = last_thrust(inputStreamV, inputStreamR, 0);
         //inputStreamR->print();
-        for (int i = 0; i < 5; i++) {
-            printf("%d \n", *(outputStream->host_timestamp + i));
-        }
         outputStream->copy_to_host();
         //outputStream->print();
         // Compare kernel result to correct data
@@ -190,7 +187,7 @@ TEST_CASE("last_thrust()") {
         outputStream = last_thrust(intermediateStream, inputStream2, 0);
 
         outputStream->copy_to_host();
-        outputStream->print();
+        //outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
@@ -266,13 +263,13 @@ TEST_CASE("last()") {
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        inputStreamV->print();
-        inputStreamR->print();
+        //inputStreamV->print();
+        //inputStreamR->print();
         //inputStreamV.print();
         //inputStreamR.print();
         std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-        outputStream->print();
+        //outputStream->print();
         //printf("xx");
         // outputStream.print();
         //outputStream.print();
