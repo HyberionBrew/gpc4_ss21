@@ -349,7 +349,6 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
       thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
       //std::cout <<"timestap1" <<result_timestamps[rs] << std::endl;
       return result;
-
     }
     thrust::device_vector<int> add = cross_streams(inputInt1_timestamps, inputInt2_timestamps,inputInt1_values,inputInt2_values, size_inputInt1,size_inputInt2,op,true);
     int shift_timestamps1 = size_inputInt2-add.size();
