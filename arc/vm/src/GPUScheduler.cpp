@@ -4,6 +4,7 @@
 
 #include "GPUScheduler.h"
 #include <GPUReader.cuh>
+#include <StreamFunctions.cuh>
 #include <iostream>
 #include <cassert>
 
@@ -29,13 +30,13 @@ bool GPUScheduler::next() {
             std::cout << ": Mod, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
             break;
         case inst_delay:
-            std::cout << ": Delay, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, delay(get_intst(inst.r1), get_ust(inst.r2), 0));
             break;
         case inst_last:
-            std::cout << ": Last, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, last(get_intst(inst.r1), get_ust(inst.r2), 0));
             break;
         case inst_time:
-            std::cout << ": Time, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, time(get_intst(inst.r1), 0));
             break;
         case inst_merge:
             std::cout << ": Merge, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
@@ -128,7 +129,7 @@ bool GPUScheduler::next() {
             std::cout << ": Unit, R1: " << inst.r1 << std::endl;
             break;
         case inst_exit:
-            std::cout << ": Exit" << std::endl;
+            // Terminate the program
             return false;
         default:
             // Unreachable code
