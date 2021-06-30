@@ -9,8 +9,7 @@ import colorama
 import time
 
 TESSLA = "tessla.jar"
-TESSLA_DL = "https://git.tessla.io/tessla/tessla/builds/artifacts/master/raw/target/scala-2.13/tessla-assembly-1.2.2" \
-            ".jar?job=deploy "
+TESSLA_DL = "https://owncloud.tuwien.ac.at/index.php/s/4f9jydKvqZfzofx/download"
 WINDER = "winder"
 ARC = "arc"
 SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
@@ -22,6 +21,7 @@ ARC_OUT = os.path.join(DATA, "arc.out")
 TESSLA_OUT = os.path.join(DATA, "tessla.out")
 
 WINDER_OUT_PATTERN = r"Compiled successfully to (.*\.coil)"
+TESSLA_OUT_PATTERN = r"Parser: ([0-9]+) us; Interpreter: ([0-9]+) us; Total: ([0-9]+) us"
 
 MODE_SEQUENTIAL = 252
 MODE_CUDA = 253
@@ -35,6 +35,7 @@ MODE_MAP = {
     "thrust": MODE_THRUST
 }
 
+OUT_CSV = "results.csv"
 
 def get_arc_mode(mode):
     if mode == MODE_SEQUENTIAL:
@@ -108,14 +109,22 @@ def rebuild():
 def run_tessla(spec, infile):
     start = time.time()
     print("{}: Running interpreter".format(TESSLA))
-    tessla_ec = os.system("java -jar {} interpreter {} {} > {} ".format(os.path.join(BIN, TESSLA),
-                                                                        spec,
-                                                                        infile, TESSLA_OUT))
-    tessla_et = round((time.time() - start)*1000)
-    if tessla_ec != 0:
-        print_red("{}: Problem during execution, exiting".format(TESSLA))
-    else:
-        print("{}: Execution successful ({} ms)\n".format(TESSLA, tessla_et))
+    with open(TESSLA_OUT, "w") as tessla_out:
+        p = subprocess.Popen(["java", "-jar", os.path.join(BIN, TESSLA), "interpreter", spec, infile],
+                             stdout=tessla_out, stderr=subprocess.PIPE)
+        p.wait()
+        output = p.stderr.read().decode()
+        matches = re.match(TESSLA_OUT_PATTERN, output)
+        parser_time = matches.group(1)
+        exec_time = matches.group(2)
+        total_time = matches.group(3)
+        tessla_ec = p.returncode
+        tessla_et = round((time.time() - start) * 1000)
+        if tessla_ec != 0:
+            print_red("{}: Problem during execution, exiting".format(TESSLA))
+        else:
+            print("{}: Execution successful ({} ms)\n".format(TESSLA, tessla_et))
+        return parser_time, exec_time
 
 
 def run_arc(spec, infile, mode, verbose):
@@ -123,12 +132,12 @@ def run_arc(spec, infile, mode, verbose):
 
     # compile spec
     start = time.time()
-    p = subprocess.Popen([os.path.join(BIN, WINDER), "compile", spec], stdout=subprocess.PIPE)
+    winder_p = subprocess.Popen([os.path.join(BIN, WINDER), "compile", spec], stdout=subprocess.PIPE)
 
-    p.wait()
-    winder_et = round((time.time()-start)*1000)
-    output = p.stdout.read().decode()
-    winder_ec = p.returncode
+    winder_p.wait()
+    winder_et = round((time.time() - start) * 1000)
+    output = winder_p.stdout.read().decode()
+    winder_ec = winder_p.returncode
     matches = re.match(WINDER_OUT_PATTERN, output)
     if matches is None or winder_ec != 0:
         print_red("{}: Problem during .coil compilation, exiting.".format(WINDER))
@@ -139,15 +148,15 @@ def run_arc(spec, infile, mode, verbose):
     coil_file = matches.group(1)
 
     arc_mode = get_arc_mode(mode)
-    command = ""
-    if verbose:
-        command = "{} -o {} {} {} {}".format(os.path.join(BIN, ARC), ARC_OUT, arc_mode, coil_file, infile)
-    else:
-        command = "{} -v -o {} {} {} {}".format(os.path.join(BIN, ARC), ARC_OUT, arc_mode, coil_file, infile)
     print("{}: Running interpreter in mode {}".format(ARC, magenta(name_str(mode))))
     start = time.time()
-    arc_ec = os.system(command)
-    arc_et = round(((time.time()-start)*1000))
+    arc_p = subprocess.Popen([os.path.join(BIN, ARC), "-v", "-o", ARC_OUT, arc_mode, coil_file, infile],
+                             stdout=subprocess.PIPE)
+    arc_p.wait()
+    arc_ec = arc_p.returncode
+    arc_et = round(((time.time() - start) * 1000))
+    arc_out = arc_p.stdout.read().decode()
+    print(arc_out)
     if arc_ec != 0:
         print_red("{}: Problem during execution, exiting. (arc exited with exit code {})".format(ARC, arc_ec))
         exit(1)
@@ -170,7 +179,7 @@ def check_diff():
         return exit_code
 
 
-def compare(spec, infile, arc_mode, arc_verbose):
+def compare(name, spec, infile, arc_mode, arc_verbose):
     print_bright("Running comparison for specification {} and input file {}...\n".format(magenta(spec),
                                                                                          magenta(infile)))
     run_tessla(spec, infile)
@@ -181,6 +190,9 @@ def compare(spec, infile, arc_mode, arc_verbose):
         os.remove(TESSLA_OUT)
     else:
         exit(exit_code)
+
+    # write time results to csv
+
 
 
 def compare_all(arc_mode, arc_verbose):
@@ -193,10 +205,10 @@ def compare_all(arc_mode, arc_verbose):
         pref = inf.split(".")[0]
         spec = [s for s in spec_files if s.split(".")[0] == pref]
         if len(spec) > 0:
-            all_list.append((os.path.join(DATA, spec[0]), os.path.join(DATA, inf)))
+            all_list.append((pref, os.path.join(DATA, spec[0]), os.path.join(DATA, inf)))
     c = 0
-    for s, i in all_list:
-        compare(s, i, arc_mode, arc_verbose)
+    for n, s, i in all_list:
+        compare(n, s, i, arc_mode, arc_verbose)
         c += 1
         if c != len(all_list):
             print_delimiter()
