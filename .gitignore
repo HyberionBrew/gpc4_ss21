@@ -211,7 +211,8 @@ arc/test/bin
 *.out
 
 # fulltest bin folder (is rebuilt automatically)
-benchmark/fulltest/bin/*
+benchmark/bin/*
+benchmark/data_archive
 
 # winder profiler
 winder/target/*

@@ -42,7 +42,7 @@ RESERVED_KW = {DELAY, LAST, TIME, MERGE, COUNT, "in", "out", "def", "as", "if", 
 
 SEED_SIZE = 5
 
-MODE_DEBUG = "debug"
+MODE_TEST = "test"
 MODE_BENCHMARK = "benchmark"
 
 POSITIVE = "POSITIVE"
@@ -497,7 +497,7 @@ def generate_spec(length, seed, mode, trace_length):
             else:
                 raise RuntimeError("Found stream with invalid type {}".format(s.stream_type))
         else:
-            if mode == MODE_DEBUG or i >= len(stream_stack) - 4:
+            if mode == MODE_TEST or i >= len(stream_stack) - 3:
                 out_list.append(OUT_FORMAT.format(s.name, s.type_str()))
 
     stat_list = []
@@ -529,7 +529,7 @@ def generate_test(spec_length, trace_length, seed, target_folder, mode):
                                     int_weights, unit_weights, INT_MIN, INT_MAX, trace_length, seed)
 
     # write to files
-    test_name = "test_{}_sl{}_tl{}_{}".format(seed, spec_length, trace_length, mode)
+    test_name = "{}_{}_sl{}_tl{}".format(mode, seed, spec_length, trace_length)
     spec_name = test_name + ".tessla"
     trace_name = test_name + ".in"
     with open(os.path.join(target_folder, spec_name), "w") as file:
@@ -550,9 +550,9 @@ def main():
                         type=int, default=100)
     parser.add_argument("-o", "--output-folder", help="The folder to write the specification and input trace to",
                         type=str, default="")
-    parser.add_argument("-m", "--mode", help="Mode to be run in (debug := all intermediate output streams, "
-                                             "benchmark := max 3 output streams)", choices=[MODE_DEBUG, MODE_BENCHMARK],
-                        default=MODE_DEBUG)
+    parser.add_argument("-m", "--mode", help="Mode to be run in (test := all intermediate output streams, "
+                                             "benchmark := max 3 output streams)", choices=[MODE_TEST, MODE_BENCHMARK],
+                        default=MODE_TEST)
 
     args = parser.parse_args()
 
