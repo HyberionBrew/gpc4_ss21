@@ -38,7 +38,7 @@ PICK_CHANCE = 0.75
 
 ARITH_OPS = ["+", "-", "/", "%"]
 
-RESERVED_KW = {DELAY, LAST, TIME, MERGE, COUNT, "in", "out", "def", "as", "if", "type", "module", "then", "else"}
+RESERVED_KW = {DELAY, LAST, TIME, MERGE, COUNT, "in", "out", "def", "as", "if", "type", "module", "then", "else", "on"}
 
 SEED_SIZE = 5
 
@@ -148,13 +148,13 @@ class Operation:
             elif self.name == LAST:
                 # follow trigger stream for all properties but value
                 if pos_flag_l == POSITIVE:
-                    return POSITIVE, max_val_l, zero_ts_r, max_size_r, max_ts_r
+                    return POSITIVE, max_val_l, False, max_size_r, max_ts_r
                 else:
-                    return NON_POSITIVE, DONT_CARE, zero_ts_r, max_size_r, max_ts_r
+                    return NON_POSITIVE, DONT_CARE, False, max_size_r, max_ts_r
         else:
             # only one (l) input stream
             if self.name == COUNT:
-                # max_size is new max_val (!), possibly non-positive if input has no event at ts 0
+                # max_size is new max_val (!), possibly non-positive if input has no (!) event at ts 0
                 if zero_ts_l:
                     return POSITIVE, max_size_l, True, max_size_l, max_ts_l
                 else:
@@ -270,7 +270,7 @@ class BinArithOp:
         pos_flag_l, max_val_l, zero_ts_l, max_size_l, max_ts_l = ops[0].props
         pos_flag_r, max_val_r, zero_ts_r, max_size_r, max_ts_r = ops[1].props
         new_size = max_size_r + max_size_l
-        new_zero_ts = zero_ts_l or zero_ts_r
+        new_zero_ts = zero_ts_l and zero_ts_r
         new_max_ts = max(max_ts_r, max_ts_l)
         if self.operator == "+":
             return POSITIVE, max_val_l + max_val_r, new_zero_ts, new_size, new_max_ts
@@ -345,7 +345,7 @@ class Stream:
 
 
 OPERATIONS = [
-     Operation("delay", [INT_STREAM, STREAM], UNIT_STREAM),
+    # Operation("delay", [INT_STREAM, STREAM], UNIT_STREAM),
     Operation("last", [INT_STREAM, STREAM], INT_STREAM),
     Operation("time", [STREAM], INT_STREAM),
     Operation("merge", [INT_STREAM, INT_STREAM], INT_STREAM),
@@ -353,8 +353,8 @@ OPERATIONS = [
     Operation("count", [STREAM], INT_STREAM),
     UnArithOp(),
     BinArithOp(),
-     DefaultOp(),
-     UnitOp()
+    # DefaultOp(),
+    # UnitOp()
 ]
 
 
@@ -458,6 +458,7 @@ def alloc_new(stream_stack, stream_type, is_input, properties):
         # infer actual stream type from properties
         stream_type = UNIT_STREAM if properties[0] == UNIT else INT_STREAM
     new_stream = Stream(stream_type, is_input, properties)
+    print(new_stream.name, new_stream.props)
     stream_stack.append(new_stream)
     return new_stream
 
