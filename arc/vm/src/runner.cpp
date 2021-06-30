@@ -112,10 +112,10 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         std::cout << "Took " << static_cast<float>(cooldown_time) / 1000000 << "s to do so.\n";
         std::cout << "\n";
         std::cout << "Done.\n";
-        std::cout << "Took " << static_cast<float>(warmup_time + calc_time + cooldown_time) / 1000000
-            << "s (Warmup: " << static_cast<float>(warmup_time) / 1000000
-            << "s, Calculations: " << static_cast<float>(calc_time) / 1000000
-            << "s, Cooldown: " << static_cast<float>(cooldown_time) / 1000000 << "s) to do so.\n";
+        std::cout << "Took " << warmup_time + calc_time + cooldown_time
+            << " us (Warmup: " << warmup_time
+            << " us, Calculations: " << calc_time
+            << " us, Cooldown: " << cooldown_time << " us) to do so.\n";
         std::cout << "\n";
     }
 }

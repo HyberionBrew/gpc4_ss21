@@ -69,6 +69,9 @@ bool SequentialScheduler::next() {
             } else if (un1 != nullptr && un2 != nullptr) {
                 set_reg(inst.rd, merge(*un1, *un2));
             } else {
+                // TODO remove
+                printf("%zu, %zu\n", inst.r1, inst.r2);
+                fflush(0);
                 assert(false);
             }
             break;
