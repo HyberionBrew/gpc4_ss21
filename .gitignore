@@ -212,7 +212,10 @@ arc/test/bin
 
 # fulltest bin folder (is rebuilt automatically)
 benchmark/bin/*
+
+# other benchmark stuff
 benchmark/data_archive
+benchmark/*.csv
 
 # winder profiler
 winder/target/*

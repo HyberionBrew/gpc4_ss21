@@ -36,7 +36,8 @@ MODE_MAP = {
     "thrust": MODE_THRUST
 }
 
-CSV_HEADER = "name, tessla_compile, tessla_exec, winder, arc_warmup, arc_computation, arc_cooldown"
+CSV_HEADER = "name, tessla_compile (us), tessla_exec (us), winder (us), arc_warmup (us), " \
+             "arc_computation (us), arc_cooldown (us)"
 
 
 def get_arc_mode(mode):
@@ -82,14 +83,14 @@ def rebuild():
 
     print("Rebuilding winder...")
     # build winder
-    winder_ec = os.system("cd ../../winder; cargo build --release")
+    winder_ec = os.system("cd ../winder; cargo build --release")
     # copy binary to ./bin
     shutil.copy("../winder/target/release/winder", "{}/{}".format(BIN, WINDER))
     print()
 
     print("Rebuilding arc...")
     # build arc
-    arc_ec = os.system("cd ../../arc; cmake . > /dev/null 2>&1; cmake --build . --target arc ")
+    arc_ec = os.system("cd ../arc; cmake . > /dev/null 2>&1; cmake --build . --target arc ")
     # copy binary to ./bin
     shutil.copy("../arc/arc", "{}/{}".format(BIN, ARC))
     print()
@@ -188,13 +189,23 @@ def check_diff():
 
 def print_output(outlines):
     print_delimiter()
+    print_bright("Recorded execution times:\n")
     print(CSV_HEADER)
     for o in outlines:
         print(o)
 
 
 def write_output(outfile, outlines):
-    pass
+    print_delimiter()
+    success = False
+    with open(outfile, "w") as of:
+        of.write(CSV_HEADER+"\n")
+        of.write("\n".join(outlines))
+        success = True
+    if success:
+        print_bright("Wrote execution times successfully to {}".format(magenta(outfile)))
+    else:
+        print_bright(red("Failed to write output to {}".format(outfile)))
 
 
 def compare(name, spec, infile, arc_mode, outfile, single_comp):
