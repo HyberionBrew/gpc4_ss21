@@ -117,6 +117,7 @@ struct is_zero
   }
 };
 
+//is used by slift_thrust()
 thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_timestamps, thrust::device_ptr<int> inputInt2_timestamps,thrust::device_ptr<int> inputInt1_values,thrust::device_ptr<int> inputInt2_values,int size1,int size2,operations op, bool swap){
     //*inputInt1_timestamps
     int input_shift =0;
@@ -134,12 +135,13 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
                       inputInt2_timestamps+input_shift, inputInt2_timestamps+size2,
                       fit_1.begin(),
                       thrust::less_equal<int>());
-        //decrement by -1
+    //decrement by -1
     thrust::transform(fit_1.begin(),
                   fit_1.end(),
                   thrust::make_constant_iterator((1)),
                   fit_1.begin(),
                   thrust::minus<int>());
+    
     //check if no value is before
     if(fit_1.size() == 0){
       thrust::device_vector<int> res(0);
@@ -155,11 +157,9 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
     //}
 
 
-    //printf("size_1: %d \n",size1);
-    //printf("size_2: %d \n",size2);
     int size2_new = size2-input_shift;
 
-
+    //the
     int out_of_range = thrust::count(fit_1.begin(), fit_1.end(), size1);
     thrust::fill(fit_1.end()-out_of_range,fit_1.end(),size1-1);
     thrust::device_vector<int> added_1(size2_new);
@@ -167,18 +167,6 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
                   inputInt1_values,
                   added_1.begin());
 
-    //for(int i = 0; i < added_1.size(); i++) {
-    //   std::cout << "ADD[" << i << "] = " << added_1[i] << std::endl;
-    //}
-
-    //IF SWAP SET i.e. second computation on a non commutative operation
-    // simply swap added_1.begin() with inputInt2_values! ezay peasy lemon squeazy
-    // just pass FIRST AND SECOND and swap accordingly!!
-   //if (size2 <= size1){
-        //first add up for all valid values
-        //printf("taken\n");
-        //count values that would be outside of range, i.e. all values == size
-        //printf("%d \n", out_of_range);
     int zeros = 0;
     if (swap){
       switch(op){
@@ -227,19 +215,7 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
       }     
     }
 
-        //thrust::transform(added_1.end()-out_of_range, added_1.end(), thrust::make_constant_iterator(*(inputInt2_values+size2)),added_1.end()-out_of_range, thrust::plus<int>());
-        //now fill up remaining
-        //thrust::transform(fit_1[size_fit1], fit_2,fit_2 +size_fit1, op);
-        //inputInt2_values +result_values
-    //}
-    //else{
-      //size_inputInt1 > size_inputIn2
-    //  thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::plus<int>());
-   // }
- 
-  //for(int i = 0; i < added_1.size(); i++) {
-  //      std::cout << "ADDFInal[" << i << "] = " << added_1[i] << std::endl;
-  //}
+
   
   return added_1;
 }
@@ -265,32 +241,6 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
     auto inputInt2_timestamps = thrust::device_pointer_cast(inputInt2->device_timestamp+*offsetInt2);
     auto inputInt2_values = thrust::device_pointer_cast(inputInt2->device_values+*offsetInt2);
     //Standard guard
-    //TODO! but in function @ cleanup!
-    //std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
-   /* int sizeAllocated = (inputInt1->size+inputInt2->size)*sizeof(int);
-    result->size = inputInt1->size+ inputInt2->size;
-    result->host_timestamp = (int *) malloc(result->size * sizeof(int));
-    result->host_values = (int *) malloc(result->size * sizeof(int));
-    memset(result->host_timestamp, 0, sizeAllocated);
-    memset(result->host_values, 0, sizeAllocated);
-    printf("host offs %d \n", *result->host_offset);
-    result->copy_to_device(false);
-    auto result_values = thrust::device_pointer_cast(result->device_values);
-    auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
-    
-    int * x_h = (int *) malloc(sizeof(int));
-    int * x_d;
-    memset(x_h,0,sizeof(int));
-
-    CHECK(cudaMalloc((int**)&x_d, sizeof(int)));
-    //CHECK(cudaMemcpy(x_h, x_d, sizeof(int), cudaMemcpyHostToDevice));
-
-    auto result_offs = thrust::device_pointer_cast(x_d);
-    //auto result_offs = thrust::device_pointer_cast(result->device_offset);
-    printf("result offs = %d \n",*result_offs);
-    *result_offs = 0;
-    printf("result offs = %d \n",*result_offs);
-    //*result_offs = *offsetInt1 + *offsetInt2;*/
     std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
     int sizeAllocated = (inputInt1->size +inputInt2->size)* sizeof(int);
     result->size = inputInt1->size +inputInt2->size;
@@ -308,16 +258,10 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
     auto result_values = thrust::device_pointer_cast(result->device_values);
     auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
     auto result_offs = thrust::device_pointer_cast(result->device_offset);
-    //printf("result_values = %d \n",result_timestamps[0]);
-    //printf("result offs = %d \n",result_offs[0]);
 
     //fill those that are not part of the current calc (since they are invalid) with -1
     thrust::fill(result_values,result_values+*result_offs,-1);
     thrust::fill(result_timestamps,result_timestamps+*result_offs,-1);
-
-    //now only look at valid region
-    //result_values = thrust::device_pointer_cast(result->device_values+*result_offs);
-    //result_timestamps = thrust::device_pointer_cast(result->device_timestamp+*result_offs);
 
     /*FINISHED PREAMBLE*/
 
@@ -327,14 +271,13 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
 
     //fast path for merge
     if (op==merge){
-        //TODO!
        thrust::device_vector<int> merged_timestamps(size_inputInt2+size_inputInt1);
 
        thrust::device_vector<int> merged_values(size_inputInt2+size_inputInt1);
        thrust::merge_by_key(inputInt1_timestamps,inputInt1_timestamps+size_inputInt1,
                         inputInt2_timestamps,inputInt2_timestamps+size_inputInt2,
                         inputInt1_values, inputInt2_values,merged_timestamps.begin(),merged_values.begin());
-        //thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> new_end = thrust::unique_by_key(merged_timestamps.begin(),merged_timestamps.end(),merged_values.begin());
+    
       thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> new_end = thrust::unique_by_key(merged_timestamps.begin(),merged_timestamps.end(),merged_values.begin());
 
       int length = thrust::distance(merged_timestamps.begin(),new_end.first);
@@ -348,9 +291,10 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
         std::cout << "Final[" << i << "] = " <<result_timestamps[i] <<" | "<< result_values[i] << std::endl;
       }*/
       thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
-      //std::cout <<"timestap1" <<result_timestamps[rs] << std::endl;
       return result;
     }
+
+
     thrust::device_vector<int> add = cross_streams(inputInt1_timestamps, inputInt2_timestamps,inputInt1_values,inputInt2_values, size_inputInt1,size_inputInt2,op,true);
     int shift_timestamps1 = size_inputInt2-add.size();
     thrust::device_vector<int> add2 = cross_streams(inputInt2_timestamps, inputInt1_timestamps,inputInt2_values,inputInt1_values, size_inputInt2,size_inputInt1,op,false);
@@ -377,12 +321,12 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
 
     int length = thrust::distance(merged_timestamps.begin(),new_end.first);//thrust::count(values_res.begin(),values_res.end(),-1);
 
-    printf("result size %d",result->size);
-     printf("result legth %d",length);
+    //printf("result size %d",result->size);
+    //printf("result legth %d",length);
     int rs = result->size-length;
-    printf("result_ insied %d \n",rs);
+    //printf("result_ insied %d \n",rs);
     //result_offs[0] = rs;
-    printf("result_ insied %d \n",rs );
+    //printf("result_ insied %d \n",rs );
     thrust::copy(merged_timestamps.begin(), merged_timestamps.end(), 
                   result_timestamps+rs);
     thrust::copy(merged_values.begin(), merged_values.end(), 
@@ -393,7 +337,7 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
     }*/
     thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
     //std::cout <<"timestap1" <<result_timestamps[rs] << std::endl;
-    std::cout <<"res offset" <<result_offs[0]<< std::endl;
+    //std::cout <<"res offset" <<result_offs[0]<< std::endl;
     return result;
 
 }
