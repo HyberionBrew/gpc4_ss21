@@ -28,12 +28,13 @@ std::shared_ptr<GPUIntStream> last_thrust(std::shared_ptr<GPUIntStream> inputInt
     //first cast device pointers to thrust pointers
     auto offsetInt = thrust::device_pointer_cast(inputInt->device_offset);
     auto offsetUnit = thrust::device_pointer_cast(inputUnit->device_offset);
+    
     //shift for offset
     auto inputInt_timestamps = thrust::device_pointer_cast(inputInt->device_timestamp+*offsetInt);
     auto inputInt_values = thrust::device_pointer_cast(inputInt->device_values+*offsetInt);
     auto inputUnit_timestamps = thrust::device_pointer_cast(inputUnit->device_timestamp+*offsetUnit);
+    
     //Standard guard
-
     std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
     int sizeAllocated = inputUnit->size * sizeof(int);
     result->size = inputUnit->size;
