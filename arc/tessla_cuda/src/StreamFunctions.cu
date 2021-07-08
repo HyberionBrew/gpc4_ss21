@@ -696,6 +696,11 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
 
 std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
 
+    // Merge fast path
+    if (op == MRG){
+        return lift(x,y,MRG);
+    }
+
     int *x_ts = (int*)malloc(x->size*sizeof(int));
     int *y_ts = (int*)malloc(y->size*sizeof(int));
 
@@ -723,25 +728,10 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
     std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
     cudaDeviceSynchronize();
-    //last_xy.copy_to_host();
-    //last_xy.print();
-    //last_yx.copy_to_host();
-    //last_yx.print();
 
     std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
     std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
-
-    x_prime->copy_to_host();
-    y_prime->copy_to_host();
-
-    printf("print x/y prime\n");
-    x_prime->print();
-    y_prime->print();
     cudaDeviceSynchronize();
-    //x_prime.copy_to_host();
-    //y_prime.copy_to_host();
-    //x_prime.print();
-    //y_prime.print();
 
     std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
     cudaDeviceSynchronize();
