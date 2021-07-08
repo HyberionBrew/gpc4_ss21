@@ -448,7 +448,7 @@ __device__ void lift_merge( int *x_ts, int *y_ts,
                             int *out_ts, int *out_v,
                             bool x_done, bool y_done, lift_op op){
 
-    if (x_ts[*x_i] <= y_ts[*y_i] && !x_done){
+    if (x_ts[*x_i] <= y_ts[*y_i] && !x_done || y_done){
         *out_ts = x_ts[*x_i];
         *out_v = x_v[*x_i];
         (*x_i)++;
@@ -622,13 +622,23 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
     int xo = (*x_offset);
     int yo = (*y_offset);
 
+    if (tidx == 0){
+        printf("lift x\n");
+        for (int i = xo; i < x_len; i++){
+            printf("x_ts[%i] = %i\n",i,x_ts[i]);
+        }
+        for (int i = yo; i < y_len; i++){
+            printf("y_ts[%i] = %i\n",i,y_ts[i]);
+        }
+    }
+
     int len_offset = xo+yo;
 
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads);     // Values per thread
     int diag = tidx * vpt;                                                      // Binary search constraint
 
     int intersect = merge_path(x_ts+xo, y_ts+yo, diag, x_len-xo, y_len-yo);
-    int x_start = intersect+1;
+    int x_start = intersect;
     int y_start = diag - intersect;
 
     // Split op into merge vs. value function and specific value operation
@@ -721,6 +731,12 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
     std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
 
+    x_prime->copy_to_host();
+    y_prime->copy_to_host();
+
+    printf("print x/y prime\n");
+    x_prime->print();
+    y_prime->print();
     cudaDeviceSynchronize();
     //x_prime.copy_to_host();
     //y_prime.copy_to_host();
