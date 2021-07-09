@@ -8,7 +8,7 @@
 #include <vector>
 #include "../../test/catch2/catch.hpp"
 #include <GPUReader.cuh>
-#include <Stream.cuh>
+#include <GPUStream.cuh>
 #include <StreamFunctions.cuh>
 
 #include <chrono>

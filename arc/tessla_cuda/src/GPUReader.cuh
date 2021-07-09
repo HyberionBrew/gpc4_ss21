@@ -2,7 +2,7 @@
 #define TESSLA_CUDA_READER_CUH
 
 #include <string>
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include <map>
 #include <memory>
 #include <vector>

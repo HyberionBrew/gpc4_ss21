@@ -14,7 +14,7 @@
 #define MRG 5
 
 #include <cuda_runtime.h>
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include <memory>
 
 // time operation for unit stream

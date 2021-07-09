@@ -1,7 +1,7 @@
 #include "StreamFunctions.cuh"
 #include "StreamFunctionsThrust.cuh"
 #include "helper.cuh"
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include <thrust/device_ptr.h>
 #include <iostream>
 #include <thrust/functional.h>

@@ -3,10 +3,44 @@
 //
 #include <cuda_runtime.h>
 
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include "helper.cuh"
 
 #include <stdexcept>
+
+/**
+ * Create an empty stream of size size and copy over to CUDA device if necessary.
+ * Does not set memory on host to all 0. Might contain bogus values.
+ * @param size size The size of the stream to create
+ * @param createOnDevice Allocate the memory on CUDA device
+ */
+GPUUnitStream::GPUUnitStream(size_t size, bool createOnDevice) {
+    this->size = size;
+    this->host_timestamp = (int *) malloc(size * sizeof(int));
+    this->host_offset = (int *) malloc(sizeof(int));
+    // Check if we have enough memory left
+    if (this->host_timestamp == nullptr) {
+        throw std::runtime_error("Out of memory.");
+    }
+
+    if (createOnDevice) this->copy_to_device(false);
+}
+
+/**
+ * Copy constructor of Unit Stream. If onDevice is set, the stream is also copied on the CUDA device
+ * @param stream Stream to be copied.
+ * @param onDevice Also copy data from CUDA device
+ */
+GPUUnitStream::GPUUnitStream(GPUUnitStream &stream, bool onDevice) : GPUUnitStream(stream.size, onDevice){
+    this->host_offset = stream.host_offset;
+    memcpy(this->host_timestamp, stream.host_timestamp, stream.size * sizeof (int));
+
+    if (onDevice) {
+        this->device_offset = stream.device_offset;
+        // TODO make this more high performance
+        CHECK(cudaMemcpy(this->device_timestamp, stream.device_timestamp, stream.size * sizeof (int), cudaMemcpyDeviceToDevice));
+    }
+}
 
 GPUIntStream::GPUIntStream(int *timestamp, int *value, size_t size, int offs) {
     this->host_timestamp = timestamp;
@@ -36,7 +70,6 @@ GPUIntStream::GPUIntStream(int *timestamp, int *value, size_t size) {
  * @param createOnDevice Allocate the memory on CUDA device
  */
 GPUIntStream::GPUIntStream(size_t size, bool createOnDevice) {
-    int sizeAllocated = size * sizeof(int);
     this->size = size;
     this->host_timestamp = (int *) malloc(size * sizeof(int));
     this->host_values = (int *) malloc(size * sizeof(int));

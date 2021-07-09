@@ -5,7 +5,7 @@
 #include <sys/time.h>
 #include "main.cuh"
 #include "helper.cuh"
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include "StreamFunctions.cuh"
 #include "device_information.cuh"
 #include "StreamFunctionHelper.cuh"

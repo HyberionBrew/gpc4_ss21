@@ -6,7 +6,7 @@
 #define GPC4_SS21_GPUSCHEDULER_H
 
 #include "Scheduler.h"
-#include <Stream.cuh>
+#include <GPUStream.cuh>
 #include <memory>
 #include <vector>
 #include <unordered_map>

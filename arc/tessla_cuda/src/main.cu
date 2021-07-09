@@ -5,7 +5,7 @@
 #include <cuda_profiler_api.h>
 #include "main.cuh"
 #include "helper.cuh"
-#include "Stream.cuh"
+#include "GPUStream.cuh"
 #include "StreamFunctions.cuh"
 #include "StreamFunctionsThrust.cuh"
 void experimental_time(){
