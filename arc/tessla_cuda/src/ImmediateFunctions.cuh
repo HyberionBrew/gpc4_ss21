@@ -1,6 +1,14 @@
-//
-// Created by fabian on 09/07/2021.
-//
+/**
+ * @file ImmediateFunctions.cuh
+ * @author Fabian Posch
+ * @date 2021.07.09
+ * @brief Immediate stream operations header
+ *
+ * Header file containing immediate stream operation library functions.
+ * Implementation done using vanilla CUDA.
+ * The CUDA kernel headers are not to be used.
+ *
+ */
 
 #ifndef ARC_IMMEDIATEFUNCTIONS_CUH
 #define ARC_IMMEDIATEFUNCTIONS_CUH

@@ -1,6 +1,13 @@
-//
-// Created by fabian on 09/07/2021.
-//
+/**
+ * @file ImmediateFunctions.cu
+ * @author Fabian Posch
+ * @date 2021.07.09
+ * @brief Implementation of immediate stream operations
+ *
+ * Implementation of TeSSLa immediate stream operations using
+ * vanilla CUDA.
+ *
+ */
 
 #include "ImmediateFunctions.cuh"
 #include "StreamFunctionHelper.cuh"
