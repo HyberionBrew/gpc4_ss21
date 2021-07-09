@@ -170,21 +170,21 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
     int zeros = 0;
     if (swap){
       switch(op){
-        case add:
+        case TH_OP_add:
           thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::plus<int>());
           break;
-        case substract:
+        case TH_OP_subtract:
           thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::minus<int>());
           break;
-        case divide:
+        case TH_OP_divide:
           zeros = thrust::count_if(inputInt2_timestamps+input_shift, inputInt2_timestamps+input_shift+(added_1.end() -added_1.begin()),is_zero());
           if (zeros!= 0) throw std::runtime_error("Division by Zero error");
           thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::divides<int>());
           break;
-        case multiply:
+        case TH_OP_multiply:
           thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::multiplies<int>());
           break;
-        case modulo:
+        case TH_OP_modulo:
           zeros = thrust::count_if(inputInt2_timestamps+input_shift, inputInt2_timestamps+input_shift+(added_1.end() -added_1.begin()),is_zero());
           if (zeros!= 0) throw std::runtime_error("Division by Zero error");
           thrust::transform(added_1.begin(), added_1.end(), inputInt2_values+input_shift,added_1.begin(), thrust::modulus<int>());
@@ -193,21 +193,21 @@ thrust::device_vector<int> cross_streams(thrust::device_ptr<int> inputInt1_times
     }
     else{
       switch(op){
-        case add:
+        case TH_OP_add:
           thrust::transform(inputInt2_values+input_shift, inputInt2_values+input_shift+(added_1.end() -added_1.begin()),added_1.begin(), added_1.begin(), thrust::plus<int>());
           break;
-        case substract:
+        case TH_OP_subtract:
           thrust::transform(inputInt2_values+input_shift, inputInt2_values+input_shift+(added_1.end() -added_1.begin()),added_1.begin(), added_1.begin(), thrust::minus<int>());
           break;
-        case divide:
+        case TH_OP_divide:
           zeros = thrust::count_if(added_1.begin(),added_1.end(),is_zero());
           if (zeros!= 0) throw std::runtime_error("Division by Zero error");
           thrust::transform(inputInt2_values+input_shift, inputInt2_values+input_shift+(added_1.end() -added_1.begin()),added_1.begin(), added_1.begin(),  thrust::divides<int>());
           break;
-        case multiply:
+        case TH_OP_multiply:
           thrust::transform(inputInt2_values+input_shift, inputInt2_values+input_shift+(added_1.end() -added_1.begin()),added_1.begin(), added_1.begin(),  thrust::multiplies<int>());
           break;
-        case modulo:
+        case TH_OP_modulo:
           zeros = thrust::count_if(added_1.begin(),added_1.end(),is_zero());
           if (zeros!= 0) throw std::runtime_error("Division by Zero error");
           thrust::transform(inputInt2_values+input_shift, inputInt2_values+input_shift+(added_1.end() -added_1.begin()),added_1.begin(), added_1.begin(),  thrust::modulus<int>());
@@ -270,7 +270,7 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
     int size_inputInt1 = inputInt1->size-*offsetInt1;
 
     //fast path for merge
-    if (op==merge){
+    if (op==TH_OP_merge){
        thrust::device_vector<int> merged_timestamps(size_inputInt2+size_inputInt1);
 
        thrust::device_vector<int> merged_values(size_inputInt2+size_inputInt1);

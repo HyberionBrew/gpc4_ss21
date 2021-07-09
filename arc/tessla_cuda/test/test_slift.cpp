@@ -422,7 +422,7 @@ TEST_CASE("slift_thrust()"){
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,merge, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_merge, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         outputStream->print();
@@ -463,7 +463,7 @@ TEST_CASE("slift_thrust()"){
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,add, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream.print();
@@ -503,7 +503,7 @@ TEST_CASE("slift_thrust()"){
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,substract, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY, TH_OP_subtract, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream->print();
@@ -546,7 +546,7 @@ TEST_CASE("slift_thrust()"){
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,divide, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         outputStream->print();
@@ -591,7 +591,7 @@ TEST_CASE("slift_thrust()"){
       //  inputStreamR.print();
       try
         {
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,divide, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream->print();
@@ -639,7 +639,7 @@ TEST_CASE("slift_thrust()"){
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,add, 0);
+        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream.print();
@@ -679,7 +679,7 @@ SECTION("slift(+) simple example 2 flipped") {
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,add, 0);
+        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream->print();
@@ -718,7 +718,7 @@ SECTION("slift(+) simple example 2 flipped") {
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,add, 0);
+        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream.print();
@@ -758,7 +758,7 @@ SECTION("slift(+) simple example 2 flipped") {
         inputStreamY->copy_to_device();
        // inputStreamV.print();
       //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,add, 0);
+        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         //inputStreamR.print();
         outputStream->copy_to_host();
         //outputStream->print();
