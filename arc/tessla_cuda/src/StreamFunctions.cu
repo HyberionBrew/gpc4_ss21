@@ -703,18 +703,6 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
         return lift(x,y,MRG);
     }
 
-    int *x_ts = (int*)malloc(x->size*sizeof(int));
-    int *y_ts = (int*)malloc(y->size*sizeof(int));
-
-    // xy ... y is the unit stream
-    int *xy_ts = (int*)malloc(y->size*sizeof(int));
-    int *yx_ts = (int*)malloc(x->size*sizeof(int));
-    int *xy_v = (int*)malloc(y->size*sizeof(int));
-    int *yx_v = (int*)malloc(x->size*sizeof(int));
-
-    memset(xy_ts, -1, y->size*sizeof(int));
-    memset(yx_ts, -1, x->size*sizeof(int));
-
     // Make Unit streams from Int streams for last()
     std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream(x->host_timestamp, x->size, *(x->host_offset)));
     std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream(y->host_timestamp, y->size, *(y->host_offset)));
@@ -730,31 +718,31 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
     std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
     printf("x_unit\n");
-    x_unit.print();
+    x_unit->print();
     printf("y_unit\n");
-    y_unit.print();
+    y_unit->print();
 
 
     printf("before last xy\n");
     printf("x size: %i\n", x->size);
-    printf("y unit size: %i\n", y_unit.size);
-    last(x, &y_unit, &last_xy, 0);
+    printf("y unit size: %i\n", y_unit->size);
+    last_xy = last(x, y_unit, 0);
     cudaDeviceSynchronize();
 
     std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
     std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
     cudaDeviceSynchronize();
-    last(y, &x_unit, &last_yx, 0);
+    last_yx = last(y, x_unit, 0);
 
     printf("x stream\n");
     x->print();
     printf("y unit\n");
-    y_unit.print();
+    y_unit->print();
     printf("last xy\n");
-    last_xy.print();
+    last_xy->print();
 
-    lift(x, &last_xy, &x_prime, MRG);
-    lift(y, &last_yx, &y_prime, MRG);
+    x_prime = lift(x, last_xy, MRG);
+    y_prime = lift(y, last_yx, MRG);
 
     std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
     cudaDeviceSynchronize();
