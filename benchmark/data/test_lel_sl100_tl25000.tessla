@@ -1,0 +1,204 @@
+in a: Events[Int]
+in p: Events[Unit]
+in q: Events[Unit]
+in y: Events[Unit]
+def b = 86 + a
+def c = count(b)
+def d = time(c)
+def e = time(d)
+def f = time(d)
+def g = count(f)
+def h = last(g, f)
+def i = merge(h, g)
+def j = count(i)
+def k = time(i)
+def l = last(k, h)
+def m = merge(k, j)
+def n = merge(l, k)
+def o = count(n)
+def r = merge(p, q)
+def s = time(r)
+def t = s + o
+def u = count(t)
+def v = last(u, t)
+def w = v + t
+def x = last(w, v)
+def az = merge(p, y)
+def aa = last(x, v)
+def ab = merge(az, y)
+def ac = merge(az, r)
+def ad = merge(ac, ab)
+def ae = 77 + x
+def af = count(ae)
+def ag = af + ae
+def ah = time(ag)
+def ai = time(ah)
+def aj = ah + ag
+def ak = last(ai, ah)
+def al = last(aj, ai)
+def am = last(al, ak)
+def an = last(am, al)
+def ao = an + 98
+def ap = time(an)
+def aq = merge(ad, ac)
+def ar = time(aq)
+def at = 35 + ar
+def au = merge(at, ar)
+def av = last(au, at)
+def aw = merge(aq, ac)
+def ax = count(au)
+def ay = count(aw)
+def bz = merge(aw, aq)
+def ba = ax + au
+def bb = merge(bz, aw)
+def bc = ba + ay
+def bd = merge(bb, bz)
+def be = bc + 28
+def bf = count(be)
+def bg = merge(bf, be)
+def bh = time(bg)
+def bi = count(bf)
+def bj = merge(bi, bh)
+def bk = bj + bi
+def bl = merge(bk, bj)
+def bm = merge(bl, bj)
+def bn = 4 + bm
+def bo = bn + bj
+def bp = count(bo)
+def bq = merge(bd, bb)
+def br = bp + 86
+def bs = count(br)
+def bt = 39 + bs
+def bu = time(bs)
+def bv = merge(bu, bt)
+def bw = bv + bu
+def bx = bw + bv
+def by = merge(bq, bd)
+def cz = count(by)
+def ca = cz + bx
+def cb = count(cz)
+def cc = 34 + cb
+def cd = last(cb, cz)
+def ce = time(cd)
+def cf = ce + cd
+def cg = merge(ce, cc)
+def ch = last(cg, cf)
+def ci = count(cf)
+def cj = time(ch)
+def ck = merge(cj, cg)
+def cl = merge(bq, bb)
+def cm = count(cl)
+def cn = merge(ck, cj)
+def co = 52 + cn
+def cp = time(co)
+def cq = last(cp, co)
+def cr = time(cp)
+def cs = merge(cl, bq)
+def ct = merge(cs, cl)
+def cu = cr + 49
+def cv = count(cu)
+def cw = merge(ct, cl)
+def cx = merge(cv, cu)
+def cy = count(cx)
+def dz = cy + cv
+def da = last(cy, cx)
+out b
+out c
+out d
+out e
+out f
+out g
+out h
+out i
+out j
+out k
+out l
+out m
+out n
+out o
+out r
+out s
+out t
+out u
+out v
+out w
+out x
+out az
+out aa
+out ab
+out ac
+out ad
+out ae
+out af
+out ag
+out ah
+out ai
+out aj
+out ak
+out al
+out am
+out an
+out ao
+out ap
+out aq
+out ar
+out at
+out au
+out av
+out aw
+out ax
+out ay
+out bz
+out ba
+out bb
+out bc
+out bd
+out be
+out bf
+out bg
+out bh
+out bi
+out bj
+out bk
+out bl
+out bm
+out bn
+out bo
+out bp
+out bq
+out br
+out bs
+out bt
+out bu
+out bv
+out bw
+out bx
+out by
+out cz
+out ca
+out cb
+out cc
+out cd
+out ce
+out cf
+out cg
+out ch
+out ci
+out cj
+out ck
+out cl
+out cm
+out cn
+out co
+out cp
+out cq
+out cr
+out cs
+out ct
+out cu
+out cv
+out cw
+out cx
+out cy
+out dz
+out da

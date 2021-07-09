@@ -15,14 +15,17 @@
 
 #include <cuda_runtime.h>
 #include "Stream.cuh"
+#include <memory>
+
 // time operation for unit stream
 int simp_compare(const void *a, const void *b); // TODO: Delete when no longer needed
 void calcThreadsBlocks(int threads, int *block_size, int*blocks);
-void time(GPUIntStream *s, GPUIntStream *result, cudaStream_t stream);
-void last(GPUIntStream *d, GPUUnitStream *r, GPUIntStream *result, cudaStream_t stream);
-void delay(GPUIntStream *s, GPUUnitStream *r, GPUUnitStream*result, cudaStream_t stream);
-void delay_preliminary_prune(GPUIntStream *s, GPUUnitStream *r, cudaStream_t stream);
-void lift(GPUIntStream *x, GPUIntStream *y, GPUIntStream *result, int threads, int op);
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStream_t stream);
+std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
+std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
+void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
+std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op);
+std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op);
 __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values, int size, int*offs, int* resultOffse);
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values,int IntStreamSize, int size, int* offsInt, int* offsUnit);
 __global__ void final_reduce(int* block_red,int size,int* offset);
@@ -36,5 +39,6 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int *x_v, int *y_v, int *out_v,
                             int threads, int x_len, int y_len, 
                             int op, int *valid, int *invalid,
-                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset);
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset,
+                            int *x_offset, int *y_offset);
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH

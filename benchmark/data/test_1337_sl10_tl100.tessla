@@ -1,0 +1,25 @@
+in a: Events[Int]
+in b: Events[Int]
+in d: Events[Unit]
+in e: Events[Unit]
+in j: Events[Unit]
+def c = a * b
+def f = merge(d, e)
+def g = a + 52
+def h = count(g)
+def i = count(h)
+def k = merge(e, j)
+def l = 39 + i
+def m = time(l)
+def n = m + 40
+def o = count(n)
+out c
+out f
+out g
+out h
+out i
+out k
+out l
+out m
+out n
+out o

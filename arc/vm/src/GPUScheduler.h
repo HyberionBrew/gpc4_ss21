@@ -6,11 +6,22 @@
 #define GPC4_SS21_GPUSCHEDULER_H
 
 #include "Scheduler.h"
+#include <Stream.cuh>
+#include <memory>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
 
 class GPUScheduler : public Scheduler {
 private:
-    std::vector<Instruction> lookahead;
-    std::vector<Register> registers;
+    std::vector<IOStream> out_streams;
+    unordered_map<size_t, shared_ptr<GPUIntStream>> intRegisters;
+    unordered_map<size_t, shared_ptr<GPUUnitStream>> unitRegisters;
+    void set_reg (size_t pos, shared_ptr<GPUIntStream> stream);
+    void set_reg (size_t pos, shared_ptr<GPUUnitStream> stream);
+    shared_ptr<GPUIntStream> get_intst (size_t reg);
+    shared_ptr<GPUUnitStream> get_ust (size_t reg);
 public:
     explicit GPUScheduler(InstrInterface & interface);
     bool next() override;

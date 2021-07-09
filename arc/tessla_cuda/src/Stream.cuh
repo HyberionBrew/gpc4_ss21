@@ -35,12 +35,13 @@ public:
     GPUIntStream();
     GPUIntStream(int *timestamp, int *value, size_t size, int offs);
     //just allocate on host
+    GPUIntStream(GPUIntStream & stream, bool onDevice);
+    GPUIntStream(size_t size, bool createOnDevice);
 
     void copy_to_device(bool valid);
     void copy_to_device();
     void copy_to_host();
     void free_device();
-    GPUIntStream(bool deviceOnly, size_t size);
     void free_host();
     void print();
 };
@@ -56,6 +57,8 @@ public:
     GPUUnitStream();
     GPUUnitStream(int *timestamp, size_t size);
     GPUUnitStream(int *timestamp, size_t size, int offs);
+    GPUUnitStream(size_t size, bool createOnDevice);
+    GPUUnitStream(GPUUnitStream & stream, bool onDevice);
     void copy_to_device();
     void copy_to_device(bool valid);
     void copy_to_host();

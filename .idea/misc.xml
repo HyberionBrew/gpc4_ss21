@@ -6,6 +6,8 @@
   <component name="CidrRootsConfiguration">
     <sourceRoots>
       <file path="$PROJECT_DIR$/arc/tessla_cuda/src" />
+      <file path="$PROJECT_DIR$/arc/tessla_seq/src" />
+      <file path="$PROJECT_DIR$/arc/vm/src" />
     </sourceRoots>
   </component>
 </project>

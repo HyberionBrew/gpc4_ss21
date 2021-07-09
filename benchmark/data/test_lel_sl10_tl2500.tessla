@@ -1,0 +1,21 @@
+in a: Events[Int]
+def b = a * 10
+def c = count(b)
+def d = time(c)
+def e = time(d)
+def f = time(e)
+def g = count(f)
+def h = last(g, f)
+def i = merge(h, f)
+def j = count(f)
+def k = time(j)
+out b
+out c
+out d
+out e
+out f
+out g
+out h
+out i
+out j
+out k
