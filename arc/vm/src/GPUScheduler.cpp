@@ -49,7 +49,7 @@ bool GPUScheduler::next() {
             set_reg(inst.rd, add_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_muli:
-            std::cout << ": MulI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, mul_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_subi:
             std::cout << ": SubI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
