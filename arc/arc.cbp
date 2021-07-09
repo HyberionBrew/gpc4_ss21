@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="arc"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\tessla_seq\;CMake Files\tessla_seq\src\;CMake Files\tessla_seq\test\;CMake Files\tessla_seq\benchmark\;CMake Files\tessla_cuda\;CMake Files\tessla_cuda\src\;CMake Files\tessla_cuda\test\;CMake Files\external\;CMake Files\external\lfqueue\;CMake Files\vm\;CMake Files\vm\src\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="package_source">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 package_source"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="package">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 package"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_seq">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/libtessla_seq.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 tessla_seq"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_seq/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/libtessla_seq.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 tessla_seq/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_seq_test">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 tessla_seq_test"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_seq_test/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 tessla_seq_test/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="reader_benchmark">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/reader_benchmark" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 reader_benchmark"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="reader_benchmark/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/reader_benchmark" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 reader_benchmark/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_cuda">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/libtessla_cuda.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 tessla_cuda"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_cuda/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/libtessla_cuda.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 tessla_cuda/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_cuda_test">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 tessla_cuda_test"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tessla_cuda_test/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 tessla_cuda_test/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="uninstall">
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 uninstall"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/liblfqueue.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/liblfqueue.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue.static">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/liblfqueue.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue.static"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue.static/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/liblfqueue.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue.static/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue-example">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/lfqueue-example" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue-example"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lfqueue-example/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/lfqueue-example" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 lfqueue-example/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="arc">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/arc" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/vm/src"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 arc"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="arc/fast">
+				<Option output="/mnt/bulk/git/gpc4_ss21/arc/arc" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/bulk/git/gpc4_ss21/arc"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/opt/cuda/include"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/vm/src"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src"/>
+					<Add directory="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 arc/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/mnt/bulk/git/gpc4_ss21/arc/vm/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/example.c">
+			<Option target="lfqueue-example"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/lfqueue.c">
+			<Option target="lfqueue"/>
+			<Option target="lfqueue.static"/>
+			<Option target="lfqueue-example"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/lfqueue.h">
+			<Option target="lfqueue"/>
+			<Option target="lfqueue.static"/>
+			<Option target="lfqueue-example"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/GPUReader.cu">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/GPUReader.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Stream.cu">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/Stream.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctionHelper.cu">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctionHelper.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctions.cu">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctions.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctionsThrust.cu">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/StreamFunctionsThrust.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/device_information.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/helper.cuh">
+			<Option target="tessla_cuda"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_benchmark.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_cuda.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_last.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_main.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_slift.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/test_time.cpp">
+			<Option target="tessla_cuda_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/reader_benchmark.cpp">
+			<Option target="reader_benchmark"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Debug.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Debug.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Event.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Event.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Reader.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Reader.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Stream.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Stream.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/StreamFunctions.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/StreamFunctions.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Writer.cpp">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/Writer.h">
+			<Option target="tessla_seq"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/test_main.cpp">
+			<Option target="tessla_seq_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/test_test.cpp">
+			<Option target="tessla_seq_test"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/DebugScheduler.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/DebugScheduler.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/Decode.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/Decode.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/GPUScheduler.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/GPUScheduler.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/InstrInterface.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/InstrInterface.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/Scheduler.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/Scheduler.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/SequentialScheduler.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/SequentialScheduler.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/main.cpp">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/main.h">
+			<Option target="arc"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_seq\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_seq\src\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_seq\test\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_seq/benchmark/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_seq\benchmark\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_cuda\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_cuda\src\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/tessla_cuda/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\tessla_cuda\test\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\lfqueue\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/external/lfqueue/cmake_uninstall.cmake.in">
+			<Option virtualFolder="CMake Files\external\lfqueue\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\vm\"/>
+		</Unit>
+		<Unit filename="/mnt/bulk/git/gpc4_ss21/arc/vm/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\vm\src\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

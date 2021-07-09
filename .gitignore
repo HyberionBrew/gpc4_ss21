@@ -209,3 +209,9 @@ arc/test/bin
 
 # Tesla output files
 *.out
+
+# Output files
+arc/arc
+arc/external/*
+benchmark/fulltest/bin/*
+winder/target/*
