@@ -174,14 +174,14 @@ GPUUnitStream::GPUUnitStream(int*timestamp, size_t size) {
 }
 
 
-void UnitStream::free_device(){
+void GPUUnitStream::free_device(){
     CHECK(cudaFree(this->device_timestamp));
     CHECK(cudaFree(this->device_offset));
    // free(this->host_timestamp);
     free(this->host_offset);
 }
 
-void UnitStream::copy_to_device(){
+void GPUUnitStream::copy_to_device(){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -191,7 +191,7 @@ void UnitStream::copy_to_device(){
 
 }
 
-void UnitStream::copy_to_device(bool valid){
+void GPUUnitStream::copy_to_device(bool valid){
     onDevice =true;
     int sizeAllocate = this->size * sizeof(int);
     CHECK(cudaMalloc((int**)&this->device_timestamp, sizeAllocate));
@@ -203,7 +203,7 @@ void UnitStream::copy_to_device(bool valid){
 }
 
 
-void UnitStream::copy_to_host() {
+void GPUUnitStream::copy_to_host() {
     int sizeAllocate = this->size * sizeof(int);
     //dest,src
     memset(this->host_timestamp,  0, sizeAllocate);
