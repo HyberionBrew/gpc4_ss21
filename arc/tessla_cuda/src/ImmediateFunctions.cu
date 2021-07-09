@@ -58,7 +58,7 @@ shared_ptr<GPUIntStream> mul_imm (shared_ptr<GPUIntStream> input, size_t imm, cu
 
     // Calculate using GPU
     std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
-    add_imm_cuda <<<blocks, block_size, 0, stream>>> (input->device_values, imm, result->device_values);
+    mul_imm_cuda <<<blocks, block_size, 0, stream>>> (input->device_values, imm, result->device_values);
 
     return result;
 }
