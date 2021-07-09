@@ -52,10 +52,12 @@ bool GPUScheduler::next() {
             set_reg(inst.rd, mul_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_subi:
-            std::cout << ": SubI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // stream - imm
+            set_reg(inst.rd, sub_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_subii:
-            std::cout << ": SubII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // imm - stream
+            set_reg(inst.rd, sub_inv_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_divi:
             std::cout << ": DivI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
