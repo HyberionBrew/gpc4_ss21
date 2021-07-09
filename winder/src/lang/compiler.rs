@@ -209,7 +209,6 @@ impl CompilableStat for OutputStat {
         // unwrap asserted by static check
         let r = c.get_reg(&self.id);
         c.out_regs.push((self.id.clone(),r));
-        c.push_instruction(Instruction::Store(r));
     }
 }
 
@@ -580,7 +579,12 @@ impl Compiler {
         // unwrap ok because of static and dependency check
         if *self.last_use.get(id).unwrap() == self.curr_index {
             if !self.out_nodes.iter().any(|(x,_)| x == id) { // don't free output regs
+                // free non-output register
                 self.free_reg(id);
+            } else {
+                // store output register (to host) since last usage has been completed
+                // unwrap ok because node is in dependency graph
+                self.instructions.push(Instruction::Store(*self.reg_map.get(id).unwrap()))
             }
         }
     }
