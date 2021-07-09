@@ -5,17 +5,6 @@
 #ifndef TESSLA_CUDA_STREAM_CUH
 #define TESSLA_CUDA_STREAM_CUH
 
-/**
- * Stream class, can contain either an GPUIntStream or a GPUUnitStream
- */
-/*class Stream {
-public:
-    virtual void copy_to_device()=0;
-    virtual void copy_to_host()=0;
-    size_t size;
-    bool OnDevice;
-};*/
-
 class GPUIntStream{
 public:
     //DO NOT USE DESTRUCTOR! LEADS TO ERROR IN CONJUNCTION WITH

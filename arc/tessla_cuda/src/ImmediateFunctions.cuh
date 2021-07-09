@@ -1,0 +1,20 @@
+//
+// Created by fabian on 09/07/2021.
+//
+
+#ifndef ARC_IMMEDIATEFUNCTIONS_CUH
+#define ARC_IMMEDIATEFUNCTIONS_CUH
+
+#include "GPUStream.cuh"
+#include <memory>
+#include <cuda_runtime.h>
+
+using namespace std;
+
+// Calling interface
+shared_ptr<GPUIntStream> add_imm(shared_ptr<GPUIntStream> input, size_t imm, cudaStream_t stream);
+
+// CUDA operations. Do not use externally
+__global__ void add_imm_cuda (const int *input_val, int imm, int *output_val);
+
+#endif //ARC_IMMEDIATEFUNCTIONS_CUH
