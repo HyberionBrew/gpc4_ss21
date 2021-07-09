@@ -5,6 +5,7 @@
 #include "GPUScheduler.h"
 #include <GPUReader.cuh>
 #include <StreamFunctions.cuh>
+#include <ImmediateFunctions.cuh>
 #include <iostream>
 #include <cassert>
 
@@ -45,7 +46,7 @@ bool GPUScheduler::next() {
             std::cout << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
             break;
         case inst_addi:
-            std::cout << ": AddI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, add_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_muli:
             std::cout << ": MulI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
