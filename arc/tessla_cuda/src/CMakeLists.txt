@@ -3,7 +3,7 @@ include_directories(${PROJECT_SOURCE_DIR}/tessla_cuda/src)
 
 add_library(tessla_cuda
         StreamFunctions.cuh
-        GPUReader.cuh Reader.cu
+        GPUReader.cuh GPUReader.cu
         Stream.cuh Stream.cu
         StreamFunctions.cu
         StreamFunctionHelper.cuh StreamFunctionHelper.cu
