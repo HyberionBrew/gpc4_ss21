@@ -47,8 +47,9 @@ std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::share
 
     int resultIndex = 0; // TODO: Change?
     int prevResultsCount = r_prune->size; // TODO: Change?
-    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>();
+    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>(s->size, true);
     *result->host_offset = (int) result->size; // TODO: Change?
+    memset(result->host_timestamp, -1, s->size * sizeof(int));
 
     // Iteratively search for new output events
     while (prevResultsCount > 0) {
@@ -58,7 +59,7 @@ std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::share
         calcThreadsBlocks(threads, &block_size, &blocks);
 
         printf("Scheduled delay() with <<<%d,%d>>>, %i threads \n",blocks,block_size, threads);
-        delay_cuda<<<blocks, block_size, 0, stream>>>(s->device_timestamp, s->device_values, prevResults.device_timestamp, tempResults.device_timestamp, threads, s->size, s->device_offset, prevResults.device_offset, tempResults.device_offset, stream);
+        delay_cuda<<<blocks, block_size, 0, stream>>>(s_prune->device_timestamp, s_prune->device_values, prevResults.device_timestamp, tempResults.device_timestamp, threads, s_prune->size, s_prune->device_offset, prevResults.device_offset, tempResults.device_offset, stream);
         tempResults.copy_to_host(); 
 
         // Merge output events into existing output events

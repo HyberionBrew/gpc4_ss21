@@ -98,7 +98,7 @@ GPUIntStream::GPUIntStream(GPUIntStream &stream, bool onDevice) : GPUIntStream(s
     if (onDevice) {
         this->device_offset = stream.device_offset;
         // TODO make this more high performance
-        CHECK(cudaMemcpy(this->device_offset, stream.device_offset, allocSize, cudaMemcpyDeviceToDevice));
+        CHECK(cudaMemcpy(this->device_offset, stream.device_offset, sizeof(int), cudaMemcpyDeviceToDevice));
         CHECK(cudaMemcpy(this->device_timestamp, stream.device_timestamp, allocSize, cudaMemcpyDeviceToDevice));
         CHECK(cudaMemcpy(this->device_values, stream.device_values, allocSize, cudaMemcpyDeviceToDevice));
     }
