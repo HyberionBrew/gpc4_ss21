@@ -5,6 +5,7 @@ add_library(tessla_cuda
         StreamFunctions.cuh
         GPUReader.cuh GPUReader.cu
         GPUStream.cuh GPUStream.cu
+        GPUWriter.cuh GPUWriter.cu
         StreamFunctions.cu
         ImmediateFunctions.cu
         StreamFunctionHelper.cuh StreamFunctionHelper.cu
