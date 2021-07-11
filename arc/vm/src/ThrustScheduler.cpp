@@ -39,7 +39,7 @@ bool ThrustScheduler::next() {
             //set_reg(inst.rd, time(get_intst(inst.r1), 0));
             break;
         case inst_merge:
-            std::cout << ": Merge, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_merge, 0));
             break;
         case inst_count:
             std::cout << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
