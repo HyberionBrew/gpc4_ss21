@@ -16,19 +16,19 @@ bool GPUScheduler::next() {
     Instruction inst = instrInterface.pop();
     switch (inst.type) {
         case inst_add:
-            std::cout << ": Add, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), ADD));
             break;
         case inst_mul:
-            std::cout << ": Mul, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MUL));
             break;;
         case inst_sub:
-            std::cout << ": Sub, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), SUB));
             break;
         case inst_div:
-            std::cout << ": Div, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), DIV));
             break;
         case inst_mod:
-            std::cout << ": Mod, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MOD));
             break;
         case inst_delay:
             set_reg(inst.rd, delay(get_intst(inst.r1), get_ust(inst.r2), 0));
@@ -40,7 +40,7 @@ bool GPUScheduler::next() {
             set_reg(inst.rd, time(get_intst(inst.r1), 0));
             break;
         case inst_merge:
-            std::cout << ": Merge, R1: " << inst.r1 << " R2: " << inst.r2 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MRG));
             break;
         case inst_count:
             std::cout << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
