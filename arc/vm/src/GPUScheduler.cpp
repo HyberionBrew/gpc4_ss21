@@ -5,6 +5,7 @@
 #include "GPUScheduler.h"
 #include <GPUReader.cuh>
 #include <StreamFunctions.cuh>
+#include <ImmediateFunctions.cuh>
 #include <iostream>
 #include <cassert>
 
@@ -45,28 +46,34 @@ bool GPUScheduler::next() {
             std::cout << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
             break;
         case inst_addi:
-            std::cout << ": AddI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, add_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_muli:
-            std::cout << ": MulI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, mul_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_subi:
-            std::cout << ": SubI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // stream - imm
+            set_reg(inst.rd, sub_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_subii:
-            std::cout << ": SubII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // imm - stream
+            set_reg(inst.rd, sub_inv_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_divi:
-            std::cout << ": DivI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // stream / imm
+            set_reg(inst.rd, div_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_divii:
-            std::cout << ": DivII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // imm / stream
+            set_reg(inst.rd, div_inv_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_modi:
-            std::cout << ": ModI, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // stream % imm
+            set_reg(inst.rd, mod_imm(get_intst(inst.r1), inst.imm, 0));;
             break;
         case inst_modii:
-            std::cout << ": ModII, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
+            // imm % stream
+            set_reg(inst.rd, mod_inv_imm(get_intst(inst.r1), inst.imm, 0));
             break;
         case inst_default:
             std::cout << ": Default, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
