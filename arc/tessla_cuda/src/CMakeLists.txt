@@ -14,3 +14,4 @@ add_library(tessla_cuda
 
 # Set CUDA target architectures
 set_property(TARGET tessla_cuda PROPERTY CUDA_ARCHITECTURES 61 75)
+set_target_properties(tessla_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
