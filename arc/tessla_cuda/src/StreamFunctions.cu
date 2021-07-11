@@ -101,14 +101,12 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
         badsort<<<1, 1, 0, stream>>>(tempResults, threads);
         cudaDeviceSynchronize();
 
-        printf("Old offset: %i\n", *tempResults_offset);
         calculate_offset<<<blocks, block_size, 0, stream>>>(tempResults + *tempResults_offset, tempResults_offset, threads);
+        cudaDeviceSynchronize();
         
         prevResultsCount = threads - (*tempResults_offset - *reset_offset);
-        printf("Updated prevResultsCount: %i = %i - (%i - %i)\n", prevResultsCount, threads, *tempResults_offset, *reset_offset);
 
         if (prevResultsCount > 0) {
-            printf("Copying to results...\n");
             memcpy(result_timestamps + resultCount, tempResults + *tempResults_offset, prevResultsCount * sizeof(int));
             resultCount += prevResultsCount;
         }
@@ -120,25 +118,18 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
         tempResults = temp_timestamps;
         tempResults_offset = temp_offset;
         *tempResults_offset = *reset_offset;
-        printf("reset_offset new: %i\n", *reset_offset);
 
     }
-    cudaDeviceSynchronize();
     badsort<<<1, 1, 0, stream>>>(result_timestamps, result_size);
     cudaDeviceSynchronize();
-    printf("result sort done, results: \n");
     int threads = result_size;
     int block_size = 0;
     int blocks = 0;
     calcThreadsBlocks_device(threads, &block_size, &blocks);
 
     *result_offset = 0;
-    printf("old results offset: %i\n", *result_offset);
-    printf("resultCount: %i\n", resultCount);
     //calculate_offset<<<blocks, block_size, 0, stream>>>(result_timestamps, result_offset, threads);
     *result_offset = result_size - resultCount;
-    cudaDeviceSynchronize();
-    printf("offset (%i / %i) done, results: \n", *result_offset, result_size);
 }
 
 std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
@@ -154,6 +145,7 @@ std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::share
 
     // Launch actual iterative algorithm on device
     delay_iteration<<<1, 1, 0, stream>>>(prevResults->device_timestamp, prevResults->device_offset, prevResults->size, s_prune->device_timestamp, s_prune->device_values, s_prune->device_offset, s_prune->size, result->device_timestamp, result->device_offset, result->size, stream);
+    cudaDeviceSynchronize();
 
     return result;
 }
@@ -172,6 +164,7 @@ void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GP
     
     printf("Scheduled delay_preliminary_prune() with <<<%d,%d>>>, %i threads \n",blocks,block_size, threads);
     delay_cuda_preliminary_prune<<<blocks, block_size, 0, stream>>>(s->device_timestamp, s->device_values, r->device_timestamp, threads, r->size, s->device_offset, r->device_offset, stream);
+    cudaDeviceSynchronize();
 }
 
 __global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int size, int resetSize, int *offset, int *resetOffset, cudaStream_t stream) {
