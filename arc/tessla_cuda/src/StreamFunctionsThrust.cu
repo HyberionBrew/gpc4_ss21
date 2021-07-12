@@ -345,9 +345,11 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
 
 struct delay_invalidate : public thrust::binary_function<int, int, int>
 {
+  int maxTimestamp;
+  delay_invalidate(int max): maxTimestamp(max) {};
   __host__ __device__
   int operator()(int output, int nextReset) {
-    if (nextReset < output)
+    if (nextReset < output || maxTimestamp < output)
       return -1;
     return output;
   }
@@ -386,20 +388,21 @@ std::shared_ptr<GPUUnitStream> delay_thrust(std::shared_ptr<GPUIntStream> inputD
                       delay_outputs.begin(),
                       thrust::plus<int>());
     
+    int maxTimestamp = inputDelay->host_timestamp[inputDelay->size - 1] > inputReset->host_timestamp[inputReset->size - 1] ? inputDelay->host_timestamp[inputDelay->size - 1] : inputReset->host_timestamp[inputReset->size - 1];
     thrust::device_vector<int> delay_timestamps(inputDelay->size - *offsetDelay);
     thrust::copy(inputDelay_timestamps, inputDelay_timestamps + inputDelay->size - *offsetDelay,
                  delay_timestamps.begin());
     thrust::transform(delay_outputs.begin(), delay_outputs.end(),
                       nextResets_timestamps.begin(),
                       delay_outputs.begin(),
-                      delay_invalidate());
+                      delay_invalidate(maxTimestamp));
 
     auto inputOutput_begin = thrust::make_zip_iterator(thrust::make_tuple(delay_timestamps.begin(), delay_outputs.begin()));
     auto inputOutput_end = thrust::make_zip_iterator(thrust::make_tuple(delay_timestamps.end(), delay_outputs.end()));
     
     // Remove invalidated
     auto inputOutput_filteredEnd = thrust::remove_if(inputOutput_begin, inputOutput_end, delay_invalidated_filter());
-    std::cout << "removed " << inputOutput_end - inputOutput_filteredEnd << " elements" << std::endl;
+    //std::cout << "removed " << inputOutput_end - inputOutput_filteredEnd << " elements" << std::endl;
 
     // Iteratively generate new outputs
     thrust::device_vector<int> iteration_input(inputReset->size);
