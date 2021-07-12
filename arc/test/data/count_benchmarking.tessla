@@ -1,0 +1,3 @@
+in a: Events[Unit]
+def y := count(a)
+out y

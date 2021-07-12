@@ -456,12 +456,28 @@ std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input)
   auto offset = thrust::device_pointer_cast(input->device_offset);
   auto input_ts = thrust::device_pointer_cast(input->device_timestamp+*offset);
 
+  //std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
+  //Standard guard
   std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
+  int sizeAllocated = (input->size + 1) * sizeof(int);
+  result->size = (input->size + 1);
+  result->host_timestamp = (int *) malloc((input->size + 1) * sizeof(int));
+  result->host_values = (int *) malloc((input->size + 1) * sizeof(int));
+
+  // Check if we have enough memory left
+  if (result->host_values == nullptr || result->host_timestamp == nullptr) {
+      throw std::runtime_error("Out of memory.");
+  }
+
+  memset(result->host_timestamp, 0, sizeAllocated);
+  memset(result->host_values, 0, sizeAllocated);
+  result->copy_to_device(false);
+
 
   // set device offset accordingly
-  result->device_offset = input->device_offset; 
+  *thrust::device_pointer_cast(result->device_offset) = *thrust::device_pointer_cast(input->device_offset); 
 
-  bool input_ts_z = input_ts[0] == 0;
+  bool input_ts_z = input_ts[*offset] == 0;
 
   int size_alloc = 0; 
   if (input_ts_z) {
@@ -474,16 +490,14 @@ std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input)
     // Result timestamps start with value 1 => same event count as input
 
     result->size = size_alloc;
-    cudaMalloc((void **) result->device_timestamp, (size_alloc)*sizeof(int));
-    cudaMalloc((void **) result->device_values, (size_alloc)*sizeof(int));
-
-    auto offset = result->device_offset;
+    CHECK(cudaMalloc((void **) &result->device_timestamp, (size_alloc)*sizeof(int)));
+    CHECK(cudaMalloc((void **) &result->device_values, (size_alloc)*sizeof(int)));
 
     auto dest_first = thrust::device_pointer_cast(result->device_values + *offset);
     auto dest_last = thrust::device_pointer_cast(result->device_values+ size_alloc);
 
     // copy device timestamps
-    thrust::copy_n(input->device_timestamp, input->size, result->device_timestamp);
+    thrust::copy_n(thrust::device_pointer_cast(input->device_timestamp), input->size, thrust::device_pointer_cast(result->device_timestamp));
 
     thrust::sequence(dest_first, dest_last, 1);
 
@@ -491,21 +505,19 @@ std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input)
     // Result timestamps start with value 0 => one more event than input
     int size_alloc = (input->size + 1);
     result->size = size_alloc;
-    cudaMalloc((void **) result->device_timestamp, (size_alloc)*sizeof(int));
-    cudaMalloc((void **) result->device_values, (size_alloc)*sizeof(int));
-
-    auto offset = result->device_offset;
+    CHECK(cudaMalloc((void **) &result->device_timestamp, (size_alloc)*sizeof(int)));
+    CHECK(cudaMalloc((void **) &result->device_values, (size_alloc)*sizeof(int)));
 
     // first is offset by 1
-    auto dest_first = thrust::device_pointer_cast(result->device_values + *offset + 1);
-    auto dest_last = thrust::device_pointer_cast(result->device_values+ size_alloc);
+    auto dest_first = thrust::device_pointer_cast(result->device_values + *offset);
+    auto dest_last = thrust::device_pointer_cast(result->device_values + size_alloc);
 
     // set first timestamp to 0 and then copy timestamps from input
     auto result_ts = thrust::device_pointer_cast(result->device_timestamp+*offset);
     result_ts[0] = 0;
 
     // copy device timestamps
-    thrust::copy_n(input->device_timestamp, input->size, result->device_timestamp+1);
+    thrust::copy_n(thrust::device_pointer_cast(input->device_timestamp), input->size, thrust::device_pointer_cast(result->device_timestamp + 1));
 
     thrust::sequence(dest_first, dest_last, 0);
   }
