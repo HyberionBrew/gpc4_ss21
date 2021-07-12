@@ -53,4 +53,7 @@ __global__ void inval_multiples_merge(  int op, int threads,
                                         int x_len, int y_len,
                                         int *x_offset_d, int *y_offset_d,
                                         int *out_ts, int *invalid, int *valid);
+
+__device__ void selection_sort( int *data, int left, int right );
+__global__ void cdp_simple_quicksort(int *data, int left, int right, int depth );
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH

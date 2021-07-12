@@ -1,10 +1,10 @@
 # Register VM Instruction Set
 
-The format operates on Big Endian.
-
 ## Instruction Format
 
+
 __Op-Types depending on first two bits__:
+
 - R-Type: `00`
 - I-Type: `01`
 - M-Type: `10`
@@ -79,12 +79,14 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 |---------|-----------------------|-------------------------------------------------------|
 | 0xFF    | Exit                  | Exit program (last instruction)                       |
 
-# Header
-* Signature: `58 52 41 59`
-* Fields are always delimited by `0xF0F0`
-* End of header marked by `0xFFFF`
-* Header fields must appear in order, not required fields may be omitted
-* For Input streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
+## Header
+
+- All integers are interpreted in big-endian order.
+- Signature: `58 52 41 59` (XRAY)
+- Fields are always delimited by `0xF0F0`
+- End of header marked by `0xFFFF`
+- Header fields must appear in order, not required fields may be omitted
+- For Input streams, the stream type is defined as `00` for Unit and `01` for Integer streams.
 
 | Header (HEX)  |     Meaning                                   |      alternatives                                  |
 |---------------|-----------------------------------------------|----------------------------------------------------|
@@ -93,6 +95,20 @@ XXXXXXXX  XXXXXXXX  XXXXXXXX
 | 49 4E 53 54   | Input stream name (may appear more than once) | 2/4 Bytes reg name, 1 Byte Type, ASCII stream name |
 | 4F 55 53 54   | Output stream name (may appear more than once)| 2/4 Bytes reg name, ASCII stream name              |
 
-# Example
-Example for version number 1.0, 2 byte register length, i1 as input stream in register 1234 and o2 as output in register 4321:
-`58 52 41 59 53 50 45 43 00 01 00 00 F0 F0 52 45 47 4C 00 F0 F0 49 4E 53 54 04 D2 00 69 31 00 F0 F0 4F 55 53 54 10 E1 6f 32 00 F0 F0 FF FF FF`
+## Example
+
+Example for version number 1.0, 2 byte register length, `i1` as input stream in register `1234` and `o2` as output in
+register `4321` without instructions except `Exit`. Notes in brackets are the decoded meaning of the corresponding
+bytes as described above. Strings outside of brackets the decoded bytes in UTF8.
+
+```
+Bytes                                   |   Meaning
+----------------------------------------|-------------------------------------------------------------------
+58 52 41 59                             |   XRAY 
+53 50 45 43 00 01 00 00 F0 F0           |   SPEC (Version 1.0, delimiter)
+52 45 47 4C 00 F0 F0                    |   REGL (2 bytes, delimiter)
+49 4E 53 54 04 D2 00 69 31 00 F0 F0     |   INST (1234, unit stream) i1 (string-terminating byte, delimiter)
+4F 55 53 54 10 E1 6f 32 00 F0 F0        |   OUST (4321) o2 (string-terminating byte, delimiter)
+FF FF                                   |   (Header end)
+FF                                      |   (Exit Instruction)
+```

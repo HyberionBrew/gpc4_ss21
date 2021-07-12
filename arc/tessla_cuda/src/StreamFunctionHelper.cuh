@@ -24,4 +24,6 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
                                 lift_func fct, lift_op op, 
                                 int *valid, int *invalid);
                                 
+__device__ void selection_sort( int *data, int left, int right );
+__global__ void cdp_simple_quicksort(int *data, int left, int right, int depth );
 #endif //TESSLA_CUDA_STREAMFUNCTIONHELPER_CUH

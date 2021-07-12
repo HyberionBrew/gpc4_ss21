@@ -27,7 +27,7 @@ pub enum Instruction {
     DivII(u32, i32, u32),
     ModI(u32, i32, u32),
     ModII(u32, i32, u32),
-    Default(u32, i32),
+    Default(i32, u32),
     Load(u32),
     // currently unused
     // Load4(u32),
@@ -251,7 +251,7 @@ impl CompilableExpr for DefaultExpr {
     fn compute_last_use(&self, _c: &mut Compiler) { }
 
     fn compile(&self, c: &mut Compiler, rd: &Vec<u8>) {
-        c.push_instruction(Instruction::Default(rd!(c,rd), self.value));
+        c.push_instruction(Instruction::Default(self.value, rd!(c,rd)));
     }
 }
 

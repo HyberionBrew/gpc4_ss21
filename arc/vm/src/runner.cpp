@@ -7,6 +7,7 @@
 #include "DebugScheduler.h"
 #include "GPUScheduler.h"
 #include "SequentialScheduler.h"
+#include <ThrustScheduler.h>
 #include <iostream>
 #include <unistd.h>
 #include <thread>
@@ -66,6 +67,10 @@ void schedule (InstrInterface & interface, scheduler type, std::string in_file, 
         case sequential:
             scheduler = new SequentialScheduler(interface);
             if (verbose) str << "Sequential";
+            break;
+        case thrust:
+            scheduler = new ThrustScheduler(interface);
+            if (verbose) str << "Thrust";
             break;
         default:
             std::cout << "Required scheduler not yet implemented.\n";

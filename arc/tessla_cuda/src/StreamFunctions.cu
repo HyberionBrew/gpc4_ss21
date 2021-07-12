@@ -98,7 +98,7 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
         delay_cuda<<<blocks, block_size, 0, stream>>>(inputInt_timestamps, inputInt_values, reset_timestamps, tempResults, threads, inputInt_size, inputInt_offset, reset_offset, tempResults_offset, stream);
         cudaDeviceSynchronize();
 
-        badsort<<<1, 1, 0, stream>>>(tempResults, threads);
+        cdp_simple_quicksort<<<1, 1, 0, stream>>>(tempResults, 0, threads - 1, 0);
         cudaDeviceSynchronize();
 
         calculate_offset<<<blocks, block_size, 0, stream>>>(tempResults + *tempResults_offset, tempResults_offset, threads);
@@ -120,7 +120,7 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
         *tempResults_offset = *reset_offset;
 
     }
-    badsort<<<1, 1, 0, stream>>>(result_timestamps, result_size);
+    cdp_simple_quicksort<<<1, 1, 0, stream>>>(result_timestamps, 0, result_size - 1, 0);
     cudaDeviceSynchronize();
     int threads = result_size;
     int block_size = 0;
