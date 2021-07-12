@@ -2,8 +2,8 @@
 // Created by fabian on 31/05/2021.
 //
 
-#ifndef GPC4_SS21_GPUSCHEDULER_H
-#define GPC4_SS21_GPUSCHEDULER_H
+#ifndef GPC4_SS21_THRUSTSCHEDULER_H
+#define GPC4_SS21_THRUSTSCHEDULER_H
 
 #include "Scheduler.h"
 #include <GPUStream.cuh>
@@ -30,4 +30,4 @@ public:
 };
 
 
-#endif //GPC4_SS21_GPUSCHEDULER_H
+#endif //GPC4_SS21_THRUSTSCHEDULER_H
