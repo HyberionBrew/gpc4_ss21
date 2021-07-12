@@ -452,6 +452,22 @@ std::shared_ptr<GPUUnitStream> delay_thrust(std::shared_ptr<GPUIntStream> inputD
     return result;
 }
 
+std::shared_ptr<GPUIntStream> time_thrust(std::shared_ptr<GPUUnitStream> input) {
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
+
+    size_t size_alloc = input->size;
+    result->size = size_alloc;
+    result->device_offset = input->device_offset;
+    cudaMalloc((void **) result->device_timestamp, (size_alloc)*sizeof(int));
+    cudaMalloc((void **) result->device_values, (size_alloc)*sizeof(int));
+
+    auto dest = thrust::device_pointer_cast(result->device_values + *result->device_offset);
+    auto source = thrust::device_pointer_cast(input->device_timestamp + *input->device_offset);
+    thrust::copy_n(source, input->size, dest);
+
+    return result;
+}
+
 std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input){
   auto offset = thrust::device_pointer_cast(input->device_offset);
   auto input_ts = thrust::device_pointer_cast(input->device_timestamp+*offset);
