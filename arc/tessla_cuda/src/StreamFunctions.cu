@@ -87,6 +87,7 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
     memset(tempResults, -1, reset_size * sizeof(int));
 
     int resultCount = 0;
+    int maxTimestamp = inputInt_timestamps[inputInt_size-1] > reset_timestamps[reset_size-1] ? inputInt_timestamps[inputInt_size-1] : reset_timestamps[reset_size-1];
 
     int prevResultsCount = reset_size;
     while (prevResultsCount > 0) {
@@ -95,7 +96,7 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
         int blocks = 0;
         calcThreadsBlocks_device(threads, &block_size, &blocks);
 
-        delay_cuda<<<blocks, block_size, 0, stream>>>(inputInt_timestamps, inputInt_values, reset_timestamps, tempResults, threads, inputInt_size, inputInt_offset, reset_offset, tempResults_offset, stream);
+        delay_cuda<<<blocks, block_size, 0, stream>>>(inputInt_timestamps, inputInt_values, reset_timestamps, tempResults, threads, inputInt_size, inputInt_offset, reset_offset, tempResults_offset, maxTimestamp, stream);
         cudaDeviceSynchronize();
 
         cdp_simple_quicksort<<<1, 1, 0, stream>>>(tempResults, 0, threads - 1, 0);
@@ -235,7 +236,7 @@ __device__ int lookUpNextElement(int size, int searchValue, int *timestamps) {
 }
 
 
-__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset,cudaStream_t stream) {
+__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset, int maxTimestamp, cudaStream_t stream) {
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
     inputIntTimestamps += *inputOffset;
     inputIntValues += *inputOffset;
@@ -246,7 +247,11 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
         // For each tempEvent, check if there's a matching (valid) event in IntStream s
         int index = lookUpElement(inputSize, resetTimestamps[i], inputIntTimestamps);
         if (index != INT_MIN && inputIntValues[index] != -1) {
-            results[i] = inputIntTimestamps[index] + inputIntValues[index];
+            int outputTimestamp = inputIntTimestamps[index] + inputIntValues[index];
+            if (outputTimestamp <= maxTimestamp)
+                results[i] = outputTimestamp;
+            else
+                results[i] = -1;
         } else {
             results[i] = -1;
         }

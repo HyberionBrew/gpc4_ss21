@@ -31,7 +31,7 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
 __global__ void final_reduce(int* block_red,int size,int* offset);
 
 __global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int size, int resetSize, int *offset, int *resetOffset, cudaStream_t stream);
-__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset, cudaStream_t stream);
+__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset, int maxTimestamp, cudaStream_t stream);
 __device__ int lookUpElement(int size,int searchValue, int * input_timestamp);
 __device__ int lookUpNextElement(int size,int searchValue, int * timestamps);
 __global__ void calculate_offset(int* timestamps, int* offset, int size);
