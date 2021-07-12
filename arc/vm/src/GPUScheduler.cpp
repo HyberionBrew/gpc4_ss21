@@ -8,6 +8,7 @@
 #include <ImmediateFunctions.cuh>
 #include <iostream>
 #include <cassert>
+#include "GPUWriter.cuh"
 
 GPUScheduler::GPUScheduler(InstrInterface & interface) : Scheduler(interface) {
 }
@@ -176,6 +177,19 @@ void GPUScheduler::warmup(std::string in_file) {
 }
 
 void GPUScheduler::cooldown(std::string outfile) {
+    GPUWriter writer(outfile);
+    for (auto &stream : out_streams) {
+        if (get_ust(stream.regname) != nullptr) {
+            // Add unit stream
+            writer.addUnitStream(stream.name, get_ust(stream.regname));
+        } else if (get_intst(stream.regname) != nullptr) {
+            // Add integer stream
+            writer.addIntStream((stream.name), get_intst(stream.regname));
+        } else {
+            assert(false);
+        }
+    }
+    writer.writeOutputFile();
 }
 
 void GPUScheduler::set_reg(size_t pos, shared_ptr<GPUIntStream> stream) {
