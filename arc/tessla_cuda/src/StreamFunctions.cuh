@@ -41,4 +41,16 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int op, int *valid, int *invalid,
                             int *out_ts_cpy, int *out_v_cpy, int *invalid_offset,
                             int *x_offset, int *y_offset);
+                            
+__global__ void remove_invalid( int threads, int *invalid, int *valid, 
+                                int x_len, int y_len, 
+                                int *out_ts_cpy, int *out_ts, 
+                                int *out_v_cpy, int *out_v,
+                                int *x_offset_d, int *y_offset_d,
+                                int *result_offset, int op);
+
+__global__ void inval_multiples_merge(  int op, int threads,
+                                        int x_len, int y_len,
+                                        int *x_offset_d, int *y_offset_d,
+                                        int *out_ts, int *invalid, int *valid);
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH
