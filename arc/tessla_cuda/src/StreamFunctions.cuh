@@ -41,4 +41,7 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int op, int *valid, int *invalid,
                             int *out_ts_cpy, int *out_v_cpy, int *invalid_offset,
                             int *x_offset, int *y_offset);
+
+__device__ void selection_sort( int *data, int left, int right );
+__global__ void cdp_simple_quicksort(int *data, int left, int right, int depth );
 #endif //TESSLA_CUDA_STREAMFUNCTIONS_CUH
