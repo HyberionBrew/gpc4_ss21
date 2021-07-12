@@ -13,6 +13,7 @@
 #include <thrust/merge.h>
 #include <thrust/functional.h>
 #include <thrust/pair.h>
+#include <thrust/scan.h>
 
 struct is_larger_zero
 {
@@ -445,4 +446,52 @@ std::shared_ptr<GPUUnitStream> delay_thrust(std::shared_ptr<GPUIntStream> inputD
     thrust::copy(results.begin(), results_end, result->device_timestamp);
 
     return result;
+}
+
+std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input){
+  auto offset = thrust::device_pointer_cast(input->device_offset);
+  auto input_ts = thrust::device_pointer_cast(input->device_timestamp+*offset);
+
+  std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
+
+  // Increase size by 1 to handle potentially new timestamp 0
+  int size_alloc = (input->size + 1) * sizeof(int);
+  result->size = size_alloc;
+  cudaMalloc((void **) result->device_timestamp, (size_alloc)*sizeof(int));
+  cudaMalloc((void **) result->device_values, (size_alloc)*sizeof(int));
+
+  // create helper array for prefix sum
+  int *helper;
+  cudaMalloc((void **) helper, (input->size+1)*sizeof(int));
+  auto helper_start = thrust::device_pointer_cast(helper+*offset);
+  auto helper_end = thrust::device_pointer_cast(helper+input->size+1);
+  thrust::fill(helper_start, helper_end, 1);
+
+  // set first timestamp to 0 and then copy timestamps from input
+  auto result_ts = thrust::device_pointer_cast(result->device_timestamp);
+  result_ts[0] = 0;
+  // copy device timestamps
+  thrust::copy_n(input->device_timestamp, input->size, result->device_timestamp+1);
+
+  // destination is at offset - 1, handle accordingly in if statement
+  auto dest = thrust::device_pointer_cast(result->device_values+ *offset - 1);
+
+  if (input_ts[0] == 0){
+    // Result timestamps start with value 1 => inclusive prefix sum and same event count as input
+    thrust::inclusive_scan(helper_start + 1, helper_end, dest + 1);
+
+    // set device offset accordingly
+    result->device_offset = input->device_offset + 1; 
+  } else {
+    // Result timestamps start with value 0 => exclusive prefix sum and one event more than input
+    thrust::exclusive_scan(helper_start, helper_end, dest);
+
+    // set device offset accordingly
+    result->device_offset = input->device_offset; 
+  }
+
+  // free helper
+  cudaFree(helper);
+
+  return result;
 }
