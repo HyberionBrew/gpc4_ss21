@@ -837,6 +837,7 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     int *xy_v = (int*)malloc(y->size*sizeof(int));
     int *yx_v = (int*)malloc(x->size*sizeof(int));
 
+    // Maybe cudaMemset?
     memset(xy_ts, -1, y->size*sizeof(int));
     memset(yx_ts, -1, x->size*sizeof(int));
 
@@ -851,6 +852,7 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
     cudaDeviceSynchronize();
 
+    // Fixes some bug, but WHY
     last_yx->copy_to_host();
     last_xy->copy_to_host();
 
@@ -872,6 +874,44 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     y_unit->free_host();
 
     // MEMORY BUG WHEN FREEING LAST XY/YX
+
+    return result;
+}
+
+// Scan from slides
+__global__ void assign_vals(int *input, int *result_v, int *result_ts, int *input_offset, int *result_offset, int size){
+    
+    const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (input[0] == 0 && tidx < size){
+        result_v[tidx] = tidx;
+        (*result_offset)++;
+    }
+    else if (tidx < size){
+        result_v[tidx] = tidx;
+        //(*result_offset)++;
+    }
+    if (tidx == 0){
+        memcpy(result_ts + 1, input, (size-1)*sizeof(int));
+    }
+    return;
+}
+
+std::shared_ptr<GPUIntStream> count(std::shared_ptr<GPUUnitStream> input){
+    int threads = input->size + 1;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+
+    std::shared_ptr<GPUIntStream> result(new GPUIntStream());
+
+    cudaMalloc((void **) &result->device_timestamp, (input->size + 1)*sizeof(int));
+    cudaMalloc((void **) &result->device_values, (input->size + 1)*sizeof(int));
+    cudaMalloc((void **) &result->device_offset, sizeof(int));
+
+    assign_vals<<<blocks, block_size>>>( input->device_timestamp, result->device_values, result->device_timestamp,
+                                        input->device_offset, result->device_offset, 
+                                        input->size+1);
 
     return result;
 }

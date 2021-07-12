@@ -12,6 +12,53 @@ void experimental_time(){
 
 }
 
+void test_count(){
+    printf("count() test\n");
+
+    int *input_1 = (int*)malloc(5*sizeof(int));
+    int *input_2 = (int*)malloc(5*sizeof(int));
+
+    input_1[0] = 0;
+    input_1[1] = 1;
+    input_1[2] = 2;
+    input_1[3] = 3;
+    input_1[4] = 4;
+
+    input_2[0] = 1;
+    input_2[1] = 2;
+    input_2[2] = 3;
+    input_2[3] = 4;
+    input_2[4] = 5;
+
+    std::shared_ptr<GPUUnitStream> inp_1(new GPUUnitStream(input_1, 5));
+    std::shared_ptr<GPUUnitStream> inp_2(new GPUUnitStream(input_2, 5));
+
+    printf("made inputs\n");
+
+    inp_1->copy_to_device();
+
+    std::shared_ptr<GPUIntStream> res_1 = count(inp_1);
+    std::shared_ptr<GPUIntStream> res_2 = count(inp_2);
+    res_1->host_offset = (int*)malloc(sizeof(int));
+    res_1->host_timestamp = (int*)malloc(6*sizeof(int));
+    res_1->host_values = (int*)malloc(6*sizeof(int));
+    res_1->size = 6;
+
+    res_2->host_offset = (int*)malloc(sizeof(int));
+    res_2->host_timestamp = (int*)malloc(6*sizeof(int));
+    res_2->host_values = (int*)malloc(6*sizeof(int));
+    res_2->size = 6;
+
+    res_1->copy_to_host();
+    res_2->copy_to_host();
+
+    printf("RESULT 1:\n");
+    res_1->print();
+
+    printf("RESULT 2:\n");
+    res_2->print();
+}
+
 void test_slift(){
     printf("slift test\n");
     int sx = 50;
@@ -57,7 +104,8 @@ int main(int argc, char **argv) {
     CHECK(cudaGetDeviceProperties(&deviceProp, dev));
     printf("Using Device %d: %s\n", dev, deviceProp.name);
 
-    test_slift();
+    //test_slift();
+    test_count();
 
     return(0);
 }

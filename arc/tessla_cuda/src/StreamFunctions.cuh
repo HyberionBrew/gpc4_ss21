@@ -26,6 +26,8 @@ std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::share
 void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
 std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op);
 std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op);
+std::shared_ptr<GPUIntStream> count(std::shared_ptr<GPUUnitStream> input);
+__global__ void assign_vals(int *input, int *result, int *input_offset, int *result_offset, int size);
 __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values, int size, int*offs, int* resultOffse);
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values,int IntStreamSize, int size, int* offsInt, int* offsUnit);
 __global__ void final_reduce(int* block_red,int size,int* offset);
