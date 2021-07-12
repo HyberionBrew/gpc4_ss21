@@ -101,6 +101,14 @@ void GPUWriter::writeOutputFile() {
         sorter.pop();
     }
 
+    // Free streams
+    for (auto &stream : unit_streams) {
+        stream->free_host();
+    }
+    for (auto &stream : int_streams) {
+        stream->free_host();
+    }
+
     // Close the file and free the position array
     f.close();
     delete int_positions;
