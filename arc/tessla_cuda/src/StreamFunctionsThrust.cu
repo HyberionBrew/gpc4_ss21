@@ -465,7 +465,7 @@ std::shared_ptr<GPUIntStream> count_thrust(std::shared_ptr<GPUUnitStream> input)
 
   int size_alloc = 0; 
   if (input_ts_z) {
-    size_alloc = (input->siz);
+    size_alloc = (input->size);
   } else {
     size_alloc = input->size + 1;
   }
