@@ -18,6 +18,7 @@ add_executable(arc
         Decode.cpp
         GPUScheduler.cpp
         InstrInterface.cpp InstrInterface.h
+        ThrustScheduler.cpp ThrustScheduler.h
         Scheduler.cpp
         runner.cpp runner.h)
 target_link_libraries(arc tessla_seq)
