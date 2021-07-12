@@ -7,7 +7,7 @@
 #include "DebugScheduler.h"
 #include "GPUScheduler.h"
 #include "SequentialScheduler.h"
-#include "ThrustScheduler.h"
+#include <ThrustScheduler.h>
 #include <iostream>
 #include <unistd.h>
 #include <thread>

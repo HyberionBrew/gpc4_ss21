@@ -7,6 +7,7 @@
 #include <StreamFunctionsThrust.cuh>
 #include <iostream>
 #include <cassert>
+#include <GPUWriter.cuh>
 
 ThrustScheduler::ThrustScheduler(InstrInterface & interface) : Scheduler(interface) {
 }
