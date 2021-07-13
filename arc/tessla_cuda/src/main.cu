@@ -106,7 +106,7 @@ void test_slift(){
 
     /*for (int i=0; i<sx; i++){
         x_ts[i] = i;
-        x_v[i] = 2*i;
+        x_v[i] = i;
     }
     
     for (int i=0; i<sy; i++){
@@ -120,15 +120,15 @@ void test_slift(){
     x->copy_to_device();
     y->copy_to_device();
 
-    std::shared_ptr<GPUIntStream> res = slift(x,y, ADD);
+    std::shared_ptr<GPUIntStream> res = slift(x,y, MRG);
     res->host_offset = (int*)malloc(sizeof(int));
     res->host_timestamp = (int*)malloc(res->size*sizeof(int));
     res->host_values = (int*)malloc(res->size*sizeof(int));
 
     res->copy_to_host();
 
-    x->print();
-    y->print();
+    //x->print();
+    //y->print();
     res->print();
 }
 
