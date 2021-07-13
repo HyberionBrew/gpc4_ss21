@@ -232,7 +232,6 @@ struct tupleEqual
     }
 };
 
-//TODO! only supports adds
 std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputInt1, std::shared_ptr<GPUIntStream> inputInt2,operations op, cudaStream_t stream){
     /*PREAMBLE*/
     auto offsetInt1 = thrust::device_pointer_cast(inputInt1->device_offset);
@@ -342,6 +341,59 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
     //std::cout <<"res offset" <<result_offs[0]<< std::endl;
     return result;
 
+}
+
+std::shared_ptr<GPUUnitStream> merge_unit_thrust(std::shared_ptr<GPUUnitStream> input1, std::shared_ptr<GPUUnitStream> input2, cudaStream_t stream){
+    /*PREAMBLE*/
+    auto offsetInt1 = thrust::device_pointer_cast(input1->device_offset);
+    auto offsetInt2 = thrust::device_pointer_cast(input2->device_offset);
+    //shift for offset
+    auto inputInt1_timestamps = thrust::device_pointer_cast(input1->device_timestamp + *offsetInt1);
+    auto inputInt2_timestamps = thrust::device_pointer_cast(input2->device_timestamp + *offsetInt2);
+    //Standard guard
+    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>();
+    int sizeAllocated = (input1->size + input2->size) * sizeof(int);
+    result->size = input1->size + input2->size;
+    result->host_timestamp = (int *) malloc(sizeAllocated);
+
+    // Check if we have enough memory left
+    if (result->host_timestamp == nullptr) {
+        throw std::runtime_error("Out of memory.");
+    }
+
+    memset(result->host_timestamp, 0, sizeAllocated);
+    result->copy_to_device(false);
+    auto result_timestamps = thrust::device_pointer_cast(result->device_timestamp);
+    auto result_offs = thrust::device_pointer_cast(result->device_offset);
+
+    //fill those that are not part of the current calc (since they are invalid) with -1
+    thrust::fill(result_timestamps,result_timestamps+*result_offs,-1);
+
+    /*FINISHED PREAMBLE*/
+
+    //calc lower bounds
+    int size_inputInt2 = input2->size - *offsetInt2;
+    int size_inputInt1 = input1->size - *offsetInt1;
+
+    thrust::device_vector<int> merged_timestamps(size_inputInt2+size_inputInt1);
+
+    thrust::device_vector<int> merged_values(size_inputInt2+size_inputInt1);
+    thrust::merge(inputInt1_timestamps,inputInt1_timestamps+size_inputInt1,
+                         inputInt2_timestamps,inputInt2_timestamps+size_inputInt2,
+                         merged_timestamps.begin());
+
+    thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> new_end = thrust::unique_by_key(merged_timestamps.begin(),merged_timestamps.end(),merged_values.begin());
+
+    int length = thrust::distance(merged_timestamps.begin(),new_end.first);
+    int rs = result->size-length;
+    thrust::copy(merged_timestamps.begin(), merged_timestamps.end(),
+                 result_timestamps+rs);
+
+    /*for (int i=rs ; i < result->size;i++){
+      std::cout << "Final[" << i << "] = " <<result_timestamps[i] <<" | "<< result_values[i] << std::endl;
+    }*/
+    thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
+    return result;
 }
 
 struct delay_invalidate : public thrust::binary_function<int, int, int>

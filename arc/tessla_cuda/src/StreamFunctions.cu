@@ -266,7 +266,7 @@ __device__ void delay_cuda_rec(){
 // https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
 // ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
 // Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
-std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStream_t stream){
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUUnitStream> input, cudaStream_t stream){
     int threads = input->size;
     int block_size = 1;
     int blocks = 1;
@@ -275,7 +275,7 @@ std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStre
     std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
     // Fire off the actual calculation
     time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
-    printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
+    //printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
     return result;
 };
 
