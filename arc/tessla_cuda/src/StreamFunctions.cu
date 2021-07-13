@@ -607,7 +607,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 }
 
 // Information about MergePath
-// https://stackoverflow.com/questions/30729106/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
+// https://stackoverflow.com/questions/307291++06/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
 /**
  * See the following paper for parallel merging of sorted arrays:
  * O. Green, R. Mccoll, and D. Bader
@@ -638,9 +638,14 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     result->size = x->size + y->size;
     result->host_timestamp = (int*)malloc(result->size * sizeof(int));
     result->host_values = (int*)malloc(result->size * sizeof(int));
+    result->host_offset = (int*)malloc(sizeof(int));
     memset(result->host_timestamp, -1, result->size);
     memset(result->host_values, 0, result->size);
-    result->copy_to_device(false);
+    *result->host_offset = 0;
+    cudaMalloc((int**)&result->device_timestamp, result->size*sizeof(int));
+    cudaMalloc((int**)&result->device_values, result->size*sizeof(int));
+    cudaMalloc((int**)&result->device_offset, sizeof(int));
+    result->copy_to_device(true);
 
     // Array to count valid timestamps
     int *valid_h = (int*)malloc(threads*sizeof(int));
@@ -660,6 +665,9 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     cudaMalloc((int**)&out_ts_cpy, result->size*sizeof(int));
     cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
 
+    cudaMemset(invalid_d, 0, threads*sizeof(int));
+    cudaMemset(valid_d, 0, threads*sizeof(int));
+
     cudaDeviceSynchronize();
 
     // 3, 2, 1, go
@@ -678,7 +686,7 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
         inval_multiples_merge<<<blocks, block_size>>> ( op, threads,
                                                         x->size, y->size,
                                                         x->device_offset, y->device_offset,
-                                                        out_ts_cpy+len_offset, invalid_d, valid_d);
+                                                        out_ts_cpy, invalid_d, valid_d);
         cudaDeviceSynchronize();
     }
 
@@ -717,15 +725,27 @@ __global__ void inval_multiples_merge(  int op, int threads,
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
     int len_offset = x_offset + y_offset;
+
+    if (tidx >= x_len+y_len - len_offset){
+        return;
+    }
+
+    out_ts += len_offset;
+
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads); // Values per thread 
-
     for (int i = 0; i < vpt && tidx*vpt+i < (x_len+y_len)-len_offset; i++){
-        int l = max(tidx*vpt + i - 1, 0);
-        int r = max(tidx*vpt + i, 1);
-
+        //int l = max(tidx*vpt + i - 1, 0);
+        //int r = max(tidx*vpt + i, 1);
+        if (tidx*vpt+i == 0){
+            continue;
+        }
+        int l = tidx*vpt + i - 1;
+        int r = tidx*vpt + i;
+        if (x_len+y_len < 1000) printf("l: %i -- r: %i\n", out_ts[l], out_ts[r]);
         if (out_ts[l] == out_ts[r]){
             out_ts[r] = -1;
             invalid[tidx]++;
+            if (x_len+y_len < 1000) printf("inval ptr %p\n", invalid+tidx);
             // Decrement valid, since it is at maximum due to incrementations before
             valid[tidx]--;
         }
@@ -744,12 +764,18 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
     int len_offset = x_offset + y_offset;
+
+    if (tidx >= x_len+y_len - len_offset){
+        return;
+    }
+
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads); // Values per thread 
 
     // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
     int cuml_invalid = 0;
-    for (int i = 0; i < threads; i++){
+    for (int i = 0; i < (x_len+y_len) - len_offset; i++){
         cuml_invalid += invalid[i];
+        if (tidx == 0 && x_len+y_len < 1000) printf("invalid[%i] = %i\n", i, invalid[i]);
     }
 
     int cuml_valid_before = 0;
@@ -771,6 +797,9 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
     // Only one thread does this
     if (tidx == 0) {
         (*result_offset) = cuml_invalid+len_offset;
+        printf("result offset %i\n", *result_offset);
+        printf("cuml inval: %i\n", cuml_invalid);
+        printf("len offs: %i\n",len_offset);
     }
 }
 
@@ -782,6 +811,10 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int *x_offset, int *y_offset){
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
+    /*if (threads <= 1024){
+        valid[tidx] = 0;
+        invalid[tidx] = 0;
+    }*/
 
     int xo = (*x_offset);
     int yo = (*y_offset);
@@ -819,7 +852,9 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     
     // Merge fast path
     if (op == MRG){
-        return lift(x,y,MRG);
+        std::shared_ptr<GPUIntStream> merge_result = lift(x, y, MRG);
+        cudaDeviceSynchronize();
+        return merge_result;
     }
     // Fast path for 1/2 empty stream(s)
     if (x->size == 0 || y->size == 0){
