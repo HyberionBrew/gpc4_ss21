@@ -297,9 +297,9 @@ std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> inputInt, std::
                                                  result->device_values, inputInt->size, threads,
                                                  inputInt->device_offset, inputUnit->device_offset);
     //TODO! comment out
-    printf("beforecalc\n");
+    //printf("beforecalc\n");
     calcThreadsBlocks(threads,&block_size,&blocks);
-    printf("aftercalc\n");
+    //printf("aftercalc\n");
     //copy result vector to device
     if (!result->onDevice) {
         //TODO! where do we free this?
@@ -575,11 +575,14 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 
         int offset = (tidx*vpt) + i;
 
+
         fct(x_ts, y_ts, 
             x_v, y_v,
             &x_i, &y_i, 
             out_ts+offset, out_v+offset,
             x_done, y_done, op);
+
+        //printf("out part %i: %i : %i\n", offset, out_ts[offset], out_v[offset]);
 
         if (x_i >= x_len){
             x_done = true;
@@ -592,7 +595,6 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
             y_done = true;
         }
     }
-
 
     // Count valid/invalid timestamps per partition
     for (int i = 0; i < vpt && tidx*vpt+i < x_len+y_len; i++){
@@ -623,12 +625,9 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
  * Lift
  */
 std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
-    int block_size = 0;
-    int blocks = 0;
-    int x_offset = *(x->host_offset);
-    int y_offset = *(y->host_offset);
-    int len_offset = x_offset+y_offset;
-    int threads = (x->size-x_offset) + (y->size-y_offset);
+    int block_size = 1;
+    int blocks = 1;
+    int threads = x->size + y->size;
     calcThreadsBlocks(threads, &block_size, &blocks);
 
     threads = (blocks) * (block_size);
@@ -636,23 +635,32 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     // Create Result
     std::shared_ptr<GPUIntStream> result(new GPUIntStream());
     result->size = x->size + y->size;
-    result->host_timestamp = (int*)malloc(result->size * sizeof(int));
-    result->host_values = (int*)malloc(result->size * sizeof(int));
-    memset(result->host_timestamp, -1, result->size);
-    memset(result->host_values, 0, result->size);
-    result->copy_to_device(false);
+    cudaMalloc((int**)&result->device_offset, sizeof(int));
+    cudaMalloc((int**)&result->device_timestamp, result->size*sizeof(int));
+    cudaMalloc((int**)&result->device_values, result->size*sizeof(int));
+
+    cudaMemset(result->device_timestamp, -1, result->size*sizeof(int));
+    cudaMemset(result->device_values, 0, result->size*sizeof(int));
+    
+    //result->host_timestamp = (int*)malloc(result->size * sizeof(int));
+    //result->host_values = (int*)malloc(result->size * sizeof(int));
+    //memset(result->host_timestamp, -1, result->size);
+    //memset(result->host_values, 0, result->size);
+    //result->copy_to_device(false);
 
     // Array to count valid timestamps
-    int *valid_h = (int*)malloc(threads*sizeof(int));
+    //int *valid_h = (int*)malloc(threads*sizeof(int));
     int *valid_d;
-    memset(valid_h, 0, threads*sizeof(int));
+    //memset(valid_h, 0, threads*sizeof(int));
     cudaMalloc((int**)&valid_d, threads*sizeof(int));
+    cudaMemset(valid_d, 0, threads*sizeof(int));
 
     // Array to count invalid timestamps
-    int *invalid_h = (int*)malloc(threads*sizeof(int));
+    //int *invalid_h = (int*)malloc(threads*sizeof(int));
     int *invalid_d;
-    memset(invalid_h, 0, threads*sizeof(int));
+    //memset(invalid_h, 0, threads*sizeof(int));
     cudaMalloc((int**)&invalid_d, threads*sizeof(int));
+    cudaMemset(invalid_d, 0, threads*sizeof(int));
 
     // Array to copy the result to ... needed for offset calculations
     int *out_ts_cpy;
@@ -678,7 +686,7 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
         inval_multiples_merge<<<blocks, block_size>>> ( op, threads,
                                                         x->size, y->size,
                                                         x->device_offset, y->device_offset,
-                                                        out_ts_cpy+len_offset, invalid_d, valid_d);
+                                                        out_ts_cpy, invalid_d, valid_d);
         cudaDeviceSynchronize();
     }
 
@@ -693,14 +701,12 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     cudaDeviceSynchronize();
 
     // Free arrays
-    // Something's not quite right yet
-    
-    //cudaFree(out_ts_cpy);
-    //cudaFree(out_v_cpy);
-    //cudaFree(invalid_d);
-    //cudaFree(valid_d);
-    //free(valid_h);
-    //free(invalid_h);
+    cudaFree(out_ts_cpy);
+    cudaFree(out_v_cpy);
+    cudaFree(invalid_d);
+    cudaFree(valid_d);
+
+    //printf("res size: %i\n", result->size);
 
     return result; 
 }
@@ -717,6 +723,9 @@ __global__ void inval_multiples_merge(  int op, int threads,
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
     int len_offset = x_offset + y_offset;
+
+    out_ts += len_offset;
+
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads); // Values per thread 
 
     for (int i = 0; i < vpt && tidx*vpt+i < (x_len+y_len)-len_offset; i++){
@@ -730,6 +739,13 @@ __global__ void inval_multiples_merge(  int op, int threads,
             valid[tidx]--;
         }
     }
+
+    /*if (tidx == 0){
+        printf("After removing merge invalid:\n");
+        for (int i = 0; i < x_len+y_len; i++){
+            printf("out_ts[%i] = %i\n", i, out_ts[i]);
+        }
+    }*/
 }
 
 __global__ void remove_invalid( int threads, int *invalid, int *valid, 
@@ -744,6 +760,11 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
     int len_offset = x_offset + y_offset;
+
+    if (tidx >= x_len+y_len - len_offset){
+        return;
+    }
+
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads); // Values per thread 
 
     // Each thread can now add up all valid/invalid timestamps and knows how to place their valid timestamps
@@ -772,6 +793,15 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
     if (tidx == 0) {
         (*result_offset) = cuml_invalid+len_offset;
     }
+
+    /*if (tidx == 0){
+        printf("After removing invalid:\n");
+        printf("offset: %i\n", *result_offset);
+        for (int i = 0; i < x_len+y_len; i++){
+            printf("out_ts[%i] = %i \t| ", i, out_ts[i]);
+            printf("out_v[%i] = %i\n", i, out_v[i]);
+        }
+    }*/
 }
 
 __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
@@ -783,13 +813,34 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
 
+    /*if (tidx == 0){
+        printf("COMBINING:\n");
+        for (int i = 0; i < x_len; i++){
+            printf("x_ts[%i] = %i \t| ", i, x_ts[i]);
+            printf("x_v[%i] = %i\n", i, x_v[i]);
+        }
+        printf("\n");
+        for (int i = 0; i < y_len; i++){
+            printf("y_ts[%i] = %i \t| ", i, y_ts[i]);
+            printf("y_v[%i] = %i\n", i, y_v[i]);
+        }
+    }*/
+
     int xo = (*x_offset);
     int yo = (*y_offset);
 
     int len_offset = xo+yo;
 
+    if (tidx >= x_len+y_len-len_offset){
+        return;
+    }
+
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads);     // Values per thread
     int diag = tidx * vpt;                                                      // Binary search constraint
+
+    for (int i = 0; i < vpt && tidx*vpt+i < (x_len + y_len)-len_offset; i++){
+        out_ts[i] = -1;
+    }
 
     int intersect = merge_path(x_ts+xo, y_ts+yo, diag, x_len-xo, y_len-yo);
     int x_start = intersect;
@@ -823,63 +874,106 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
     }
     // Fast path for 1/2 empty stream(s)
     if (x->size == 0 || y->size == 0){
-        int *e_ts = (int*)malloc(0);
-        int *e_v = (int*)malloc(0);
-        std::shared_ptr<GPUIntStream> empty(new GPUIntStream(e_ts, e_v, 0));
+        //int *e_ts = (int*)malloc(0);
+        //int *e_v = (int*)malloc(0);
+        //std::shared_ptr<GPUIntStream> empty(new GPUIntStream(e_ts, e_v, 0));
+        std::shared_ptr<GPUIntStream> empty(new GPUIntStream());
+        cudaMalloc((void **) &empty->device_timestamp, 0*sizeof(int));
+        cudaMalloc((void **) &empty->device_values, 0*sizeof(int));
+        cudaMalloc((void **) &empty->device_offset, 1*sizeof(int));
+        cudaMemset(empty->device_offset, 0, 1*sizeof(int));
         empty->size = 0;
-        empty->copy_to_device();
+        //empty->copy_to_device();
         return empty;
     }
 
-    int *x_ts = (int*)malloc(x->size*sizeof(int));
-    int *y_ts = (int*)malloc(y->size*sizeof(int));
-    memcpy(x_ts, x->host_timestamp, x->size*sizeof(int));
-    memcpy(y_ts, y->host_timestamp, y->size*sizeof(int));
+    //int *x_ts = (int*)malloc(x->size*sizeof(int));
+    //int *y_ts = (int*)malloc(y->size*sizeof(int));
+    //int *x_v = (int*)malloc(x->size*sizeof(int));
+    //int *y_v = (int*)malloc(y->size*sizeof(int));
+    //memcpy(x_ts, x->host_timestamp, x->size*sizeof(int));
+    //memcpy(y_ts, y->host_timestamp, y->size*sizeof(int));
 
     // xy ... y is the unit stream
-    int *xy_ts = (int*)malloc(y->size*sizeof(int));
-    int *yx_ts = (int*)malloc(x->size*sizeof(int));
-    int *xy_v = (int*)malloc(y->size*sizeof(int));
-    int *yx_v = (int*)malloc(x->size*sizeof(int));
+    //int *xy_ts = (int*)malloc(y->size*sizeof(int));
+    //int *yx_ts = (int*)malloc(x->size*sizeof(int));
+    //int *xy_v = (int*)malloc(y->size*sizeof(int));
+    //int *yx_v = (int*)malloc(x->size*sizeof(int));
 
     // Maybe cudaMemset?
-    memset(xy_ts, -1, y->size*sizeof(int));
-    memset(yx_ts, -1, x->size*sizeof(int));
+    //memset(xy_ts, -1, y->size*sizeof(int));
+    //memset(yx_ts, -1, x->size*sizeof(int));
 
     // Make Unit streams from Int streams for last()
-    std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream(x_ts, x->size, *(x->host_offset)));
-    std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream(y_ts, y->size, *(y->host_offset)));
+    //std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream(x_ts, x->size, *(x->host_offset)));
+    //std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream(y_ts, y->size, *(y->host_offset)));
 
-    x_unit->copy_to_device();
-    y_unit->copy_to_device();
+    std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream());
+    std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream());
+
+    x_unit->size = x->size;
+    y_unit->size = y->size;
+
+    cudaMalloc((void **) &x_unit->device_timestamp, (x->size)*sizeof(int));
+    cudaMalloc((void **) &y_unit->device_timestamp, (y->size)*sizeof(int));
+    cudaMalloc((void **) &x_unit->device_offset, sizeof(int));
+    cudaMalloc((void **) &y_unit->device_offset, sizeof(int));
+
+    cudaMemcpy(x_unit->device_timestamp, x->device_timestamp, x->size*sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(y_unit->device_timestamp, y->device_timestamp, y->size*sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(x_unit->device_offset, x->device_offset, sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(y_unit->device_offset, y->device_offset, sizeof(int), cudaMemcpyDeviceToDevice);
+
+    //x_unit->copy_to_device();
+    //y_unit->copy_to_device();
 
     std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
     std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
     cudaDeviceSynchronize();
 
     // Fixes some bug, but WHY
-    last_yx->copy_to_host();
-    last_xy->copy_to_host();
+    //last_yx->copy_to_host();
+    //last_xy->copy_to_host();
 
+    //printf("XPRIME\n");
     std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
+    //printf("YPRIME\n");
     std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
     cudaDeviceSynchronize();
 
+    //printf("RESULT\n");
     std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
     cudaDeviceSynchronize();
 
-    x_prime->free_device();
-    x_prime->free_host();
-    y_prime->free_device();
-    y_prime->free_host();
+    //x_prime->free_device();
+    //y_prime->free_device();
+    //
+    //x_unit->free_device();
+    //y_unit->free_device();
 
-    x_unit->free_device();
-    x_unit->free_host();
-    y_unit->free_device();
-    y_unit->free_host();
+    cudaFree(last_xy->device_offset);
+    cudaFree(last_xy->device_values);
+    cudaFree(last_xy->device_timestamp);
 
-    // MEMORY BUG WHEN FREEING LAST XY/YX
+    cudaFree(last_yx->device_offset);
+    cudaFree(last_yx->device_values);
+    cudaFree(last_yx->device_timestamp);
 
+    cudaFree(x_prime->device_offset);
+    cudaFree(x_prime->device_values);
+    cudaFree(x_prime->device_timestamp);
+
+    cudaFree(y_prime->device_offset);
+    cudaFree(y_prime->device_values);
+    cudaFree(y_prime->device_timestamp);
+
+    cudaFree(x_unit->device_offset);
+    cudaFree(x_unit->device_timestamp);
+
+    cudaFree(y_unit->device_offset);
+    cudaFree(y_unit->device_timestamp);
+
+    //printf("res size: %i\n", result->size);
     return result;
 }
 
