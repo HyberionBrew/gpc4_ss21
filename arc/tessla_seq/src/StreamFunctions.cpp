@@ -62,16 +62,15 @@ shared_ptr<UnitStream> delay(IntStream& d, Stream& r){
         while (currEventR != rstream.end() && (*currEventR)->get_timestamp() < currEventD->timestamp) {
             currEventR++;
         }
-        while (currEventOutIndex < outstream.size() && outstream[currEventOutIndex].timestamp < outstream[currEventOutIndex].timestamp) {
+        while (currEventOutIndex < outstream.size() && outstream[currEventOutIndex].timestamp < currEventD->timestamp) {
             currEventOutIndex++;
         }
-        if ((currEventR != rstream.end()) &&
-            ((currEventD->timestamp == (*currEventR)->get_timestamp()) ||
-             (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp)))) {
-
+        if (currEventR != rstream.end() && currEventD->timestamp == (*currEventR)->get_timestamp()) {
+            // Triggered by reset event
             size_t target = currEventD->timestamp + currEventD->value;
+            // Check next reset event
             currEventR++;
-            if (currEventR >= rstream.end() || (*currEventR)->get_timestamp() >= target) {
+            if ((currEventR) >= rstream.end() || (*currEventR)->get_timestamp() >= target) {
                 // don't push timestamps that are after input stream
                 if (target <= (d.stream.end()-1)->timestamp ) {
                     UnitEvent node{target};
@@ -79,6 +78,17 @@ shared_ptr<UnitStream> delay(IntStream& d, Stream& r){
                 }
             }
             currEventR--;
+        } else if (currEventOutIndex < outstream.size() && (currEventD->timestamp == outstream[currEventOutIndex].timestamp)) {
+            // Triggered by output event
+            size_t target = currEventD->timestamp + currEventD->value;
+            // Check currently pointed to reset event
+            if ((currEventR) >= rstream.end() || (*currEventR)->get_timestamp() >= target) {
+                // don't push timestamps that are after input stream
+                if (target <= (d.stream.end()-1)->timestamp ) {
+                    UnitEvent node{target};
+                    outstream.push_back(node);
+                }
+            }
         }
     }
     return make_shared<UnitStream>(outstream);
