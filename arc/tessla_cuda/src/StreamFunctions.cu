@@ -895,8 +895,6 @@ __global__ void assign_vals(int *input, int *result_v, int *result_ts, int *inpu
         } else {
             // stream is 1 _larger_ than input => don't increase offset
             *result_offset = *input_offset;
-            result_v[*result_offset] = 0;
-            result_ts[*result_offset] = 0;
         }
     }
 
