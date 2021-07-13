@@ -7,8 +7,9 @@ add_library(tessla_cuda
         GPUStream.cuh GPUStream.cu
         GPUWriter.cuh GPUWriter.cu
         StreamFunctions.cu
-        ImmediateFunctions.cu
+        ImmediateFunctions.cu ImmediateFunctions.cuh
         StreamFunctionHelper.cuh StreamFunctionHelper.cu
+        ImmediateFunctionsThrust.cu ImmediateFunctionsThrust.cuh
         helper.cuh
         device_information.cuh
         StreamFunctionsThrust.cuh StreamFunctionsThrust.cu
