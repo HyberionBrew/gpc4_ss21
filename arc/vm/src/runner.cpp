@@ -16,7 +16,7 @@
 #include <cassert>
 #include <time.h>
 
-std::string usage_string = "Usage: arc [-D | -t | -s | -o FILENAME] -v coil_file input_file";
+std::string usage_string = "Usage: arc [-D | -t | -s | -g] [-o FILENAME] [-v] coil_file input_file";
 constexpr scheduler DEFAULT_SCHEDULER = debug;
 
 void decode (InstrInterface & interface, std::string coil_file, bool verbose) {
@@ -136,7 +136,7 @@ int run(int argc, char **argv) {
 
     // Read in command line arguments
     scheduler scheduler = DEFAULT_SCHEDULER;
-    const char *optstring = "Dtsvo:";
+    const char *optstring = "Dtsvog:";
     bool verbose = false;
     char opt;
 
@@ -164,6 +164,9 @@ int run(int argc, char **argv) {
                 break;
             case 't':
                 scheduler = thrust;
+                break;
+            case 'g':
+                scheduler = gpu;
                 break;
             case 's':
                 scheduler = sequential;
