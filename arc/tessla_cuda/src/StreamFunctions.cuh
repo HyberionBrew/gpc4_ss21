@@ -20,7 +20,7 @@
 // time operation for unit stream
 int simp_compare(const void *a, const void *b); // TODO: Delete when no longer needed
 void calcThreadsBlocks(int threads, int *block_size, int*blocks);
-std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStream_t stream);
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUUnitStream> input, cudaStream_t stream);
 std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
 std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
 void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);

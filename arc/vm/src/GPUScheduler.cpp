@@ -9,6 +9,8 @@
 #include <iostream>
 #include <cassert>
 #include "GPUWriter.cuh"
+#include <ImmediateFunctionsThrust.cuh>
+#include <StreamFunctionsThrust.cuh>
 
 GPUScheduler::GPUScheduler(InstrInterface & interface) : Scheduler(interface) {
 }
@@ -17,75 +19,79 @@ bool GPUScheduler::next() {
     Instruction inst = instrInterface.pop();
     switch (inst.type) {
         case inst_add:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), ADD));
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_add, 0));
             break;
         case inst_mul:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MUL));
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_multiply,0));
             break;;
         case inst_sub:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), SUB));
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_subtract, 0));
             break;
         case inst_div:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), DIV));
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_divide, 0));
             break;
         case inst_mod:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MOD));
+            set_reg(inst.rd, slift_thrust(get_intst(inst.r1), get_intst(inst.r2), TH_OP_modulo, 0));
             break;
         case inst_delay:
-            set_reg(inst.rd, delay(get_intst(inst.r1), get_ust(inst.r2), 0));
+            set_reg(inst.rd, delay_thrust(get_intst(inst.r1), get_ust_cast(inst.r2), 0));
             break;
         case inst_last:
-            set_reg(inst.rd, last(get_intst(inst.r1), get_ust(inst.r2), 0));
+            set_reg(inst.rd, last_thrust(get_intst(inst.r1), get_ust_cast(inst.r2), 0));
             break;
         case inst_time:
-            set_reg(inst.rd, time(get_intst(inst.r1), 0));
+            set_reg(inst.rd, time(get_ust_cast(inst.r1), 0));
             break;
         case inst_merge:
-            set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MRG));
+            if (get_ust(inst.r1) == nullptr) {
+                set_reg(inst.rd, slift(get_intst(inst.r1), get_intst(inst.r2), MRG));
+            } else {
+                set_reg(inst.rd, merge_unit_thrust(get_ust(inst.r1), get_ust(inst.r2), 0));
+            }
             break;
         case inst_count:
-            std::cout << ": Count, R1: " << inst.r1 << " RD: " << inst.rd << std::endl;
+            set_reg(inst.rd, count(get_ust_cast(inst.r1)));
             break;
         case inst_addi:
-            set_reg(inst.rd, add_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, add_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_muli:
-            set_reg(inst.rd, mul_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, mul_imm_thrust(get_intst(inst.r1), inst.imm ));
             break;
         case inst_subi:
             // stream - imm
-            set_reg(inst.rd, sub_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, sub_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_subii:
             // imm - stream
-            set_reg(inst.rd, sub_inv_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, sub_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_divi:
             // stream / imm
-            set_reg(inst.rd, div_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, div_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_divii:
             // imm / stream
-            set_reg(inst.rd, div_inv_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, div_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_modi:
             // stream % imm
-            set_reg(inst.rd, mod_imm(get_intst(inst.r1), inst.imm, 0));;
+            set_reg(inst.rd, mod_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_modii:
             // imm % stream
-            set_reg(inst.rd, mod_inv_imm(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, mod_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_default:
             std::cout << ": Default, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;
             break;
         case inst_load: {
             // Load stream on device
-            shared_ptr<GPUIntStream> GPUIntStream;
+            shared_ptr<GPUIntStream> intStream;
             shared_ptr<GPUUnitStream> unitStream;
-            if ((GPUIntStream = get_intst(inst.r1)) != nullptr) {
+            if ((intStream = get_intst(inst.r1)) != nullptr) {
                 // Load GPUIntStream
-                GPUIntStream->copy_to_device();
+                intStream->copy_to_device();
             } else if ((unitStream = get_ust(inst.r1)) != nullptr) {
                 // Load unitstream
                 unitStream->copy_to_device();
@@ -215,5 +221,45 @@ shared_ptr<GPUUnitStream> GPUScheduler::get_ust(size_t reg) {
         return unitRegisters[reg];
     } else {
         return nullptr;
+    }
+}
+
+shared_ptr<GPUUnitStream> GPUScheduler::get_ust_cast(size_t reg) {
+    if (unitRegisters.find(reg) != unitRegisters.end()) {
+        return unitRegisters[reg];
+    } else {
+        if (intRegisters.find(reg) != intRegisters.end()) {
+            // "cast" int stream to unit stream
+            auto ist = intRegisters[reg];
+            auto ust = make_shared<GPUUnitStream>();
+            ust->device_timestamp = ist->device_timestamp;
+            ust->device_offset = ist->device_offset;
+            ust->host_timestamp = ist->host_timestamp;
+            ust->host_offset = ist->host_offset;
+            return ust;
+        } else {
+            return nullptr;
+        }
+    }
+}
+
+shared_ptr<GPUIntStream> GPUScheduler::get_intst_cast(size_t reg) {
+    if (intRegisters.find(reg) != intRegisters.end()) {
+        return intRegisters[reg];
+    } else {
+        if (unitRegisters.find(reg) != unitRegisters.end()) {
+            // "cast" int stream to unit stream
+            auto ust = unitRegisters[reg];
+            auto ist = make_shared<GPUIntStream>();
+            ist->device_timestamp = ust->device_timestamp;
+            ist->device_offset = ust->device_offset;
+            ist->host_timestamp = ust->host_timestamp;
+            ist->host_offset = ust->host_offset;
+            ist->device_values = nullptr;
+            ist->host_timestamp = nullptr;
+            return ist;
+        } else {
+            return nullptr;
+        }
     }
 }
