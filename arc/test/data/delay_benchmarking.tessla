@@ -1,0 +1,4 @@
+in a: Events[Unit]
+in z: Events[Int]
+def y := delay(z,a)
+out y

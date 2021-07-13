@@ -47,34 +47,34 @@ bool ThrustScheduler::next() {
             set_reg(inst.rd, count_thrust(get_ust(inst.r1)));
             break;
         case inst_addi:
-            set_reg(inst.rd, add_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, add_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_muli:
-            set_reg(inst.rd, mul_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, mul_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_subi:
             // stream - imm
-            set_reg(inst.rd, sub_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, sub_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_subii:
             // imm - stream
-            set_reg(inst.rd, sub_inv_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, sub_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_divi:
             // stream / imm
-            set_reg(inst.rd, div_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, div_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_divii:
             // imm / stream
-            set_reg(inst.rd, div_inv_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, div_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_modi:
             // stream % imm
-            set_reg(inst.rd, mod_imm_thrust(get_intst(inst.r1), inst.imm, 0));;
+            set_reg(inst.rd, mod_imm_thrust(get_intst(inst.r1), inst.imm));;
             break;
         case inst_modii:
             // imm % stream
-            set_reg(inst.rd, mod_inv_imm_thrust(get_intst(inst.r1), inst.imm, 0));
+            set_reg(inst.rd, mod_inv_imm_thrust(get_intst(inst.r1), inst.imm));
             break;
         case inst_default:
             //std::cout << ": Default, R1: " << inst.r1 << " IMM: " << inst.imm << " RD: " << inst.rd << std::endl;

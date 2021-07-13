@@ -129,8 +129,8 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
     calcThreadsBlocks_device(threads, &block_size, &blocks);
 
     *result_offset = 0;
-    //calculate_offset<<<blocks, block_size, 0, stream>>>(result_timestamps, result_offset, threads);
-    *result_offset = result_size - resultCount;
+    calculate_offset<<<blocks, block_size, 0, stream>>>(result_timestamps, result_offset, threads);
+    //*result_offset = result_size - resultCount;
 }
 
 std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
@@ -1045,36 +1045,58 @@ std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared
 __global__ void assign_vals(int *input, int *result_v, int *result_ts, int *input_offset, int *result_offset, int size){
     
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;
+    bool input_zero_ts = input[*input_offset] == 0;
+    if (tidx == 0) {
+        if (input_zero_ts) {
+            // stream has same size as input => increase offset by one since stream has larger size
+            *result_offset = *input_offset + 1;
+        } else {
+            // stream is 1 _larger_ than input => don't increase offset
+            *result_offset = *input_offset;
+        }
+    }
 
-    if (input[0] == 0 && tidx < size){
-        result_v[tidx] = tidx;
-        (*result_offset)++;
+    __syncthreads();
+
+    if (input_zero_ts && tidx < size){
+        // timestamp at 0, result has same event count as input
+        result_v[*result_offset + tidx - 1] = tidx;
+        result_ts[*result_offset + tidx] = input[*input_offset + tidx];
     }
     else if (tidx < size){
-        result_v[tidx] = tidx;
+        // no timestamp at 0, result has input event count + 1
+        result_v[*result_offset + tidx] = tidx;
+        result_ts[*result_offset + tidx] = input[*input_offset + tidx - 1];
         //(*result_offset)++;
     }
+    //__syncthreads();
     if (tidx == 0){
-        memcpy(result_ts + 1, input, (size-1)*sizeof(int));
+        //memcpy(result_ts+ 1, input, (size-1)*sizeof(int));
+        if (!input_zero_ts) {
+            result_v[*result_offset] = 0;
+            result_ts[*result_offset] = 0;
+        }
     }
     return;
 }
 
 std::shared_ptr<GPUIntStream> count(std::shared_ptr<GPUUnitStream> input){
-    int threads = input->size + 1;
+    int threads = input->size + 1; // Correct?
     int block_size = 1;
     int blocks = 1;
     calcThreadsBlocks(threads,&block_size,&blocks);
 
-    std::shared_ptr<GPUIntStream> result(new GPUIntStream());
+    //std::shared_ptr<GPUIntStream> result(new GPUIntStream());
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size + 1, true);
 
-    cudaMalloc((void **) &result->device_timestamp, (input->size + 1)*sizeof(int));
-    cudaMalloc((void **) &result->device_values, (input->size + 1)*sizeof(int));
-    cudaMalloc((void **) &result->device_offset, sizeof(int));
+    //cudaMalloc((void **) &result->device_timestamp, (input->size + 1)*sizeof(int));
+    //cudaMalloc((void **) &result->device_values, (input->size + 1)*sizeof(int));
+    //cudaMalloc((void **) &result->device_offset, sizeof(int));
 
     assign_vals<<<blocks, block_size>>>( input->device_timestamp, result->device_values, result->device_timestamp,
                                         input->device_offset, result->device_offset, 
                                         input->size+1);
+    cudaDeviceSynchronize();
 
     return result;
 }
