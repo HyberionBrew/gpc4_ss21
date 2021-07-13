@@ -905,15 +905,21 @@ __global__ void assign_vals(int *input, int *result_v, int *result_ts, int *inpu
     if (input_zero_ts && tidx < size){
         // timestamp at 0, result has same event count as input
         result_v[*result_offset + tidx - 1] = tidx;
+        result_ts[*result_offset + tidx] = input[*input_offset + tidx];
     }
     else if (tidx < size){
         // no timestamp at 0, result has input event count + 1
         result_v[*result_offset + tidx] = tidx;
+        result_ts[*result_offset + tidx] = input[*input_offset + tidx - 1];
         //(*result_offset)++;
     }
     //__syncthreads();
     if (tidx == 0){
-        memcpy(result_ts+ 1, input, (size-1)*sizeof(int));
+        //memcpy(result_ts+ 1, input, (size-1)*sizeof(int));
+        if (!input_zero_ts) {
+            result_v[*result_offset] = 0;
+            result_ts[*result_offset] = 0;
+        }
     }
     return;
 }
