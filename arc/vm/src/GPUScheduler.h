@@ -22,6 +22,8 @@ private:
     void set_reg (size_t pos, shared_ptr<GPUUnitStream> stream);
     shared_ptr<GPUIntStream> get_intst (size_t reg);
     shared_ptr<GPUUnitStream> get_ust (size_t reg);
+    shared_ptr<GPUUnitStream> get_ust_cast (size_t reg);
+    shared_ptr<GPUIntStream> get_intst_cast (size_t reg);
 public:
     explicit GPUScheduler(InstrInterface & interface);
     bool next() override;
