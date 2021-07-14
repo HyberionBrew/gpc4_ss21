@@ -270,6 +270,47 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
         }
     }
 
+    SECTION("lift() add benchmarking, sequential version") {
+        std::ofstream output_last;
+        //delete previous
+        output_last.open("benchmarking_lift_subtract_seq.data");
+        output_last << "";
+        output_last.close();
+
+        for (int j = 1; j <= BENCHMARKING_LOOPS; j++){
+            for (int i = 1; i <= BENCHMARKING_CASES; i++) {
+                auto start2 = std::chrono::high_resolution_clock::now();
+
+                std::string path = "test/data/benchmarking";
+                Reader inReader = Reader(path+std::to_string(i)+"_lift.in");
+                Reader outReader = Reader(path+std::to_string(i)+"_slift_subtract.out");
+
+                std::shared_ptr<IntStream> inputStreamZ = inReader.getIntStream("z");
+                std::shared_ptr<IntStream> inputStreamY = inReader.getIntStream("y");
+                std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("x");
+
+                int size = CORRECT_STREAM->stream.size();
+
+                auto start = std::chrono::high_resolution_clock::now();
+
+                std::shared_ptr<IntStream> result = sub(*inputStreamZ, *inputStreamY);
+
+                auto stop = std::chrono::high_resolution_clock::now();
+
+                #ifdef CHECK_RESULTS
+                REQUIRE(*result == *CORRECT_STREAM);
+                #endif
+
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                output_last.open ("benchmarking_lift_subtract_seq.data",std::ios::app);
+                output_last << "Benchmark " << i << ": " << duration.count()
+                            << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
+                output_last.close();
+            }
+        }
+    }
+
     SECTION("lift() multiply benchmarking, sequential version") {
         std::ofstream output_last;
         //delete previous
