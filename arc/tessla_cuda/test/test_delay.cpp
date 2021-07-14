@@ -13,29 +13,29 @@
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
 
+#include <StreamFunctions.cuh>
 #include <StreamFunctionsThrust.cuh>
+
+static std::string TESTDATA_PATH = "test/data/";
 
 TEST_CASE("delay_thrust()") {
     SECTION("delay_thrust() tuwel example") {
-        GPUReader inReader = GPUReader("test/data/bt_delay.in");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_delay.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_delay.out");
         std::shared_ptr<GPUIntStream> inputStreamD = inReader.getIntStream("d");
         std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("r");
-        GPUReader outReader = GPUReader("test/data/bt_delay.out");
         std::shared_ptr<GPUUnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
-
-        std::shared_ptr<GPUUnitStream> outputStream;
 
         inputStreamD->copy_to_device();
         inputStreamR->copy_to_device();
 
-        outputStream = delay_thrust(inputStreamD, inputStreamR, 0); // TODO
-
+        std::shared_ptr<GPUUnitStream> outputStream = delay_thrust(inputStreamD, inputStreamR, 0);
         outputStream->copy_to_host();
+
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        
         REQUIRE(kernelTimestamps == correctTimestamps);
 
         // Cleanup
@@ -47,25 +47,22 @@ TEST_CASE("delay_thrust()") {
     }
 
     SECTION("delay_thrust() middle") {
-        GPUReader inReader = GPUReader("test/data/bt_delay.middle.in");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_delay.middle.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_delay.middle.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
         std::shared_ptr<GPUUnitStream> inputStreamA = inReader.getUnitStream("a");
-        GPUReader outReader = GPUReader("test/data/bt_delay.middle.out");
         std::shared_ptr<GPUUnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
-
-        std::shared_ptr<GPUUnitStream> outputStream;
 
         inputStreamZ->copy_to_device();
         inputStreamA->copy_to_device();
 
-        outputStream = delay_thrust(inputStreamZ, inputStreamA, 0);
-
+        std::shared_ptr<GPUUnitStream> outputStream = delay_thrust(inputStreamZ, inputStreamA, 0);
         outputStream->copy_to_host();
+
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        
         REQUIRE(kernelTimestamps == correctTimestamps);
 
         // Cleanup
@@ -77,25 +74,22 @@ TEST_CASE("delay_thrust()") {
     }
 
     SECTION("delay_thrust() bigger") {
-        GPUReader inReader = GPUReader("test/data/bt_delay.bigger.in");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_delay.bigger.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_delay.bigger.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
         std::shared_ptr<GPUUnitStream> inputStreamA = inReader.getUnitStream("a");
-        GPUReader outReader = GPUReader("test/data/bt_delay.bigger.out");
         std::shared_ptr<GPUUnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
-
-        std::shared_ptr<GPUUnitStream> outputStream;
 
         inputStreamZ->copy_to_device();
         inputStreamA->copy_to_device();
 
-        outputStream = delay_thrust(inputStreamZ, inputStreamA, 0);
-
+        std::shared_ptr<GPUUnitStream> outputStream = delay_thrust(inputStreamZ, inputStreamA, 0);
         outputStream->copy_to_host();
+
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        
         REQUIRE(kernelTimestamps == correctTimestamps);
 
         // Cleanup

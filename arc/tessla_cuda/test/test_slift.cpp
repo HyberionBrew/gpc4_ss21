@@ -20,84 +20,64 @@
 #include <StreamFunctionsThrust.cuh>
 #include <stdio.h>
 
+static std::string TESTDATA_PATH = "test/data/";
+
 TEST_CASE("slift_regular"){
     SECTION("slift(merge) simple example") {
-        // Read input and correct output data
-        std::cout << typeid(thrust::plus<int>()).name() << std::endl;
-        GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift1_merge.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift1.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift1_merge.out");
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamZ, inputStreamY, MRG);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, MRG);
         outputStream->copy_to_host();
-        outputStream->print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+        
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-
     SECTION("slift(+) simple example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift1.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift1.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift1.out");
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamZ, inputStreamY, ADD);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, ADD);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
@@ -106,294 +86,213 @@ TEST_CASE("slift_regular"){
     SECTION("slift(-) simple example") {
         // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1_minus.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamZ, inputStreamY, SUB);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, SUB);
         outputStream->copy_to_host();
-        //outputStream->print();
-        //outputStream.print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-
-        SECTION("slift(/) simple example") {
+    SECTION("slift(/) simple example") {
         // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1_div.out");
-
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamZ, inputStreamY, DIV);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, DIV);
         outputStream->copy_to_host();
-        outputStream->print();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+        
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-
-        SECTION("slift(/) simple example with invalids") {
-        // Read input and correct output data
-        
-        GPUReader inReader = GPUReader("test/data/slift1_div.in");
+/*
+    SECTION("slift(/) simple example with invalids") {
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift1_div.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift1_div_inv.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift1_div_inv.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-      try
-        {
-        outputStream = slift(inputStreamZ, inputStreamY, DIV);
-        //inputStreamR.print();
-        outputStream->copy_to_host();
-        //outputStream->print();
-        //outputStream.print();
-        // Compare kernel result to correct data
-        std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
-        std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
-        std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
 
-        REQUIRE(kernelTimestamps == correctTimestamps);
-        REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
-        // Cleanup
-        outputStream->free_device();
-        outputStream->free_host();
-        REQUIRE(false);
+        try {
+            std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, DIV);
+            outputStream->copy_to_host();
+            outputStream->print();
+
+            // Compare kernel result to correct data
+            std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
+            std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
+            std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
+            std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
+
+            //REQUIRE(kernelTimestamps == correctTimestamps);
+            //REQUIRE(kernelValues == correctValues);
+
+            // Cleanup
+            outputStream->free_device();
+            outputStream->free_host();
+            REQUIRE(false);
+        } catch(std::runtime_error& e){
+            printf("Caught Runtime error \n");
         }
-       catch(std::runtime_error& e){
-           printf("Caught Runtime error \n");
-       }
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
-        
-        
         inputStreamZ->free_host();
         inputStreamY->free_host();
     }
+*/
 
-        SECTION("slift(+) simple example 2") {
-        // Read input and correct output data
-        //printf("----slift 2-----");
+    SECTION("slift(+) simple example 2") {
         GPUReader inReader = GPUReader("test/data/slift2.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamZ, inputStreamY, ADD);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamZ, inputStreamY, ADD);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-SECTION("slift(+) simple example 2 flipped") {
+    SECTION("slift(+) simple example 2 flipped") {
         // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/slift2.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamY, inputStreamZ, ADD);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamY, inputStreamZ, ADD);
         outputStream->copy_to_host();
-        //outputStream->print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
         // Cleanup
-        inputStreamZ->free_device();
 
+        inputStreamZ->free_device();
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
+
     SECTION("slift(+) empty example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/slift3.in");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift3.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift3.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift3.out");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamY, inputStreamZ, ADD);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamY, inputStreamZ, ADD);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
         // Cleanup
-        inputStreamZ->free_device();
 
+        inputStreamZ->free_device();
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-       SECTION("slift(+) large example") {
-        // Read input and correct output data
+    SECTION("slift(+) large example") {
         GPUReader inReader = GPUReader("test/data/slift4.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift4.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift(inputStreamY, inputStreamZ, ADD);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift(inputStreamY, inputStreamZ, ADD);
         outputStream->copy_to_host();
-        //outputStream->print();
         
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
         // Cleanup
-        inputStreamZ->free_device();
 
+        inputStreamZ->free_device();
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
@@ -406,378 +305,272 @@ SECTION("slift(+) simple example 2 flipped") {
 
 TEST_CASE("slift_thrust()"){
     SECTION("slift(merge) simple example") {
-        // Read input and correct output data
-        std::cout << typeid(thrust::plus<int>()).name() << std::endl;
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1_merge.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_merge, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_merge, 0);
         outputStream->copy_to_host();
-        outputStream->print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-
     SECTION("slift(+) simple example") {
-        // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+        
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
     SECTION("slift(-) simple example") {
-        // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1_minus.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY, TH_OP_subtract, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY, TH_OP_subtract, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+        
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-
-        SECTION("slift(/) simple example") {
-        // Read input and correct output data
+    SECTION("slift(/) simple example") {
         GPUReader inReader = GPUReader("test/data/slift1.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift1_div.out");
-
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
         outputStream->copy_to_host();
-        outputStream->print();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
 
-        SECTION("slift(/) simple example with invalids") {
-        // Read input and correct output data
-        
-        GPUReader inReader = GPUReader("test/data/slift1_div.in");
+    SECTION("slift(/) simple example with invalids") {
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift1_div.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift1_div_inv.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift1_div_inv.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-      try
-        {
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
-        //inputStreamR.print();
-        outputStream->copy_to_host();
-        //outputStream->print();
-        //outputStream.print();
-        // Compare kernel result to correct data
-        std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
-        std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
-        std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
-        std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
 
-        REQUIRE(kernelTimestamps == correctTimestamps);
-        REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
-        // Cleanup
-        outputStream->free_device();
-        outputStream->free_host();
-        REQUIRE(false);
+        try {
+            std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_divide, 0);
+            outputStream->copy_to_host();
+
+            // Compare kernel result to correct data
+            std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
+            std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
+            std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
+            std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
+            REQUIRE(kernelTimestamps == correctTimestamps);
+            REQUIRE(kernelValues == correctValues);
+
+            // Cleanup
+            outputStream->free_device();
+            outputStream->free_host();
+            REQUIRE(false);
+        } catch(std::runtime_error& e) {
+            printf("Caught Runtime error \n");
         }
-       catch(std::runtime_error& e){
-           printf("Caught Runtime error \n");
-       }
-        inputStreamZ->free_device();
 
+        inputStreamZ->free_device();
         inputStreamY->free_device();
-        
-        
         inputStreamZ->free_host();
         inputStreamY->free_host();
     }
 
-        SECTION("slift(+) simple example 2") {
-        // Read input and correct output data
-        //printf("----slift 2-----");
-        GPUReader inReader = GPUReader("test/data/slift2.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
+    SECTION("slift(+) simple example 2") {
+       //printf("----slift 2-----");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift2.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift2.out");
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamZ, inputStreamY,TH_OP_add, 0);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-SECTION("slift(+) simple example 2 flipped") {
-        // Read input and correct output data
+    SECTION("slift(+) simple example 2 flipped") {
         GPUReader inReader = GPUReader("test/data/slift2.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+        
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
+
     SECTION("slift(+) empty example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/slift3.in");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "slift3.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "slift3.out");
         std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
         std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
-        GPUReader outReader = GPUReader("test/data/slift3.out");
         std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         outputStream->copy_to_host();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();
     }
 
-       SECTION("slift(+) large example") {
-        // Read input and correct output data
+    SECTION("slift(+) large example") {
         GPUReader inReader = GPUReader("test/data/slift4.in");
-        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStreamDebug("y");
         GPUReader outReader = GPUReader("test/data/slift4.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("f");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
+        std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+        std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("f");
         inputStreamZ->copy_to_device();
         inputStreamY->copy_to_device();
-       // inputStreamV.print();
-      //  inputStreamR.print();
-        outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
-        //inputStreamR.print();
+
+        std::shared_ptr<GPUIntStream> outputStream = slift_thrust(inputStreamY, inputStreamZ,TH_OP_add, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
         
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamZ->free_device();
-
         inputStreamY->free_device();
         outputStream->free_device();
-        
         inputStreamZ->free_host();
         outputStream->free_host();
         inputStreamY->free_host();

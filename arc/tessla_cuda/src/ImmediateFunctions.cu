@@ -12,6 +12,17 @@
 #include "ImmediateFunctions.cuh"
 #include "StreamFunctionHelper.cuh"
 
+// Internal function delcarations
+// CUDA kernels
+__global__ void add_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void mul_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void sub_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void sub_inv_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void div_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void div_inv_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void mod_imm_cuda (const int *input_val, int imm, int *output_val);
+__global__ void mod_inv_imm_cuda (const int *input_val, int imm, int *output_val);
+
 /**
  * Add an immediate value to a stream.
  * @param input Input stream
@@ -45,9 +56,6 @@ __global__ void add_imm_cuda (const int *input_val, int imm, int *output_val) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     output_val[i] = input_val[i] + imm;
 }
-
-
-
 
 /**
  * Multiply an immediate value onto a stream.
@@ -83,9 +91,6 @@ __global__ void mul_imm_cuda (const int *input_val, int imm, int *output_val) {
     output_val[i] = input_val[i] * imm;
 }
 
-
-
-
 /**
  * Subtract an immediate value from a stream.
  * @param input Input stream
@@ -119,9 +124,6 @@ __global__ void sub_imm_cuda (const int *input_val, int imm, int *output_val) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     output_val[i] = input_val[i] - imm;
 }
-
-
-
 
 /**
  * Subtract a stream from an immediate value.
@@ -157,9 +159,6 @@ __global__ void sub_inv_imm_cuda (const int *input_val, int imm, int *output_val
     output_val[i] = imm - input_val[i];
 }
 
-
-
-
 /**
  * Divide a stream by an immediate value
  * @param input Input stream
@@ -193,9 +192,6 @@ __global__ void div_imm_cuda (const int *input_val, int imm, int *output_val) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     output_val[i] = input_val[i] / imm;
 }
-
-
-
 
 /**
  * Divide an immediate value by a stream
@@ -231,9 +227,6 @@ __global__ void div_inv_imm_cuda (const int *input_val, int imm, int *output_val
     output_val[i] = imm / input_val[i];
 }
 
-
-
-
 /**
  * Calculate a stream modulo an immediate value
  * @param input Input stream
@@ -267,9 +260,6 @@ __global__ void mod_imm_cuda (const int *input_val, int imm, int *output_val) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     output_val[i] = input_val[i] % imm;
 }
-
-
-
 
 /**
  * Calculate an immediate value modulo a stream

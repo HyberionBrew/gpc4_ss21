@@ -231,7 +231,6 @@ TEST_CASE("Benchmarks") {
                 #endif
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-                printf("%li us\n",duration.count());
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
                 output_last.open ("benchmarking_last.data",std::ios::app);
                 output_last << duration.count() <<  " us" << " with reader: " <<duration2.count() <<"us \n";

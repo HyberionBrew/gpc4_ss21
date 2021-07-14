@@ -9,7 +9,6 @@
 #include "../../test/catch2/catch.hpp"
 #include <GPUReader.cuh>
 #include <GPUStream.cuh>
-#include <StreamFunctions.cuh>
 
 #include <chrono>
 #include <fstream>
@@ -17,30 +16,25 @@
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
 
+#include <StreamFunctions.cuh>
 #include <StreamFunctionsThrust.cuh>
+
+static std::string TESTDATA_PATH = "test/data/";
 
 TEST_CASE("last_thrust()") {
     SECTION("last_thrust() tuwel example") {
-        // Read input and correct output data
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_last.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_last.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("v");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("r");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
-        GPUReader inReader = GPUReader("test/data/bt_last.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r");
-        GPUReader outReader = GPUReader("test/data/bt_last.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
-        // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        // inputStreamV->print();
-        //  inputStreamR->print();
-        outputStream = last_thrust(inputStreamV, inputStreamR, 0);
-        //inputStreamR->print();
+
+        std::shared_ptr<GPUIntStream> outputStream = last_thrust(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
@@ -49,84 +43,67 @@ TEST_CASE("last_thrust()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
-
         inputStreamR->free_device();
         outputStream->free_device();
-
         inputStreamV->free_host();
         outputStream->free_host();
         inputStreamR->free_host();
     }
 
-    SECTION("last() large random example") {
+    SECTION("last_thrust() large random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test2.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-        // Prepare empty output stream to fill
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test2.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test2.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
         std::shared_ptr<GPUIntStream> outputStream;
 
-        // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        //inputStreamV->print();
-        //inputStreamR->print();
 
         outputStream = last_thrust(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-
-        //outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-        for (int i = 0; i< CORRECT_STREAM->size; i++){
-            REQUIRE(kernelTimestamps[i] == correctTimestamps[i]);
-        }
-
+        REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
     SECTION("last() twice test with no invalids") {
-        // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test3.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("a");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("x");
-        GPUReader outReader = GPUReader("test/data/last_test3.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test3.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test3.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStream("a");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("x");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("o");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-
-        std::shared_ptr<GPUIntStream> intermediateStream;
-        std::shared_ptr<GPUIntStream> outputStream;
-
-        // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
         inputStream2->copy_to_device();
-        intermediateStream = last_thrust(inputStreamV, inputStreamR, 0);
-        intermediateStream->copy_to_host();
-        outputStream = last_thrust(intermediateStream, inputStream2, 0);
 
+        // Run kernel
+        std::shared_ptr<GPUIntStream> intermediateStream = last_thrust(inputStreamV, inputStreamR, 0);
+        intermediateStream->copy_to_host();
+        std::shared_ptr<GPUIntStream> outputStream = last_thrust(intermediateStream, inputStream2, 0);
         outputStream->copy_to_host();
-//        outputStream.print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
@@ -134,115 +111,89 @@ TEST_CASE("last_thrust()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
         REQUIRE(kernelTimestamps == correctTimestamps);
-
-
         REQUIRE(kernelValues == correctValues);
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         intermediateStream->free_device();
         outputStream->free_device();
         inputStream2->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        intermediateStream->free_host();
+        outputStream->free_host();
+        inputStream2->free_host();
     }
 
     SECTION("last() twice test with invalids in Unit Stream") {
-        //printf("-------------------------\n");
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test4.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("x");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test4.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test4.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test4.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStream("x");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("o");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        int sizeAllocated = (size_t)  inputStreamR->size * sizeof(int);
-        int *host_timestampOut = (int *) malloc( inputStreamR->size * sizeof(int));
-        int *host_valueOut = (int*) malloc( inputStreamR->size * sizeof(int));
-
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-
-        int *host_timestampOut2 = (int *) malloc( inputStream2->size * sizeof(int));
-        int *host_valueOut2 = (int*) malloc( inputStream2->size * sizeof(int));
-
-        memset(host_timestampOut2, 0, inputStream2->size * sizeof(int));
-        memset(host_valueOut2, 0, inputStream2->size * sizeof(int));
-
-        std::shared_ptr<GPUIntStream> intermediateStream = std::make_shared<GPUIntStream>(host_timestampOut,
-                                                                                          host_valueOut,
-                                                                                          inputStreamR->size);
-        std::shared_ptr<GPUIntStream> outputStream = std::make_shared<GPUIntStream>(host_timestampOut2, host_valueOut2,
-                                                                                    inputStream2->size);
-
-        // Run kernel
-        intermediateStream->copy_to_device();
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        outputStream->copy_to_device();
         inputStream2->copy_to_device();
 
-        intermediateStream = last_thrust(inputStreamV, inputStreamR,  0);
-        outputStream = last_thrust(intermediateStream, inputStream2, 0);
-
+        std::shared_ptr<GPUIntStream> intermediateStream = last_thrust(inputStreamV, inputStreamR,  0);
+        std::shared_ptr<GPUIntStream> outputStream = last_thrust(intermediateStream, inputStream2, 0);
+        intermediateStream->copy_to_host();
         outputStream->copy_to_host();
-        //outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
-
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         intermediateStream->free_device();
         outputStream->free_device();
         inputStream2->free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
-        free(host_valueOut2);
-        free(host_timestampOut2);
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        intermediateStream->free_host();
+        outputStream->free_host();
+        inputStream2->free_host();
     }
+
     SECTION("last empty"){
         //reading only invalid streams (they are empty)
-        GPUReader inReader = GPUReader("test/data/bt_last.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v2");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r2");
-        GPUReader outReader = GPUReader("test/data/bt_last.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y2");
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_last.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_last.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("v");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("r");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        // inputStreamV->print();
-        //  inputStreamR->print();
-        outputStream = last_thrust(inputStreamV, inputStreamR, 0);
-        //inputStreamR->print();
+        std::shared_ptr<GPUIntStream> outputStream = last_thrust(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
 
-        //outputStream->print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp+*(outputStream->host_offset), outputStream->host_timestamp+outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values+*(outputStream->host_offset), outputStream->host_values+outputStream->size);
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
 }
@@ -250,29 +201,18 @@ TEST_CASE("last_thrust()") {
 TEST_CASE("last()") {
     SECTION("last() small random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test1.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test1.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        //printf("%d \n\n",  CORRECT_STREAM.size);
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test1.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test1.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        //inputStreamV->print();
-        //inputStreamR->print();
-        //inputStreamV.print();
-        //inputStreamR.print();
         std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
-        //printf("xx");
-        // outputStream.print();
-        //outputStream.print();
+
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
@@ -281,7 +221,6 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
 
@@ -289,29 +228,28 @@ TEST_CASE("last()") {
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
     SECTION("last empty") {
-
         //reading only invalid streams (they are empty)
-        GPUReader inReader = GPUReader("test/data/bt_last.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v2");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r2");
-        GPUReader outReader = GPUReader("test/data/bt_last.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y2");
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_last.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_last.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("v");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("r");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
+        //int size = CORRECT_STREAM->size;
+        //std::shared_ptr<GPUIntStream> outputStream;
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        // inputStreamV->print();
-        //  inputStreamR->print();
-        outputStream = last(inputStreamV, inputStreamR, 0);
-        //inputStreamR->print();
+
+        std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
 
-        //outputStream->print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
@@ -320,39 +258,35 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
     SECTION("last() tuwel example") {
         // Read input and correct output data
-
-        GPUReader inReader = GPUReader("test/data/bt_last.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("v");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("r");
-        GPUReader outReader = GPUReader("test/data/bt_last.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "bt_last.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "bt_last.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("v");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("r");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
         // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        std::shared_ptr<GPUIntStream> outputStream;
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        // inputStreamV->print();
-        //  inputStreamR->print();
-        outputStream = last(inputStreamV, inputStreamR, 0);
-        //inputStreamR->print();
+
+        std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
 
-        //outputStream->print();
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
@@ -361,41 +295,33 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
     SECTION("last() small random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test1.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test1.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        //printf("%d \n\n",  CORRECT_STREAM->size);
-
-        std::shared_ptr<GPUIntStream> outputStream;
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test1.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test1.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        //inputStreamV->print();
-        //inputStreamR->print();
-        outputStream = last(inputStreamV, inputStreamR, 0);
+
+        std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-        //printf("xx");
-        // outputStream->print();
-        //outputStream->print();
-        // Compare kernel result to correct data
+
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
                                           outputStream->host_timestamp + outputStream->size);
         std::vector<int> kernelValues(outputStream->host_values + *(outputStream->host_offset),
@@ -403,7 +329,6 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
 
@@ -411,28 +336,26 @@ TEST_CASE("last()") {
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
     SECTION("last() large random example") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test2.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test2.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("y");
-        // Prepare empty output stream to fill
-        std::shared_ptr<GPUIntStream> outputStream;
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test2.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test2.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("y");
+        //std::shared_ptr<GPUIntStream> outputStream;
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        //inputStreamV->print();
-        //inputStreamR->print();
 
-        outputStream = last(inputStreamV, inputStreamR, 0);
+        std::shared_ptr<GPUIntStream> outputStream = last(inputStreamV, inputStreamR, 0);
         outputStream->copy_to_host();
-
-        //outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
@@ -442,44 +365,36 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-        for (int i = 0; i < CORRECT_STREAM->size; i++) {
-            REQUIRE(kernelTimestamps[i] == correctTimestamps[i]);
-        }
-
+        REQUIRE(kernelTimestamps == correctTimestamps);
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         outputStream->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        outputStream->free_host();
     }
 
 
     SECTION("last() twice test with no invalids") {
         // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test3.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("a");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("x");
-        GPUReader outReader = GPUReader("test/data/last_test3.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
-
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-
-        std::shared_ptr<GPUIntStream> intermediateStream;
-        std::shared_ptr<GPUIntStream> outputStream;
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test3.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test3.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStream("a");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("x");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("o");
 
         // Run kernel
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
         inputStream2->copy_to_device();
-        intermediateStream = last(inputStreamV, inputStreamR, 0);
+        std::shared_ptr<GPUIntStream> intermediateStream = last(inputStreamV, inputStreamR, 0);
+        std::shared_ptr<GPUIntStream> outputStream = last(intermediateStream, inputStream2, 0);
         intermediateStream->copy_to_host();
-        outputStream = last(intermediateStream, inputStream2, 0);
-
         outputStream->copy_to_host();
-//        outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
@@ -490,58 +405,36 @@ TEST_CASE("last()") {
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
         REQUIRE(kernelTimestamps == correctTimestamps);
-
-
         REQUIRE(kernelValues == correctValues);
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         intermediateStream->free_device();
         outputStream->free_device();
         inputStream2->free_device();
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        intermediateStream->free_host();
+        outputStream->free_host();
+        inputStream2->free_host();
     }
 
     SECTION("last() twice test with invalids in Unit Stream") {
-        //printf("-------------------------\n");
-        // Read input and correct output data
-        GPUReader inReader = GPUReader("test/data/last_test4.in");
-        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStreamDebug("z");
-        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStreamDebug("x");
-        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStreamDebug("a");
-        GPUReader outReader = GPUReader("test/data/last_test4.out");
-        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStreamDebug("o");
+        GPUReader inReader = GPUReader(TESTDATA_PATH + "last_test4.in");
+        GPUReader outReader = GPUReader(TESTDATA_PATH + "last_test4.out");
+        std::shared_ptr<GPUIntStream> inputStreamV = inReader.getIntStream("z");
+        std::shared_ptr<GPUUnitStream> inputStream2 = inReader.getUnitStream("x");
+        std::shared_ptr<GPUUnitStream> inputStreamR = inReader.getUnitStream("a");
+        std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("o");
 
-        // Prepare empty output stream to fill
-        int size = CORRECT_STREAM->size;
-        int sizeAllocated = (size_t) inputStreamR->size * sizeof(int);
-        int *host_timestampOut = (int *) malloc(inputStreamR->size * sizeof(int));
-        int *host_valueOut = (int *) malloc(inputStreamR->size * sizeof(int));
-
-        memset(host_timestampOut, 0, sizeAllocated);
-        memset(host_valueOut, 0, sizeAllocated);
-
-        int *host_timestampOut2 = (int *) malloc(inputStream2->size * sizeof(int));
-        int *host_valueOut2 = (int *) malloc(inputStream2->size * sizeof(int));
-
-        memset(host_timestampOut2, 0, inputStream2->size * sizeof(int));
-        memset(host_valueOut2, 0, inputStream2->size * sizeof(int));
-        std::shared_ptr<GPUIntStream> intermediateStream = std::make_shared<GPUIntStream>(host_timestampOut,
-                                                                                          host_valueOut,
-                                                                                          inputStreamR->size);
-        std::shared_ptr<GPUIntStream> outputStream = std::make_shared<GPUIntStream>(host_timestampOut2, host_valueOut2,
-                                                                                    inputStream2->size);
-        // Run kernel
-        intermediateStream->copy_to_device();
         inputStreamV->copy_to_device();
         inputStreamR->copy_to_device();
-        outputStream->copy_to_device();
         inputStream2->copy_to_device();
 
-        intermediateStream = last(inputStreamV, inputStreamR, 0);
-        outputStream = last(intermediateStream, inputStream2, 0);
-
+        std::shared_ptr<GPUIntStream> intermediateStream = last(inputStreamV, inputStreamR, 0);
+        std::shared_ptr<GPUIntStream> outputStream = last(intermediateStream, inputStream2, 0);
         outputStream->copy_to_host();
-        //outputStream->print();
 
         // Compare kernel result to correct data
         std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset),
@@ -551,20 +444,19 @@ TEST_CASE("last()") {
         std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp,
                                            CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
         std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
-
         REQUIRE(kernelTimestamps == correctTimestamps);
-
         REQUIRE(kernelValues == correctValues);
-        //outputStream->print();
+
         // Cleanup
         inputStreamV->free_device();
         inputStreamR->free_device();
         intermediateStream->free_device();
         outputStream->free_device();
         inputStream2->free_device();
-        free(host_valueOut);
-        free(host_timestampOut);
-        free(host_valueOut2);
-        free(host_timestampOut2);
+        inputStreamV->free_host();
+        inputStreamR->free_host();
+        intermediateStream->free_host();
+        outputStream->free_host();
+        inputStream2->free_host();
     }
 }
