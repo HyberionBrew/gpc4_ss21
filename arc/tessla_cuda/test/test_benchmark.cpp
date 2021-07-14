@@ -148,8 +148,6 @@ TEST_CASE("BENCHMARKING CUDA") {
         for (int j = 1; j <= BENCHMARKING_LOOPS; j++) {
             cudaDeviceSynchronize();
             for (int i = 3; i <= BENCHMARKING_CASES; i++) {
-                //if (i == 4)
-                //    continue;
                 auto start2 = std::chrono::high_resolution_clock::now();
 
                 GPUReader inReader = GPUReader(path + std::to_string(i) + ".in");
@@ -307,4 +305,133 @@ TEST_CASE("BENCHMARKING CUDA") {
             }
         }
     }
+
+    SECTION("lift() add benchmarking") {
+        std::ofstream output_last;
+        output_last.open("benchmarking_lift_add.data");
+        output_last << "";
+        output_last.close();
+
+        int dev = 0;
+        cudaDeviceProp deviceProp;
+        cudaGetDeviceProperties(&deviceProp, dev);
+
+        printf("Using Device %d: %s\n", dev, deviceProp.name);
+        for (int j = 1; j <= BENCHMARKING_LOOPS; j++) {
+            cudaDeviceSynchronize();
+            for (int i = 1; i <= BENCHMARKING_CASES; i++) {
+                auto start2 = std::chrono::high_resolution_clock::now();
+
+                std::string path = "test/data/benchmarking";
+                GPUReader inReader = GPUReader(path + std::to_string(i) + "_lift.in");
+                GPUReader outReader = GPUReader(path + std::to_string(i) + "_slift_add.out");
+
+                std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+                std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+                std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("x");
+
+                int size = CORRECT_STREAM->size;
+                auto start = std::chrono::high_resolution_clock::now();
+
+                std::shared_ptr<GPUIntStream> outputStream;
+                inputStreamZ->copy_to_device();
+                inputStreamY->copy_to_device();
+
+                outputStream = slift(inputStreamZ, inputStreamY, TH_OP_add);
+                outputStream->copy_to_host();
+
+                cudaDeviceSynchronize();
+
+                auto stop = std::chrono::high_resolution_clock::now();
+
+                std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset), outputStream->host_timestamp + outputStream->size);
+                std::vector<int> kernelValues(outputStream->host_values + *(outputStream->host_offset), outputStream->host_values + outputStream->size);
+                std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
+                std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
+
+                REQUIRE(kernelTimestamps == correctTimestamps);
+                REQUIRE(kernelValues == correctValues);
+
+                // Cleanup
+                inputStreamZ->free_device();
+                inputStreamY->free_device();
+                outputStream->free_device();
+                inputStreamZ->free_host();
+                inputStreamY->free_host();
+                outputStream->free_host();
+
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                output_last.open("benchmarking_lift_add.data", std::ios::app);
+                output_last << "Benchmark " << i << ": " << duration.count()
+                            << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
+                output_last.close();
+            }
+        }
+    }
+
+    SECTION("lift() multiply benchmarking") {
+        std::ofstream output_last;
+        output_last.open("benchmarking_lift_multiply.data");
+        output_last << "";
+        output_last.close();
+
+        int dev = 0;
+        cudaDeviceProp deviceProp;
+        cudaGetDeviceProperties(&deviceProp, dev);
+
+        printf("Using Device %d: %s\n", dev, deviceProp.name);
+        for (int j = 1; j <= BENCHMARKING_LOOPS; j++) {
+            cudaDeviceSynchronize();
+            for (int i = 1; i <= BENCHMARKING_CASES; i++) {
+                auto start2 = std::chrono::high_resolution_clock::now();
+
+                std::string path = "test/data/benchmarking";
+                GPUReader inReader = GPUReader(path + std::to_string(i) + "_lift.in");
+                GPUReader outReader = GPUReader(path + std::to_string(i) + "_slift_multiply.out");
+
+                std::shared_ptr<GPUIntStream> inputStreamZ = inReader.getIntStream("z");
+                std::shared_ptr<GPUIntStream> inputStreamY = inReader.getIntStream("y");
+                std::shared_ptr<GPUIntStream> CORRECT_STREAM = outReader.getIntStream("x");
+
+                int size = CORRECT_STREAM->size;
+                auto start = std::chrono::high_resolution_clock::now();
+
+                std::shared_ptr<GPUIntStream> outputStream;
+                inputStreamZ->copy_to_device();
+                inputStreamY->copy_to_device();
+
+                outputStream = slift(inputStreamZ, inputStreamY, TH_OP_multiply);
+                outputStream->copy_to_host();
+
+                cudaDeviceSynchronize();
+
+                auto stop = std::chrono::high_resolution_clock::now();
+
+                std::vector<int> kernelTimestamps(outputStream->host_timestamp + *(outputStream->host_offset), outputStream->host_timestamp + outputStream->size);
+                std::vector<int> kernelValues(outputStream->host_values + *(outputStream->host_offset), outputStream->host_values + outputStream->size);
+                std::vector<int> correctTimestamps(CORRECT_STREAM->host_timestamp, CORRECT_STREAM->host_timestamp + CORRECT_STREAM->size);
+                std::vector<int> correctValues(CORRECT_STREAM->host_values, CORRECT_STREAM->host_values + CORRECT_STREAM->size);
+
+                REQUIRE(kernelTimestamps == correctTimestamps);
+                REQUIRE(kernelValues == correctValues);
+
+                // Cleanup
+                inputStreamZ->free_device();
+                inputStreamY->free_device();
+                outputStream->free_device();
+                inputStreamZ->free_host();
+                inputStreamY->free_host();
+                outputStream->free_host();
+
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
+                output_last.open("benchmarking_lift_multiply.data", std::ios::app);
+                output_last << "Benchmark " << i << ": " << duration.count()
+                            << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
+                output_last.close();
+            }
+        }
+    }
+
 }
