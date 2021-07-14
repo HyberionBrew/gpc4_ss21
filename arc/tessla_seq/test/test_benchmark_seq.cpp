@@ -270,7 +270,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
         }
     }
 
-    SECTION("lift() add benchmarking, sequential version") {
+    SECTION("lift() subtract benchmarking, sequential version") {
         std::ofstream output_last;
         //delete previous
         output_last.open("benchmarking_lift_subtract_seq.data");
