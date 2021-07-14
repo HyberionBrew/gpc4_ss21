@@ -20,7 +20,7 @@
 #include <StreamFunctionsThrust.cuh>
 
 
-#define BENCHMARKING_CASES 6
+#define BENCHMARKING_CASES 5
 #define BENCHMARKING_LOOPS 1
 
 TEST_CASE("BENCHMARKING") {

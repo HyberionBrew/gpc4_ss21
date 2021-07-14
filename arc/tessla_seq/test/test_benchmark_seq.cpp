@@ -21,7 +21,7 @@
 #include <chrono>
 #include <fstream>
 
-#define BENCHMARKING_CASES 6
+#define BENCHMARKING_CASES 5
 #define BENCHMARKING_LOOPS 1
 #define CHECK_RESULTS
 
