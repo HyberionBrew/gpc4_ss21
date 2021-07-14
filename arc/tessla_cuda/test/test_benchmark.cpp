@@ -31,7 +31,7 @@ TEST_CASE("BENCHMARKING CUDA") {
     SECTION("last() CUDA benchmarking example") {
         // Clear previous benchmarking results
         std::ofstream output_last;
-        output_last.open("benchmarking_last.data");
+        output_last.open("benchmarking_last_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -80,7 +80,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_last.data", std::ios::app);
+                output_last.open("benchmarking_last_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count() << " us" << " with reader: " << duration2.count()<< " us size: " << CORRECT_STREAM->size << "\n";
                 output_last.close();
             }
@@ -90,7 +90,7 @@ TEST_CASE("BENCHMARKING CUDA") {
     SECTION("time() CUDA benchmarking example") {
         // Clear previous benchmarking results
         std::ofstream output_time;
-        output_time.open("benchmarking_time.data");
+        output_time.open("benchmarking_time_cuda.data");
         output_time << "";
         output_time.close();
 
@@ -129,7 +129,7 @@ TEST_CASE("BENCHMARKING CUDA") {
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
 
-                output_time.open("benchmarking_time.data", std::ios::app);
+                output_time.open("benchmarking_time_cuda.data", std::ios::app);
                 output_time << "Benchmark " << i << ": " << duration.count()<< " us" << " with reader: " << duration2.count()<< " us size: " << CORRECT_STREAM->size << "\n";
                 output_time.close();
             }
@@ -139,7 +139,7 @@ TEST_CASE("BENCHMARKING CUDA") {
     SECTION("delay() CUDA benchmarking example") {
         // Clear previous benchmarking results
         std::ofstream output_delay;
-        output_delay.open("benchmarking_delay.data");
+        output_delay.open("benchmarking_delay_cuda.data");
         output_delay << "";
         output_delay.close();
 
@@ -180,7 +180,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_delay.open("benchmarking_delay.data", std::ios::app);
+                output_delay.open("benchmarking_delay_cuda.data", std::ios::app);
                 output_delay << "Benchmark " << i << ": " << duration.count() << " us" << " with reader: " << duration2.count() << " us size: " << CORRECT_STREAM->size << "\n";
                 output_delay.close();
             }
@@ -190,7 +190,7 @@ TEST_CASE("BENCHMARKING CUDA") {
     SECTION("count() CUDA benchmarking example") {
         // Clear previous benchmarking results
         std::ofstream output_count;
-        output_count.open("benchmarking_count.data");
+        output_count.open("benchmarking_count_cuda.data");
         output_count << "";
         output_count.close();
 
@@ -233,7 +233,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_count.open("benchmarking_count.data", std::ios::app);
+                output_count.open("benchmarking_count_cuda.data", std::ios::app);
                 output_count << "Benchmark " << i << ": " << duration.count() << " us" << " with reader: " << duration2.count() << " us size: " << CORRECT_STREAM->size << "\n";
                 output_count.close();
             }
@@ -242,7 +242,7 @@ TEST_CASE("BENCHMARKING CUDA") {
     
     SECTION("lift() merge CUDA benchmarking") {
         std::ofstream output_last;
-        output_last.open("benchmarking_lift_merge.data");
+        output_last.open("benchmarking_lift_merge_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -296,7 +296,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_lift_merge.data", std::ios::app);
+                output_last.open("benchmarking_lift_merge_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count()
                             << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
                 output_last.close();
@@ -306,7 +306,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
     SECTION("slift() merge CUDA benchmarking") {
         std::ofstream output_last;
-        output_last.open("benchmarking_slift_merge.data");
+        output_last.open("benchmarking_slift_merge_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -360,7 +360,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_slift_merge.data", std::ios::app);
+                output_last.open("benchmarking_slift_merge_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count()
                             << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
                 output_last.close();
@@ -370,7 +370,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
     SECTION("slift() add CUDA benchmarking") {
         std::ofstream output_last;
-        output_last.open("benchmarking_slift_add.data");
+        output_last.open("benchmarking_slift_add_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -424,7 +424,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_slift_add.data", std::ios::app);
+                output_last.open("benchmarking_slift_add_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count()
                             << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
                 output_last.close();
@@ -434,7 +434,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
     SECTION("slift() subtract CUDA benchmarking") {
         std::ofstream output_last;
-        output_last.open("benchmarking_slift_subtract.data");
+        output_last.open("benchmarking_slift_subtract_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -488,7 +488,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_slift_subtract.data", std::ios::app);
+                output_last.open("benchmarking_slift_subtract_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count()
                             << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
                 output_last.close();
@@ -498,7 +498,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
     SECTION("slift() multiply CUDA benchmarking") {
         std::ofstream output_last;
-        output_last.open("benchmarking_slift_multiply.data");
+        output_last.open("benchmarking_slift_multiply_cuda.data");
         output_last << "";
         output_last.close();
 
@@ -552,7 +552,7 @@ TEST_CASE("BENCHMARKING CUDA") {
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
                 auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop - start2);
-                output_last.open("benchmarking_slift_multiply.data", std::ios::app);
+                output_last.open("benchmarking_slift_multiply_cuda.data", std::ios::app);
                 output_last << "Benchmark " << i << ": " << duration.count()
                             << " us" << " with reader: " << duration2.count()<< " us size: " << size << "\n";
                 output_last.close();
