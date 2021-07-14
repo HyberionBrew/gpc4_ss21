@@ -202,11 +202,9 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
       thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> new_end = thrust::unique_by_key(merged_timestamps.begin(),merged_timestamps.end(),merged_values.begin());
 
       int length = thrust::distance(merged_timestamps.begin(),new_end.first);
-      int rs = result->size-length;
-      thrust::copy(merged_timestamps.begin(), merged_timestamps.end(), 
-                    result_timestamps+rs);
-      thrust::copy(merged_values.begin(), merged_values.end(), 
-                result_values+rs);
+      int rs = result->size - length;
+      thrust::copy_n(merged_timestamps.begin(), length, result_timestamps + rs);
+      thrust::copy_n(merged_values.begin(), length, result_values + rs);
 
       thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
       return result;
@@ -229,14 +227,11 @@ std::shared_ptr<GPUIntStream> slift_thrust(std::shared_ptr<GPUIntStream> inputIn
   
     thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> new_end = thrust::unique_by_key(merged_timestamps.begin(),merged_timestamps.end(),merged_values.begin());
 
-    int length = thrust::distance(merged_timestamps.begin(),new_end.first);//thrust::count(values_res.begin(),values_res.end(),-1);
+    int length = thrust::distance(merged_timestamps.begin(),new_end.first);;
 
     int rs = result->size-length;
-    thrust::copy(merged_timestamps.begin(), merged_timestamps.end(), 
-                  result_timestamps+rs);
-    thrust::copy(merged_values.begin(), merged_values.end(), 
-              result_values+rs);
-
+    thrust::copy_n(merged_timestamps.begin(), length, result_timestamps + rs);
+    thrust::copy_n(merged_values.begin(), length, result_values + rs);
     thrust::fill(result_offs, result_offs + sizeof(int), (int) rs);
     return result;
 
