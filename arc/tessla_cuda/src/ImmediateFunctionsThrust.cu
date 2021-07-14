@@ -53,8 +53,8 @@ struct immFunctor {
 shared_ptr<GPUIntStream> exec_imm_op(shared_ptr<GPUIntStream> input, size_t imm, ImmOp op) {
     // prepare result
     shared_ptr<GPUIntStream> result = make_shared<GPUIntStream>();
-    cudaMalloc((void**) result->device_timestamp, input->size*sizeof(int));
-    cudaMalloc((void**) result->device_values, input->size*sizeof(int));
+    cudaMalloc((void**) &result->device_timestamp, input->size*sizeof(int));
+    cudaMalloc((void**) &result->device_values, input->size*sizeof(int));
     result->device_offset = input->device_offset;
 
     // copy timestamps
@@ -72,7 +72,7 @@ shared_ptr<GPUIntStream> exec_imm_op(shared_ptr<GPUIntStream> input, size_t imm,
     return result;
 }
 
-shared_ptr<GPUIntStream> add_imm_thrust(shared_ptr<GPUIntStream> input, size_t imm) {
+std::shared_ptr<GPUIntStream> add_imm_thrust(shared_ptr<GPUIntStream> input, size_t imm) {
     return exec_imm_op(input, imm, ADD);
 }
 

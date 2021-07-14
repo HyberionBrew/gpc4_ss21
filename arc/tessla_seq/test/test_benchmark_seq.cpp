@@ -45,7 +45,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
                 std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
-                int size = sizeof(*CORRECT_STREAM) / sizeof(int);
+                int size = CORRECT_STREAM->stream.size();
 
                 auto start = std::chrono::high_resolution_clock::now();
 
@@ -70,7 +70,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
     SECTION("time() benchmarking, sequential version") {
         std::ofstream output_last;
         //delete previous
-        output_last.open("benchmarking_last_seq.data");
+        output_last.open("benchmarking_time_seq.data");
         output_last << "";
         output_last.close();
 
@@ -85,7 +85,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
                 std::shared_ptr<IntStream> inputStreamV = inReader.getIntStream("z");
                 std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
-                int size = sizeof(*CORRECT_STREAM) / sizeof(int);
+                int size = CORRECT_STREAM->stream.size();
 
                 auto start = std::chrono::high_resolution_clock::now();
 
@@ -116,7 +116,6 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
 
         for (int j = 1; j <= BENCHMARKING_LOOPS; j++){
             for (int i = 3; i <= BENCHMARKING_CASES; i++) {
-                printf("dleay test case %i\n", i);
                 auto start2 = std::chrono::high_resolution_clock::now();
 
                 std::string path = "test/data/benchmarking";
@@ -127,7 +126,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
                 std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
                 std::shared_ptr<UnitStream> CORRECT_STREAM = outReader.getUnitStream("y");
 
-                int size = sizeof(*CORRECT_STREAM) / sizeof(int);
+                int size = CORRECT_STREAM->stream.size();
 
                 auto start = std::chrono::high_resolution_clock::now();
 
@@ -152,7 +151,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
     SECTION("count() benchmarking, sequential version") {
         std::ofstream output_last;
         //delete previous
-        output_last.open("benchmarking_last_seq.data");
+        output_last.open("benchmarking_count_seq.data");
         output_last << "";
         output_last.close();
 
@@ -167,7 +166,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
                 std::shared_ptr<UnitStream> inputStreamV = inReader.getUnitStream("a");
                 std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("y");
 
-                int size = sizeof(*CORRECT_STREAM) / sizeof(int);
+                int size = CORRECT_STREAM->stream.size();
 
                 auto start = std::chrono::high_resolution_clock::now();
 
@@ -208,7 +207,7 @@ TEST_CASE("BENCHMARKING SEQUENTIAL") {
                 std::shared_ptr<IntStream> inputStreamY = inReader.getIntStream("y");
                 std::shared_ptr<IntStream> CORRECT_STREAM = outReader.getIntStream("x");
 
-                int size = sizeof(*CORRECT_STREAM) / sizeof(int);
+                int size = CORRECT_STREAM->stream.size();
 
                 auto start = std::chrono::high_resolution_clock::now();
 

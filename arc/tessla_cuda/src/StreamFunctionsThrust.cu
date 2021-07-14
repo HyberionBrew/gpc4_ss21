@@ -504,17 +504,21 @@ std::shared_ptr<GPUUnitStream> delay_thrust(std::shared_ptr<GPUIntStream> inputD
     return result;
 }
 
-std::shared_ptr<GPUIntStream> time_thrust(std::shared_ptr<GPUUnitStream> input) {
+std::shared_ptr<GPUIntStream> time_thrust(std::shared_ptr<GPUIntStream> input) {
     std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>();
 
     size_t size_alloc = input->size;
     result->size = size_alloc;
-    result->device_offset = input->device_offset;
-    cudaMalloc((void **) result->device_timestamp, (size_alloc)*sizeof(int));
-    cudaMalloc((void **) result->device_values, (size_alloc)*sizeof(int));
+    result->host_timestamp = (int *)malloc((input->size) * sizeof(int));
+    result->host_values = (int*) malloc((input->size) * sizeof(int));
+    memset(result->host_timestamp, 0, size_alloc);
+    memset(result->host_values, 0, size_alloc);
+    result->copy_to_device(false);
 
-    auto dest = thrust::device_pointer_cast(result->device_values + *result->device_offset);
-    auto source = thrust::device_pointer_cast(input->device_timestamp + *input->device_offset);
+    auto dest = thrust::device_pointer_cast(result->device_values + *thrust::device_pointer_cast(result->device_offset));
+    auto source = thrust::device_pointer_cast(input->device_timestamp + *thrust::device_pointer_cast(input->device_offset));
+    thrust::copy_n(source, input->size, dest);
+    dest = thrust::device_pointer_cast(result->device_timestamp + *thrust::device_pointer_cast(result->device_offset));
     thrust::copy_n(source, input->size, dest);
 
     return result;

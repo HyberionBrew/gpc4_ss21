@@ -1,0 +1,4 @@
+in z: Events[Int]
+in y: Events[Int]
+def x := z + y
+out x
