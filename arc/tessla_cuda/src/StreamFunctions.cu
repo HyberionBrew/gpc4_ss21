@@ -12,31 +12,303 @@
 #include "StreamFunctionHelper.cuh"
 
 #define MAX_STREAMS 10
-//Memory pointer for the streams
-//TODO! not used
-// implement pointer passed memory (i.e. not as it is done currently!)
-// https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#dynamic-global-memory-allocation-and-operations
-// DISCUSS HOW TO BEST DO THIS
-// example https://forums.developer.nvidia.com/t/how-to-allocate-global-dynamic-memory-on-device-from-host/71011/2
 
-__device__ int** streamTable[MAX_STREAMS]; // Per-stream pointer
+// Internal function declarations
+__global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* output_values, int size, int*offs, int* resultOffse);
+__global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values,int IntStreamSize, int size, int* offsInt, int* offsUnit);
+void delay_preliminary_prune(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream);
+__global__ void delay_cuda_preliminary_prune(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int size, int resetSize, int *offset, int *resetOffset, cudaStream_t stream);
+__global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int reset_size, int* inputInt_timestamps, int* inputInt_values, int* inputInt_offset, int inputInt_size, int* result_timestamps, int* result_offset, int result_size, cudaStream_t stream);
+__global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *resetTimestamps, int *results, int size, int inputSize, int *inputOffset, int *resetOffset, int* resultOffset, int maxTimestamp, cudaStream_t stream);
+__global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts, 
+                            int *x_v, int *y_v, int *out_v,
+                            int threads, int x_len, int y_len, 
+                            int op, int *valid, int *invalid,
+                            int *out_ts_cpy, int *out_v_cpy, int *invalid_offset,
+                            int *x_offset, int *y_offset);
+__global__ void final_reduce(int* block_red,int size,int* offset);
+__global__ void assign_vals(int *input, int *result, int *input_offset, int *result_offset, int size);
+__device__ int lookUpElement(int size,int searchValue, int * input_timestamp);
+__device__ int lookUpNextElement(int size,int searchValue, int * timestamps);
+__global__ void calculate_offset(int* timestamps, int* offset, int size);
+__global__ void remove_invalid( int threads, int *invalid, int *valid, 
+                                int x_len, int y_len, 
+                                int *out_ts_cpy, int *out_ts, 
+                                int *out_v_cpy, int *out_v,
+                                int *x_offset_d, int *y_offset_d,
+                                int *result_offset, int op);
+__global__ void inval_multiples_merge(  int op, int threads,
+                                        int x_len, int y_len,
+                                        int *x_offset_d, int *y_offset_d,
+                                        int *out_ts, int *invalid, int *valid);
+__device__ void selection_sort( int *data, int left, int right );
+__global__ void cdp_simple_quicksort(int *data, int left, int right, int depth );
+__global__ void assign_vals(int *input, int *result_v, int *result_ts, int *input_offset, int *result_offset, int size);
 
-int simp_compare(const void *a, const void *b) { // TODO: Delete when no longer needed
-    return ( *(int*)a - *(int*)b );
+/**
+ * Externally called functions
+ **/
+
+// https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
+// ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
+// Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUIntStream> input, cudaStream_t stream){
+    int threads = input->size;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+    // Create new stream on device the size of the input stream
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
+    // Fire off the actual calculation
+    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
+    //printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
+    return result;
+};
+
+std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUUnitStream> input, cudaStream_t stream){
+    int threads = input->size;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+    // Create new stream on device the size of the input stream
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
+    // Fire off the actual calculation
+    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
+    //printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
+    return result;
+};
+
+std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> inputInt, std::shared_ptr<GPUUnitStream> inputUnit, cudaStream_t stream) {
+    int threads = (int) inputUnit->size;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads, &block_size, &blocks);
+
+    // Create new stream on device with the size of the unit input stream
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(inputUnit->size, true);
+    result->copy_to_device();
+
+    // Fire off the CUDA calculation
+    last_cuda<<<blocks, block_size, 0, stream>>>(inputInt->device_timestamp, inputInt->device_values,
+                                                 inputUnit->device_timestamp, result->device_timestamp,
+                                                 result->device_values, inputInt->size, threads,
+                                                 inputInt->device_offset, inputUnit->device_offset);
+
+ 
+    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
+    cudaDeviceSynchronize();
+
+    calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp, result->device_offset, threads);
+    return result;
 }
 
-__global__ void badsort(int* data, int n) {
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            if (data[j] > data[j+1]) {
-                int temp = data[j];
-                data[j] = data[j+1];
-                data[j+1] = temp;
-            }
-        }
+std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
+    std::shared_ptr<GPUIntStream> s_prune = std::make_shared<GPUIntStream>(*s, true);
+    std::shared_ptr<GPUUnitStream> r_prune = std::make_shared<GPUUnitStream>(*r, true);
+
+    // Prune GPUIntStream s, mark all events that can't possibly trigger due to a reset event with value -1
+    delay_preliminary_prune(s_prune, r_prune, stream);
+
+    // Prepare original input data and result output
+    std::shared_ptr<GPUUnitStream> prevResults = std::make_shared<GPUUnitStream>(*r_prune, true);
+    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>(s->size, true);
+
+    // Launch actual iterative algorithm on device
+    delay_iteration<<<1, 1, 0, stream>>>(prevResults->device_timestamp, prevResults->device_offset, prevResults->size, s_prune->device_timestamp, s_prune->device_values, s_prune->device_offset, s_prune->size, result->device_timestamp, result->device_offset, result->size, stream);
+    cudaDeviceSynchronize();
+
+    return result;
+}
+
+std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
+    // Merge fast path
+    if (op == MRG){
+        std::shared_ptr<GPUIntStream> merge_result = lift(x, y, MRG);
+        cudaDeviceSynchronize();
+        return merge_result;
     }
+    // Fast path for 1/2 empty stream(s)
+    if (x->size == 0 || y->size == 0){
+        int *e_ts = (int*)malloc(0);
+        int *e_v = (int*)malloc(0);
+        std::shared_ptr<GPUIntStream> empty(new GPUIntStream(e_ts, e_v, 0));
+        empty->size = 0;
+        empty->copy_to_device();
+        return empty;
+    }
+
+    int *x_ts = (int*)malloc(x->size*sizeof(int));
+    int *y_ts = (int*)malloc(y->size*sizeof(int));
+    memcpy(x_ts, x->host_timestamp, x->size*sizeof(int));
+    memcpy(y_ts, y->host_timestamp, y->size*sizeof(int));
+
+    // xy ... y is the unit stream
+    int *xy_ts = (int*)malloc(y->size*sizeof(int));
+    int *yx_ts = (int*)malloc(x->size*sizeof(int));
+    int *xy_v = (int*)malloc(y->size*sizeof(int));
+    int *yx_v = (int*)malloc(x->size*sizeof(int));
+
+    memset(xy_ts, -1, y->size*sizeof(int));
+    memset(yx_ts, -1, x->size*sizeof(int));
+
+    // Make Unit streams from Int streams for last()
+    std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream(x_ts, x->size, *(x->host_offset)));
+    std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream(y_ts, y->size, *(y->host_offset)));
+
+    x_unit->copy_to_device();
+    y_unit->copy_to_device();
+
+    std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
+    std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
+    cudaDeviceSynchronize();
+
+    last_yx->copy_to_host();
+    last_xy->copy_to_host();
+
+    std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
+    std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
+    cudaDeviceSynchronize();
+
+    std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
+    cudaDeviceSynchronize();
+
+    x_prime->free_device();
+    x_prime->free_host();
+    y_prime->free_device();
+    y_prime->free_host();
+
+    x_unit->free_device();
+    x_unit->free_host();
+    y_unit->free_device();
+    y_unit->free_host();
+
+    // MEMORY BUG WHEN FREEING LAST XY/YX
+
+    return result;
 }
 
+std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
+    // Information about MergePath
+    // https://stackoverflow.com/questions/307291++06/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
+    /**
+     * See the following paper for parallel merging of sorted arrays:
+     * O. Green, R. Mccoll, and D. Bader
+     * GPU merge path: a GPU merging algorithm
+     * International Conference on Supercomputing
+     * November 2014
+     * URL: https://www.researchgate.net/publication/254462662_GPU_merge_path_a_GPU_merging_algorithm
+     *
+     * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
+     */
+
+    int block_size = 0;
+    int blocks = 0;
+    int x_offset = *(x->host_offset);
+    int y_offset = *(y->host_offset);
+    int len_offset = x_offset+y_offset;
+    int threads = (x->size-x_offset) + (y->size-y_offset);
+    calcThreadsBlocks(threads, &block_size, &blocks);
+
+    threads = (blocks) * (block_size);
+
+    // Create Result
+    std::shared_ptr<GPUIntStream> result(new GPUIntStream());
+    result->size = x->size + y->size;
+    result->host_timestamp = (int*)malloc(result->size * sizeof(int));
+    result->host_values = (int*)malloc(result->size * sizeof(int));
+    result->host_offset = (int*)malloc(sizeof(int));
+    memset(result->host_timestamp, -1, result->size);
+    memset(result->host_values, 0, result->size);
+    *result->host_offset = 0;
+    cudaMalloc((int**)&result->device_timestamp, result->size*sizeof(int));
+    cudaMalloc((int**)&result->device_values, result->size*sizeof(int));
+    cudaMalloc((int**)&result->device_offset, sizeof(int));
+    result->copy_to_device(true);
+
+    // Array to count valid timestamps
+    int *valid_h = (int*)malloc(threads*sizeof(int));
+    int *valid_d;
+    memset(valid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&valid_d, threads*sizeof(int));
+
+    // Array to count invalid timestamps
+    int *invalid_h = (int*)malloc(threads*sizeof(int));
+    int *invalid_d;
+    memset(invalid_h, 0, threads*sizeof(int));
+    cudaMalloc((int**)&invalid_d, threads*sizeof(int));
+
+    // Array to copy the result to ... needed for offset calculations
+    int *out_ts_cpy;
+    int *out_v_cpy;
+    cudaMalloc((int**)&out_ts_cpy, result->size*sizeof(int));
+    cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
+
+    cudaMemset(invalid_d, 0, threads*sizeof(int));
+    cudaMemset(valid_d, 0, threads*sizeof(int));
+
+    cudaDeviceSynchronize();
+
+    // 3, 2, 1, go
+    lift_cuda<<<blocks, block_size>>>(  x->device_timestamp, y->device_timestamp, 
+                                        result->device_timestamp, 
+                                        x->device_values, y->device_values,
+                                        result->device_values,
+                                        threads, (x->size), (y->size),
+                                        op, valid_d, invalid_d, 
+                                        out_ts_cpy, out_v_cpy, result->device_offset,
+                                        x->device_offset, y->device_offset);
+                            
+    cudaDeviceSynchronize();
+
+    if (op == MRG){
+        inval_multiples_merge<<<blocks, block_size>>> ( op, threads,
+                                                        x->size, y->size,
+                                                        x->device_offset, y->device_offset,
+                                                        out_ts_cpy, invalid_d, valid_d);
+        cudaDeviceSynchronize();
+    }
+
+    // Move invalid timestamps to front and set correct offset
+    remove_invalid<<<blocks, block_size>>>( threads, invalid_d, valid_d, 
+                                            x->size, y->size,
+                                            out_ts_cpy, result->device_timestamp,
+                                            out_v_cpy, result->device_values,
+                                            x->device_offset, y->device_offset,
+                                            result->device_offset, op);
+
+    cudaDeviceSynchronize();
+
+    // Free arrays
+    // Something's not quite right yet
+    
+    //cudaFree(out_ts_cpy);
+    //cudaFree(out_v_cpy);
+    //cudaFree(invalid_d);
+    //cudaFree(valid_d);
+    //free(valid_h);
+    //free(invalid_h);
+
+    return result; 
+}
+
+std::shared_ptr<GPUIntStream> count(std::shared_ptr<GPUUnitStream> input){
+    int threads = input->size + 1;
+    int block_size = 1;
+    int blocks = 1;
+    calcThreadsBlocks(threads,&block_size,&blocks);
+
+    //std::shared_ptr<GPUIntStream> result(new GPUIntStream());
+    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size + 1, true);
+
+    assign_vals<<<blocks, block_size>>>( input->device_timestamp, result->device_values, result->device_timestamp,
+                                        input->device_offset, result->device_offset, 
+                                        input->size+1);
+    cudaDeviceSynchronize();
+
+    return result;
+}
+
+// Internal functions
 __device__ void calcThreadsBlocks_device(int threads, int *block_size, int*blocks){
     *block_size = 0;
     *blocks = 0;
@@ -130,25 +402,6 @@ __global__ void delay_iteration(int* reset_timestamps, int* reset_offset, int re
 
     *result_offset = 0;
     calculate_offset<<<blocks, block_size, 0, stream>>>(result_timestamps, result_offset, threads);
-    //*result_offset = result_size - resultCount;
-}
-
-std::shared_ptr<GPUUnitStream> delay(std::shared_ptr<GPUIntStream> s, std::shared_ptr<GPUUnitStream> r, cudaStream_t stream) {
-    std::shared_ptr<GPUIntStream> s_prune = std::make_shared<GPUIntStream>(*s, true);
-    std::shared_ptr<GPUUnitStream> r_prune = std::make_shared<GPUUnitStream>(*r, true);
-
-    // Prune GPUIntStream s, mark all events that can't possibly trigger because there's a reset event with value -1
-    delay_preliminary_prune(s_prune, r_prune, stream);
-
-    // Prepare original input data and result output
-    std::shared_ptr<GPUUnitStream> prevResults = std::make_shared<GPUUnitStream>(*r_prune, true);
-    std::shared_ptr<GPUUnitStream> result = std::make_shared<GPUUnitStream>(s->size, true);
-
-    // Launch actual iterative algorithm on device
-    delay_iteration<<<1, 1, 0, stream>>>(prevResults->device_timestamp, prevResults->device_offset, prevResults->size, s_prune->device_timestamp, s_prune->device_values, s_prune->device_offset, s_prune->size, result->device_timestamp, result->device_offset, result->size, stream);
-    cudaDeviceSynchronize();
-
-    return result;
 }
 
 /**
@@ -192,11 +445,8 @@ __device__ int lookUpElement(int size,int searchValue, int * input_timestamp){
     int R = size;
     int m = INT_MIN;
     int out = INT_MIN;
-    //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
 
     while (L<=R) {
-        // is this needed? TODO! check and discuss
-        //maybe it helps? CHECK!
         __syncthreads();
         m = (int) (L+R)/2;
         if (input_timestamp[m]<searchValue){
@@ -219,7 +469,6 @@ __device__ int lookUpNextElement(int size, int searchValue, int *timestamps) {
     int R = size - 1;
     int m = INT_MIN;
     int out = INT_MIN;
-    //TODO! APPLY OFFSET DUE TO INVALID WEIGHTS
 
     if (timestamps[size-1] > searchValue) {
         while (L<=R) {
@@ -258,67 +507,6 @@ __global__ void delay_cuda(int *inputIntTimestamps, int *inputIntValues, int *re
     }
 }
 
-__device__ void delay_cuda_rec(){
-
-}
-
-
-// https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#numa-best-practices
-// ADD stream argument to enable multiple kernels in parallel (10.5. Concurrent Kernel Execution)
-// Note:Low Medium Priority: Use signed integers rather than unsigned integers as loop counters.
-std::shared_ptr<GPUIntStream> time(std::shared_ptr<GPUUnitStream> input, cudaStream_t stream){
-    int threads = input->size;
-    int block_size = 1;
-    int blocks = 1;
-    calcThreadsBlocks(threads,&block_size,&blocks);
-    // Create new stream on device the size of the input stream
-    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size, true);
-    // Fire off the actual calculation
-    time_cuda<<<blocks,block_size,0,stream>>>(input->device_timestamp, result->device_timestamp, result->device_values, threads,input->device_offset,result->device_offset);
-    //printf("Scheduled time() with <<<%d,%d>>> \n",blocks,block_size);
-    return result;
-};
-
-
-
-
-std::shared_ptr<GPUIntStream> last(std::shared_ptr<GPUIntStream> inputInt, std::shared_ptr<GPUUnitStream> inputUnit, cudaStream_t stream) {
-    int threads = (int) inputUnit->size;
-    int block_size = 1;
-    int blocks = 1;
-    calcThreadsBlocks(threads, &block_size, &blocks);
-
-    // Create new stream on devicewith the size of the unit input stream
-    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(inputUnit->size, true);
-
-    // Fire off the CUDA calculation
-    last_cuda<<<blocks, block_size, 0, stream>>>(inputInt->device_timestamp, inputInt->device_values,
-                                                 inputUnit->device_timestamp, result->device_timestamp,
-                                                 result->device_values, inputInt->size, threads,
-                                                 inputInt->device_offset, inputUnit->device_offset);
-    //TODO! comment out
-    //printf("beforecalc\n");
-    calcThreadsBlocks(threads,&block_size,&blocks);
-    //printf("aftercalc\n");
-    //copy result vector to device
-    if (!result->onDevice) {
-        //TODO! where do we free this?
-        int sizeAllocated = inputUnit->size * sizeof(int);
-        result->size = inputUnit->size;
-        result->host_timestamp = (int *) malloc(inputUnit->size * sizeof(int));
-        result->host_values = (int *) malloc(inputUnit->size * sizeof(int));
-        memset(result->host_timestamp, 0, sizeAllocated);
-        memset(result->host_values, 0, sizeAllocated);
-        result->copy_to_device(false);
-    }
-    cudaDeviceSynchronize();
-    //TODO! check that no expection is thrown at launch!
-    last_cuda<<<blocks,block_size,0,stream>>>(inputInt->device_timestamp, inputInt->device_values, inputUnit->device_timestamp,result->device_timestamp,result->device_values,inputInt->size, threads,inputInt->device_offset,inputUnit->device_offset);
-    cudaDeviceSynchronize();
-    calculate_offset<<<blocks, block_size, 0, stream>>>(result->device_timestamp, result->device_offset, threads);
-    printf("Scheduled last() with <<<%d,%d>>> \n", blocks, block_size);
-    return result;
-}
 
 //reduction example followed from: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 //calculates the number of non valid timestamps
@@ -331,13 +519,11 @@ __global__ void calculate_offset(int* timestamps, int* offset, int size){
     sdata[tid] = 0;
 
     if (i < size){
-         //printf(" timestamp %d \n",*(timestamps+i));
          if (*(timestamps+i) < 0){
             sdata[tid] = 1;
          }
     }
     __syncthreads();
-
 
     for(unsigned int s=1; s < blockDim.x; s *= 2) {
         int index = 2 * s * tid;
@@ -351,9 +537,9 @@ __global__ void calculate_offset(int* timestamps, int* offset, int size){
         block_offset = sdata[0];
         atomicAdd(offset, block_offset);
     }
-    
 
 }
+
 __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_stream_timestamps,  int* output_timestamps, int* output_values, int intStreamSize, int size, int* offsInt, int* offsUnit){
     
     const int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -375,7 +561,6 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     output_values += *offsUnit;
     int out =  -2;
 
-
     //Search for the timestamp per thread
 
     int L = 0;
@@ -385,7 +570,6 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     if (i<size) {
 
         while (L<=R) {
-           //__syncthreads();
             m = (int) (L+R)/2;
 
             if (input_timestamp[m]<local_unit_timestamp){
@@ -409,14 +593,7 @@ __global__ void last_cuda(int* input_timestamp, int* input_values,int*unit_strea
     //now the threads perform an and reduction starting at 0 going to size
     __syncthreads();
     if (i < size){
-        if (out <0){
-            //printf("out %d \n",out);
-        }
         output_values[i] = out;
-        if (i < 40){
-            //printf("thread: %d \n",i);
-            //printf("out value %d\n", out);
-        }
     }
 }
 
@@ -581,8 +758,6 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
             out_ts+offset, out_v+offset,
             x_done, y_done, op);
 
-        //printf("out part %i: %i : %i\n", offset, out_ts[offset], out_v[offset]);
-
         if (x_i >= x_len){
             x_done = true;
         }
@@ -606,112 +781,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
     }
 }
 
-// Information about MergePath
-// https://stackoverflow.com/questions/307291++06/merge-sort-using-cuda-efficient-implementation-for-small-input-arrays
-/**
- * See the following paper for parallel merging of sorted arrays:
- * O. Green, R. Mccoll, and D. Bader
- * GPU merge path: a GPU merging algorithm
- * International Conference on Supercomputing
- * November 2014
- * URL: https://www.researchgate.net/publication/254462662_GPU_merge_path_a_GPU_merging_algorithm
- *
- * The paper claims a runtime complexity of O(log n + n/p), p ... # of processors
- */
 
-/**
- * Lift
- */
-std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
-    int block_size = 0;
-    int blocks = 0;
-    int x_offset = *(x->host_offset);
-    int y_offset = *(y->host_offset);
-    int len_offset = x_offset+y_offset;
-    int threads = (x->size-x_offset) + (y->size-y_offset);
-    calcThreadsBlocks(threads, &block_size, &blocks);
-
-    threads = (blocks) * (block_size);
-
-    // Create Result
-    std::shared_ptr<GPUIntStream> result(new GPUIntStream());
-    result->size = x->size + y->size;
-    result->host_timestamp = (int*)malloc(result->size * sizeof(int));
-    result->host_values = (int*)malloc(result->size * sizeof(int));
-    result->host_offset = (int*)malloc(sizeof(int));
-    memset(result->host_timestamp, -1, result->size);
-    memset(result->host_values, 0, result->size);
-    *result->host_offset = 0;
-    cudaMalloc((int**)&result->device_timestamp, result->size*sizeof(int));
-    cudaMalloc((int**)&result->device_values, result->size*sizeof(int));
-    cudaMalloc((int**)&result->device_offset, sizeof(int));
-    result->copy_to_device(true);
-
-    // Array to count valid timestamps
-    int *valid_h = (int*)malloc(threads*sizeof(int));
-    int *valid_d;
-    memset(valid_h, 0, threads*sizeof(int));
-    cudaMalloc((int**)&valid_d, threads*sizeof(int));
-
-    // Array to count invalid timestamps
-    int *invalid_h = (int*)malloc(threads*sizeof(int));
-    int *invalid_d;
-    memset(invalid_h, 0, threads*sizeof(int));
-    cudaMalloc((int**)&invalid_d, threads*sizeof(int));
-
-    // Array to copy the result to ... needed for offset calculations
-    int *out_ts_cpy;
-    int *out_v_cpy;
-    cudaMalloc((int**)&out_ts_cpy, result->size*sizeof(int));
-    cudaMalloc((int**)&out_v_cpy, result->size*sizeof(int));
-
-    cudaMemset(invalid_d, 0, threads*sizeof(int));
-    cudaMemset(valid_d, 0, threads*sizeof(int));
-
-    cudaDeviceSynchronize();
-
-    // 3, 2, 1, go
-    lift_cuda<<<blocks, block_size>>>(  x->device_timestamp, y->device_timestamp, 
-                                        result->device_timestamp, 
-                                        x->device_values, y->device_values,
-                                        result->device_values,
-                                        threads, (x->size), (y->size),
-                                        op, valid_d, invalid_d, 
-                                        out_ts_cpy, out_v_cpy, result->device_offset,
-                                        x->device_offset, y->device_offset);
-                            
-    cudaDeviceSynchronize();
-
-    if (op == MRG){
-        inval_multiples_merge<<<blocks, block_size>>> ( op, threads,
-                                                        x->size, y->size,
-                                                        x->device_offset, y->device_offset,
-                                                        out_ts_cpy, invalid_d, valid_d);
-        cudaDeviceSynchronize();
-    }
-
-    // Move invalid timestamps to front and set correct offset
-    remove_invalid<<<blocks, block_size>>>( threads, invalid_d, valid_d, 
-                                            x->size, y->size,
-                                            out_ts_cpy, result->device_timestamp,
-                                            out_v_cpy, result->device_values,
-                                            x->device_offset, y->device_offset,
-                                            result->device_offset, op);
-
-    cudaDeviceSynchronize();
-
-    // Free arrays
-    // Something's not quite right yet
-    
-    //cudaFree(out_ts_cpy);
-    //cudaFree(out_v_cpy);
-    //cudaFree(invalid_d);
-    //cudaFree(valid_d);
-    //free(valid_h);
-    //free(invalid_h);
-
-    return result; 
-}
 
 __global__ void inval_multiples_merge(  int op, int threads,
                                         int x_len, int y_len,
@@ -734,18 +804,14 @@ __global__ void inval_multiples_merge(  int op, int threads,
 
     int vpt = ceil((double)((x_len + y_len)-len_offset) / (double)threads); // Values per thread 
     for (int i = 0; i < vpt && tidx*vpt+i < (x_len+y_len)-len_offset; i++){
-        //int l = max(tidx*vpt + i - 1, 0);
-        //int r = max(tidx*vpt + i, 1);
         if (tidx*vpt+i == 0){
             continue;
         }
         int l = tidx*vpt + i - 1;
         int r = tidx*vpt + i;
-        if (x_len+y_len < 1000) printf("l: %i -- r: %i\n", out_ts[l], out_ts[r]);
         if (out_ts[l] == out_ts[r]){
             out_ts[r] = -1;
             invalid[tidx]++;
-            if (x_len+y_len < 1000) printf("inval ptr %p\n", invalid+tidx);
             // Decrement valid, since it is at maximum due to incrementations before
             valid[tidx]--;
         }
@@ -775,7 +841,6 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
     int cuml_invalid = 0;
     for (int i = 0; i < (x_len+y_len) - len_offset; i++){
         cuml_invalid += invalid[i];
-        if (tidx == 0 && x_len+y_len < 1000) printf("invalid[%i] = %i\n", i, invalid[i]);
     }
 
     int cuml_valid_before = 0;
@@ -797,9 +862,6 @@ __global__ void remove_invalid( int threads, int *invalid, int *valid,
     // Only one thread does this
     if (tidx == 0) {
         (*result_offset) = cuml_invalid+len_offset;
-        printf("result offset %i\n", *result_offset);
-        printf("cuml inval: %i\n", cuml_invalid);
-        printf("len offs: %i\n",len_offset);
     }
 }
 
@@ -811,10 +873,6 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                             int *x_offset, int *y_offset){
 
     const int tidx = threadIdx.x + blockIdx.x * blockDim.x;         // Thread ID
-    /*if (threads <= 1024){
-        valid[tidx] = 0;
-        invalid[tidx] = 0;
-    }*/
 
     int xo = (*x_offset);
     int yo = (*y_offset);
@@ -846,74 +904,6 @@ __global__ void lift_cuda(  int *x_ts, int *y_ts, int *out_ts,
                     x_len-xo, y_len-yo, lift_funcs[fct], lift_ops[op],
                     valid, invalid);
 
-}
-
-std::shared_ptr<GPUIntStream> slift(std::shared_ptr<GPUIntStream> x, std::shared_ptr<GPUIntStream> y, int op){
-    
-    // Merge fast path
-    if (op == MRG){
-        std::shared_ptr<GPUIntStream> merge_result = lift(x, y, MRG);
-        cudaDeviceSynchronize();
-        return merge_result;
-    }
-    // Fast path for 1/2 empty stream(s)
-    if (x->size == 0 || y->size == 0){
-        int *e_ts = (int*)malloc(0);
-        int *e_v = (int*)malloc(0);
-        std::shared_ptr<GPUIntStream> empty(new GPUIntStream(e_ts, e_v, 0));
-        empty->size = 0;
-        empty->copy_to_device();
-        return empty;
-    }
-
-    int *x_ts = (int*)malloc(x->size*sizeof(int));
-    int *y_ts = (int*)malloc(y->size*sizeof(int));
-    memcpy(x_ts, x->host_timestamp, x->size*sizeof(int));
-    memcpy(y_ts, y->host_timestamp, y->size*sizeof(int));
-
-    // xy ... y is the unit stream
-    int *xy_ts = (int*)malloc(y->size*sizeof(int));
-    int *yx_ts = (int*)malloc(x->size*sizeof(int));
-    int *xy_v = (int*)malloc(y->size*sizeof(int));
-    int *yx_v = (int*)malloc(x->size*sizeof(int));
-
-    memset(xy_ts, -1, y->size*sizeof(int));
-    memset(yx_ts, -1, x->size*sizeof(int));
-
-    // Make Unit streams from Int streams for last()
-    std::shared_ptr<GPUUnitStream> x_unit(new GPUUnitStream(x_ts, x->size, *(x->host_offset)));
-    std::shared_ptr<GPUUnitStream> y_unit(new GPUUnitStream(y_ts, y->size, *(y->host_offset)));
-
-    x_unit->copy_to_device();
-    y_unit->copy_to_device();
-
-    std::shared_ptr<GPUIntStream> last_xy = last(x, y_unit, 0);
-    std::shared_ptr<GPUIntStream> last_yx = last(y, x_unit, 0);
-    cudaDeviceSynchronize();
-
-    last_yx->copy_to_host();
-    last_xy->copy_to_host();
-
-    std::shared_ptr<GPUIntStream> x_prime = lift(x, last_xy, MRG);
-    std::shared_ptr<GPUIntStream> y_prime = lift(y, last_yx, MRG);
-    cudaDeviceSynchronize();
-
-    std::shared_ptr<GPUIntStream> result = lift(x_prime, y_prime, op);
-    cudaDeviceSynchronize();
-
-    x_prime->free_device();
-    x_prime->free_host();
-    y_prime->free_device();
-    y_prime->free_host();
-
-    x_unit->free_device();
-    x_unit->free_host();
-    y_unit->free_device();
-    y_unit->free_host();
-
-    // MEMORY BUG WHEN FREEING LAST XY/YX
-
-    return result;
 }
 
 // Scan from slides
@@ -953,25 +943,4 @@ __global__ void assign_vals(int *input, int *result_v, int *result_ts, int *inpu
         }
     }
     return;
-}
-
-std::shared_ptr<GPUIntStream> count(std::shared_ptr<GPUUnitStream> input){
-    int threads = input->size + 1; // Correct?
-    int block_size = 1;
-    int blocks = 1;
-    calcThreadsBlocks(threads,&block_size,&blocks);
-
-    //std::shared_ptr<GPUIntStream> result(new GPUIntStream());
-    std::shared_ptr<GPUIntStream> result = std::make_shared<GPUIntStream>(input->size + 1, true);
-
-    //cudaMalloc((void **) &result->device_timestamp, (input->size + 1)*sizeof(int));
-    //cudaMalloc((void **) &result->device_values, (input->size + 1)*sizeof(int));
-    //cudaMalloc((void **) &result->device_offset, sizeof(int));
-
-    assign_vals<<<blocks, block_size>>>( input->device_timestamp, result->device_values, result->device_timestamp,
-                                        input->device_offset, result->device_offset, 
-                                        input->size+1);
-    cudaDeviceSynchronize();
-
-    return result;
 }

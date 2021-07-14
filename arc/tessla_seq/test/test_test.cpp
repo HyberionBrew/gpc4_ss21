@@ -11,11 +11,11 @@
 TEST_CASE("Basic Stream Operations") {
 
     SECTION("bt_delay") {
-        Reader inReader = Reader("../test/data/bt_delay.in");
+        Reader inReader = Reader("test/data/bt_delay.in");
         std::shared_ptr<IntStream> delayStreamIn = inReader.getIntStream("d");
         std::shared_ptr<UnitStream> resetStreamIn = inReader.getUnitStream("r");
 
-        Reader outReader = Reader("../test/data/bt_delay.out");
+        Reader outReader = Reader("test/data/bt_delay.out");
         std::shared_ptr<UnitStream> intendedResult = outReader.getUnitStream("y");
 
         std::shared_ptr<UnitStream> result = delay(*delayStreamIn, *resetStreamIn);
@@ -24,11 +24,11 @@ TEST_CASE("Basic Stream Operations") {
     }
 
     SECTION("bt_last") {
-        Reader inReader = Reader("../test/data/bt_last.in");
+        Reader inReader = Reader("test/data/bt_last.in");
         std::shared_ptr<IntStream> vStreamIn = inReader.getIntStream("v");
         std::shared_ptr<UnitStream> rStreamIn = inReader.getUnitStream("r");
 
-        Reader outReader = Reader("../test/data/bt_last.out");
+        Reader outReader = Reader("test/data/bt_last.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = last(*vStreamIn, *rStreamIn);
@@ -37,11 +37,11 @@ TEST_CASE("Basic Stream Operations") {
     }
 
     SECTION("bt_merge") {
-        Reader inReader = Reader("../test/data/bt_merge.in");
+        Reader inReader = Reader("test/data/bt_merge.in");
         std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("x");
         std::shared_ptr<IntStream> yStreamIn = inReader.getIntStream("y");
 
-        Reader outReader = Reader("../test/data/bt_merge.out");
+        Reader outReader = Reader("test/data/bt_merge.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = merge(*xStreamIn, *yStreamIn);
@@ -51,10 +51,10 @@ TEST_CASE("Basic Stream Operations") {
 
     SECTION("bt_time") {
         SECTION("bt_time small dataset") {
-            Reader inReader = Reader("../test/data/bt_time.in");
+            Reader inReader = Reader("test/data/bt_time.in");
             std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("x");
 
-            Reader outReader = Reader("../test/data/bt_time.out");
+            Reader outReader = Reader("test/data/bt_time.out");
             std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("x");
 
             std::shared_ptr<IntStream> result = time(*xStreamIn);
@@ -63,10 +63,10 @@ TEST_CASE("Basic Stream Operations") {
         }
 
         SECTION("bt_time bigger dataset") {
-            Reader inReader = Reader("../test/data/bt_time.bigger.in");
+            Reader inReader = Reader("test/data/bt_time.bigger.in");
             std::shared_ptr<IntStream> xStreamIn = inReader.getIntStream("z");
 
-            Reader outReader = Reader("../test/data/bt_time.bigger.out");
+            Reader outReader = Reader("test/data/bt_time.bigger.out");
             std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
             std::shared_ptr<IntStream> result = time(*xStreamIn);
@@ -80,9 +80,9 @@ TEST_CASE("Basic Stream Operations") {
 TEST_CASE("Constant Test Cases") {
 
     SECTION("bt_addc") {
-        Reader inReader = Reader("../test/data/bt_addc.in");
+        Reader inReader = Reader("test/data/bt_addc.in");
         std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_addc.out");
+        Reader outReader = Reader("test/data/bt_addc.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = add(*inStream, 1);
@@ -90,10 +90,10 @@ TEST_CASE("Constant Test Cases") {
     }
 
     SECTION("bt_adds") {
-        Reader inReader = Reader("../test/data/bt_adds.in");
+        Reader inReader = Reader("test/data/bt_adds.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_adds.out");
+        Reader outReader = Reader("test/data/bt_adds.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = add(*inStream1, *inStream2);
@@ -101,9 +101,9 @@ TEST_CASE("Constant Test Cases") {
     }
 
     SECTION("bt_subc") {
-        Reader inReader = Reader("../test/data/bt_subc.in");
+        Reader inReader = Reader("test/data/bt_subc.in");
         std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_subc.out");
+        Reader outReader = Reader("test/data/bt_subc.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = sub1(*inStream, 3);
@@ -111,9 +111,9 @@ TEST_CASE("Constant Test Cases") {
     }
 
     SECTION("bt_mulc") {
-        Reader inReader = Reader("../test/data/bt_mulc.in");
+        Reader inReader = Reader("test/data/bt_mulc.in");
         std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_mulc.out");
+        Reader outReader = Reader("test/data/bt_mulc.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = mul(*inStream, 4);
@@ -121,9 +121,9 @@ TEST_CASE("Constant Test Cases") {
     }
 
     SECTION("bt_divc") {
-        Reader inReader = Reader("../test/data/bt_divc.in");
+        Reader inReader = Reader("test/data/bt_divc.in");
         std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_divc.out");
+        Reader outReader = Reader("test/data/bt_divc.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = div1(*inStream, 3);
@@ -131,9 +131,9 @@ TEST_CASE("Constant Test Cases") {
     }
 
     SECTION("bt_modc") {
-        Reader inReader = Reader("../test/data/bt_modc.in");
+        Reader inReader = Reader("test/data/bt_modc.in");
         std::shared_ptr<IntStream> inStream = inReader.getIntStream("x");
-        Reader outReader = Reader("../test/data/bt_modc.out");
+        Reader outReader = Reader("test/data/bt_modc.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("y");
 
         std::shared_ptr<IntStream> result = mod1(*inStream, 2);
@@ -144,10 +144,10 @@ TEST_CASE("Constant Test Cases") {
 TEST_CASE("Stream Arithmetic Test Cases (slift)") {
 
     SECTION("bt_adds") {
-        Reader inReader = Reader("../test/data/bt_adds.in");
+        Reader inReader = Reader("test/data/bt_adds.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_adds.out");
+        Reader outReader = Reader("test/data/bt_adds.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = add(*inStream1, *inStream2);
@@ -155,10 +155,10 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
     }
 
     SECTION("bt_subs") {
-        Reader inReader = Reader("../test/data/bt_subs.in");
+        Reader inReader = Reader("test/data/bt_subs.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_subs.out");
+        Reader outReader = Reader("test/data/bt_subs.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = sub(*inStream1, *inStream2);
@@ -166,10 +166,10 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
     }
 
     SECTION("bt_muls") {
-        Reader inReader = Reader("../test/data/bt_muls.in");
+        Reader inReader = Reader("test/data/bt_muls.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_muls.out");
+        Reader outReader = Reader("test/data/bt_muls.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = mul(*inStream1, *inStream2);
@@ -177,10 +177,10 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
     }
 
     SECTION("bt_divs") {
-        Reader inReader = Reader("../test/data/bt_divs.in");
+        Reader inReader = Reader("test/data/bt_divs.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_divs.out");
+        Reader outReader = Reader("test/data/bt_divs.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = div(*inStream1, *inStream2);
@@ -188,10 +188,10 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
     }
 
     SECTION("bt_mods") {
-        Reader inReader = Reader("../test/data/bt_mods.in");
+        Reader inReader = Reader("test/data/bt_mods.in");
         std::shared_ptr<IntStream> inStream1 = inReader.getIntStream("x");
         std::shared_ptr<IntStream> inStream2 = inReader.getIntStream("y");
-        Reader outReader = Reader("../test/data/bt_mods.out");
+        Reader outReader = Reader("test/data/bt_mods.out");
         std::shared_ptr<IntStream> intendedResult = outReader.getIntStream("z");
 
         std::shared_ptr<IntStream> result = mod(*inStream1, *inStream2);
@@ -199,7 +199,7 @@ TEST_CASE("Stream Arithmetic Test Cases (slift)") {
     }
 }
 
-#define BENCHMARKING_CASES 8
+#define BENCHMARKING_CASES 5
 #define BENCHMARKING_LOOPS 1
 //#define CHECK_RESULTS
 
@@ -215,7 +215,7 @@ TEST_CASE("Benchmarks") {
         for (int j=1;j <=BENCHMARKING_LOOPS;j++){
             for (int i = 1; i<BENCHMARKING_CASES; i++) {
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
                 Reader inReader = Reader(path+std::to_string(i)+".in");
                 std::shared_ptr<IntStream> inputStreamV = inReader.getIntStream("z");
                 std::shared_ptr<UnitStream> inputStreamR = inReader.getUnitStream("a");
@@ -250,7 +250,7 @@ TEST_CASE("Benchmarks") {
         for (int j=1;j <=BENCHMARKING_LOOPS;j++){
             for (int i = 1;i<=BENCHMARKING_CASES; i++){
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
 
                 // Prepare empty output stream to fill
                 Reader inReader = Reader(path+std::to_string(i)+".in");
@@ -287,7 +287,7 @@ TEST_CASE("Benchmarks") {
             // TODO: Check benchmarking case 3
             for (int i = 4;i<=BENCHMARKING_CASES; i++){
                 auto start2 = std::chrono::high_resolution_clock::now();
-                std::string path = "../test/data/benchmarking";
+                std::string path = "test/data/benchmarking";
 
                 Reader inReader = Reader(path+std::to_string(i)+".in");
                 std::shared_ptr<IntStream> inputStreamD = inReader.getIntStream("z");

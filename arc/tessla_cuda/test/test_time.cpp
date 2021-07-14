@@ -17,8 +17,6 @@
 #include <sys/time.h>
 #include <cuda_profiler_api.h>
 
-#include <StreamFunctionsThrust.cuh>
-
 
 TEST_CASE("time()") {
     SECTION("time() with small dataset") {
@@ -55,7 +53,6 @@ TEST_CASE("time()") {
         inputStream->free_device();
         outputStream->free_device();
     }
-
     SECTION("time() with bigger dataset (~109k/250k events)") {
         // Read input and correct output data
         GPUReader inReader = GPUReader("test/data/bt_time.bigger.in");

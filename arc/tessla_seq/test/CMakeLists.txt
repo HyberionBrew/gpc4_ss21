@@ -8,7 +8,7 @@ link_directories(
 
 add_executable(tessla_seq_test
         ../test/test_main.cpp
-        #../test/test_test.cpp
+        ../test/test_test.cpp
         ../test/test_benchmark_seq.cpp
 )
 
