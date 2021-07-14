@@ -205,7 +205,7 @@ std::shared_ptr<GPUIntStream> lift(std::shared_ptr<GPUIntStream> x, std::shared_
     int blocks = 0;
     int x_offset = *(x->host_offset);
     int y_offset = *(y->host_offset);
-    int len_offset = x_offset+y_offset;
+    //int len_offset = x_offset+y_offset;
     int threads = (x->size-x_offset) + (y->size-y_offset);
     calcThreadsBlocks(threads, &block_size, &blocks);
 
@@ -615,7 +615,7 @@ __global__ void time_cuda(int* input_timestamp, int* output_timestamps, int* out
  */
 __device__ int merge_path(int *x, int *y, int diag, int x_len, int y_len) {
     // Just using UnitStreams for now
-    const int i = threadIdx.x + blockIdx.x * blockDim.x;
+    //const int i = threadIdx.x + blockIdx.x * blockDim.x;
     int begin = max(0, diag - y_len);               // Start of search window
     int end = min(diag, x_len);                     // End of search window
     int mid;
@@ -737,7 +737,7 @@ __device__ void lift_partition( int *x_ts, int *y_ts, int *out_ts,
 
     int x_i = x_start;
     int y_i = y_start;
-    int size = vpt;
+    //int size = vpt;
 
     bool x_done = x_i >= x_len ? true : false;
     bool y_done = y_i >= y_len ? true : false;

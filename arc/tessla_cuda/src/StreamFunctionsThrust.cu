@@ -34,7 +34,7 @@ struct is_smaller
   is_smaller(int thresh) : _thresh(thresh) { }
 
   __host__ __device__
-  const bool operator()(const int &x) 
+  bool operator()(const int &x) 
   {
     return x <= _thresh;
   }
